@@ -1,8 +1,15 @@
+
+
 from django.db import models
 
 # Create your models here.
+
 class Block(models.Model):
     name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
 
 class Floor(models.Model):
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
@@ -14,3 +21,6 @@ class Floor(models.Model):
     cols = models.IntegerField()
 
     blocked_cells = models.JSONField(default=list)
+
+    def __str__(self):
+        return f"{self.block.name} - Floor {self.floor_number}"
