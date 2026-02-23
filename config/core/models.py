@@ -21,6 +21,8 @@ class Floor(models.Model):
     def __str__(self):
         return f"{self.block.name} - Floor {self.number}"
     def total_cells(self):
-        return self.rows * self.cols
+        if self.rows and self.cols:
+            return self.rows * self.cols
+        return 0
     
 
