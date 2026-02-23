@@ -11,10 +11,10 @@ class Floor(models.Model):
     block = models.ForeignKey(Block, on_delete = models.CASCADE)
     number = models.IntegerField()
     
-    image = models.ImageField(upload_to='floor_images/')
+    image = models.ImageField(upload_to='floor_images/', null=True, blank=True)
 
-    rows = models.IntegerField()
-    cols = models.IntegerField()
+    rows = models.IntegerField(null=True, blank=True)
+    cols = models.IntegerField(null=True, blank=True)
 
     blocked_cells = models.JSONField(default=list)  # List of blocked cell coordinates
 
