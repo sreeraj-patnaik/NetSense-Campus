@@ -1,34 +1,62 @@
 import os
 from pathlib import Path
-
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+# ------------------------------------------------
+# Utility helpers
+# ------------------------------------------------
+
 def env_bool(name, default=False):
-    value = os.getenv(name)
-    if value is None:
+    val = os.getenv(name)
+    if val is None:
         return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+    return val.lower() in ("1", "true", "yes", "on")
 
 
 def env_list(name, default=""):
-    raw = os.getenv(name, default)
-    return [item.strip() for item in raw.split(",") if item.strip()]
+    return [v.strip() for v in os.getenv(name, default).split(",") if v.strip()]
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "netsense-local-dev-secret-key-change-me-2026-very-long")
+# ------------------------------------------------
+# Core Django settings
+# ------------------------------------------------
+
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "netsense-dev-secret-key-change-me"
+)
+
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
 
-RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost,.onrender.com,netsense.sreeraj.me"
+)
+
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+
+# ------------------------------------------------
+# CSRF / Security
+# ------------------------------------------------
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://*.onrender.com,https://netsense.sreeraj.me"
+)
+
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
+
+# ------------------------------------------------
+# Applications
+# ------------------------------------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,6 +67,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "heatmap",
 ]
+
+
+# ------------------------------------------------
+# Middleware
+# ------------------------------------------------
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -51,7 +84,13 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "netsense.urls"
+
+
+# ------------------------------------------------
+# Templates
+# ------------------------------------------------
 
 TEMPLATES = [
     {
@@ -68,12 +107,23 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = "netsense.wsgi.application"
 
+
+# ------------------------------------------------
+# Database
+# ------------------------------------------------
+
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 if DATABASE_URL:
     DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=not DEBUG),
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
 else:
     DATABASES = {
@@ -83,6 +133,11 @@ else:
         }
     }
 
+
+# ------------------------------------------------
+# Password validation
+# ------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -90,35 +145,61 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+
+# ------------------------------------------------
+# Localization
+# ------------------------------------------------
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
+
 USE_I18N = True
 USE_TZ = True
+
+
+# ------------------------------------------------
+# Static files
+# ------------------------------------------------
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-MEDIA_URL = "/media/"
-MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", str(BASE_DIR / "media")))
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+# ------------------------------------------------
+# Media files
+# ------------------------------------------------
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+
+# ------------------------------------------------
+# Auth redirects
+# ------------------------------------------------
 
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/scan/"
 LOGOUT_REDIRECT_URL = "/"
 
-HEATMAP_GRID_ROWS = 12
-HEATMAP_GRID_COLS = 8
+
+# ------------------------------------------------
+# Default primary key
+# ------------------------------------------------
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ------------------------------------------------
+# Heatmap configuration
+# ------------------------------------------------
+
 HEATMAP_BLOCKS = ["A", "B", "C"]
+
 HEATMAP_FLOORS = [1, 2, 3, 4]
 
-# Override grid size per floor. Each floor entry can have unique dimensions.
-# Example:
-# HEATMAP_FLOOR_DIMENSIONS = {
-#     1: {"rows": 10, "cols": 8},
-#     2: {"rows": 12, "cols": 9},
-# }
 HEATMAP_FLOOR_DIMENSIONS = {
     1: {"rows": 12, "cols": 8},
     2: {"rows": 12, "cols": 8},
@@ -131,11 +212,25 @@ HEATMAP_SERVICE_PROVIDERS = {
     "mobile": ["Airtel", "Jio", "Vi", "BSNL"],
 }
 
+
+# ------------------------------------------------
+# Production security
+# ------------------------------------------------
+
 if not DEBUG:
+
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
-    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
+
+    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", 31536000))
+
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool(
+        "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
+        True,
+    )
+
     SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", True)
+
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
