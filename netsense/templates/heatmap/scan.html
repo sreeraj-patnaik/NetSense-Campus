@@ -33,8 +33,12 @@
             </select>
         </label>
         <label>
-            Network Name
-            <input name="network_name" type="text" placeholder="Campus WiFi / Carrier">
+            Service Provider
+            <select name="service_provider" id="serviceProviderSelect" required></select>
+        </label>
+        <label>
+            Network Name / SSID
+            <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
         </label>
         <label>
             Signal (dBm)
@@ -64,11 +68,18 @@
     <div id="scanMarkerLayer" class="heatmap-layer"></div>
 </section>
 
+{{ block_floors|json_script:"scan-block-floors-data" }}
+{{ floor_configs|json_script:"scan-floor-configs-data" }}
+{{ service_providers|json_script:"scan-service-providers-data" }}
+
 <script>
     window.NETSENSE_SCAN_CONFIG = {
         rows: {{ grid_rows }},
         cols: {{ grid_cols }},
-        floorImageTemplate: "{% static 'heatmap/images/floor-placeholder.svg' %}"
+        defaultFloorImage: "{% static 'heatmap/images/floor-placeholder.svg' %}",
+        blockFloors: JSON.parse(document.getElementById("scan-block-floors-data").textContent),
+        floorConfigs: JSON.parse(document.getElementById("scan-floor-configs-data").textContent),
+        serviceProviders: JSON.parse(document.getElementById("scan-service-providers-data").textContent)
     };
 </script>
 <script src="{% static 'heatmap/js/scan.js' %}"></script>

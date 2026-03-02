@@ -29,6 +29,10 @@
                 {% endfor %}
             </select>
         </label>
+        <label>
+            Service Provider
+            <select id="providerSelect"></select>
+        </label>
         <button id="reloadBtn" type="button">Load Heatmap</button>
     </div>
 </section>
@@ -58,12 +62,19 @@
     </aside>
 </section>
 
+{{ block_floors|json_script:"block-floors-data" }}
+{{ floor_configs|json_script:"floor-configs-data" }}
+{{ service_providers|json_script:"service-providers-data" }}
+
 <script>
     window.NETSENSE_CONFIG = {
         rows: {{ grid_rows }},
         cols: {{ grid_cols }},
-        floorImageTemplate: "{% static 'heatmap/images/floor-placeholder.svg' %}",
-        heatmapApiUrl: "{% url 'heatmap_api' %}"
+        defaultFloorImage: "{% static 'heatmap/images/floor-placeholder.svg' %}",
+        heatmapApiUrl: "{% url 'heatmap_api' %}",
+        blockFloors: JSON.parse(document.getElementById("block-floors-data").textContent),
+        floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
+        serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
 <script src="{% static 'heatmap/js/home.js' %}"></script>
