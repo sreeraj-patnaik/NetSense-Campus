@@ -1,7 +1,0 @@
-Blocks
-
-Floors
-
-Grid system
-
-Floor map image
