@@ -13,6 +13,6 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_ALLOWED_HOSTS
-        value: .onrender.com
+        value: ".onrender.com"
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: https://*.onrender.com
+        value: "https://*.onrender.com"
