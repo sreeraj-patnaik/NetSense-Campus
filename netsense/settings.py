@@ -13,7 +13,8 @@ SECRET_KEY = os.getenv(
     "netsense-dev-secret-key-change-me"
 )
 
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
@@ -168,6 +169,11 @@ HEATMAP_BLOCKS = ["A", "B", "C"]
 
 HEATMAP_FLOORS = [1, 2, 3, 4]
 
+# Default grid fallback (required by utils.py)
+HEATMAP_GRID_ROWS = 12
+HEATMAP_GRID_COLS = 8
+
+# Optional per-floor overrides
 HEATMAP_FLOOR_DIMENSIONS = {
     1: {"rows": 12, "cols": 8},
     2: {"rows": 12, "cols": 8},
