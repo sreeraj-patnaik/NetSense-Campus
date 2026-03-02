@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel auth-panel">
+    <h2>Admin Login</h2>
+    <form method="post" class="scan-form auth-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+</section>
+{% endblock %}

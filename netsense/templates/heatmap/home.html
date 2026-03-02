@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="panel">
+    <h2>Public Signal Heatmap</h2>
+    <div class="controls">
+        <label>
+            Block
+            <select id="blockSelect">
+                {% for block in blocks %}
+                    <option value="{{ block }}">{{ block }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Floor
+            <select id="floorSelect">
+                {% for floor in floors %}
+                    <option value="{{ floor }}">{{ floor }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Mode
+            <select id="modeSelect">
+                {% for value, label in modes %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button id="reloadBtn" type="button">Load Heatmap</button>
+    </div>
+</section>
+
+<section class="viewer-layout">
+    <div
+        class="map-wrap"
+        id="mapWrap"
+        data-rows="{{ grid_rows }}"
+        data-cols="{{ grid_cols }}"
+    >
+        <img
+            id="floorMap"
+            src="{% static 'heatmap/images/floor-placeholder.svg' %}"
+            alt="Floor map"
+        >
+        <div id="gridLayer" class="grid-layer"></div>
+        <div id="heatmapLayer" class="heatmap-layer"></div>
+    </div>
+
+    <aside class="legend">
+        <h3>Legend</h3>
+        <p><span class="swatch green"></span> Strong (-65 dBm and above)</p>
+        <p><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</p>
+        <p><span class="swatch red"></span> Weak (below -80 dBm)</p>
+        <p><span class="swatch none"></span> No data</p>
+    </aside>
+</section>
+
+<script>
+    window.NETSENSE_CONFIG = {
+        rows: {{ grid_rows }},
+        cols: {{ grid_cols }},
+        floorImageTemplate: "{% static 'heatmap/images/floor-placeholder.svg' %}",
+        heatmapApiUrl: "{% url 'heatmap_api' %}"
+    };
+</script>
+<script src="{% static 'heatmap/js/home.js' %}"></script>
+{% endblock %}

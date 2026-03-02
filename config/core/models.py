@@ -15,7 +15,6 @@ class Floor(models.Model):
 
     rows = models.IntegerField(null=True, blank=True)
     cols = models.IntegerField(null=True, blank=True)
-
     blocked_cells = models.JSONField(default=list)  # List of blocked cell coordinates
 
     def __str__(self):
