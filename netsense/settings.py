@@ -13,8 +13,7 @@ SECRET_KEY = os.getenv(
     "netsense-dev-secret-key-change-me"
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
-
+DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
