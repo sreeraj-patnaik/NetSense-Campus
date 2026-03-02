@@ -1,5 +1,0 @@
-Aggregation engine
-
-Median RSSI calculation
-
-Heatmap API
