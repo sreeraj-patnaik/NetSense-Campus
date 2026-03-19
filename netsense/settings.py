@@ -4,6 +4,13 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 # --------------------------------------------------
 # Core settings
 # --------------------------------------------------
@@ -13,7 +20,7 @@ SECRET_KEY = os.getenv(
     "netsense-dev-secret-key-change-me"
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+DEBUG = env_bool("DJANGO_DEBUG", True)
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
@@ -146,6 +153,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+SERVE_MEDIA_FILES = env_bool("DJANGO_SERVE_MEDIA", DEBUG)
 
 # --------------------------------------------------
 # Authentication

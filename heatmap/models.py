@@ -65,3 +65,7 @@ class Scan(models.Model):
             f"{self.block}-F{self.floor} ({self.cell_x},{self.cell_y}) "
             f"{self.mode} {provider}{self.signal_strength} dBm"
         )
+
+
+
+

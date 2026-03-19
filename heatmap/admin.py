@@ -1,12 +1,21 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import Block, FloorPlan, Scan
 
 
 class FloorPlanInline(admin.TabularInline):
     model = FloorPlan
-    extra = 1
-    fields = ("number", "name", "grid_rows", "grid_cols", "image", "is_active")
+    extra = 0
+    show_change_link = True
+    fields = ("number", "name", "grid_rows", "grid_cols", "image", "image_preview", "is_active")
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        if obj and obj.image:
+            return format_html('<img src="{}" style="max-height: 72px; border-radius: 4px;" />', obj.image.url)
+        return "-"
+    image_preview.short_description = "Preview"
 
 
 @admin.register(Block)
@@ -19,10 +28,19 @@ class BlockAdmin(admin.ModelAdmin):
 
 @admin.register(FloorPlan)
 class FloorPlanAdmin(admin.ModelAdmin):
-    list_display = ("block", "number", "name", "grid_rows", "grid_cols", "image", "is_active")
+    list_display = ("block", "number", "name", "grid_rows", "grid_cols", "image_preview", "is_active")
     list_filter = ("block", "is_active")
     search_fields = ("block__code", "name")
     ordering = ("block__code", "number")
+    list_editable = ("is_active",)
+    fields = ("block", "number", "name", "grid_rows", "grid_cols", "image", "image_preview", "is_active")
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        if obj and obj.image:
+            return format_html('<img src="{}" style="max-height: 120px; border-radius: 4px;" />', obj.image.url)
+        return "-"
+    image_preview.short_description = "Preview"
 
 
 @admin.register(Scan)

@@ -46,7 +46,7 @@
     >
         <img
             id="floorMap"
-            src="{% static 'heatmap/images/floor-placeholder.svg' %}"
+            src="{% static 'heatmap/images/Floor 1.jpeg' %}"
             alt="Floor map"
         >
         <div id="gridLayer" class="grid-layer"></div>
@@ -70,7 +70,7 @@
     window.NETSENSE_CONFIG = {
         rows: {{ grid_rows }},
         cols: {{ grid_cols }},
-        defaultFloorImage: "{% static 'heatmap/images/floor-placeholder.svg' %}",
+        defaultFloorImage: "{% static 'heatmap/images/Floor 1.jpeg' %}",
         heatmapApiUrl: "{% url 'heatmap_api' %}",
         blockFloors: JSON.parse(document.getElementById("block-floors-data").textContent),
         floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
