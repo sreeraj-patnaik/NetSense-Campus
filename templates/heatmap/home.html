@@ -2,42 +2,72 @@
 {% load static %}
 
 {% block content %}
-<section class="panel">
-    <h2>Public Signal Heatmap</h2>
-    <div class="controls">
-        <label>
-            Block
-            <select id="blockSelect">
-                {% for block in blocks %}
-                    <option value="{{ block }}">{{ block }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Floor
-            <select id="floorSelect">
-                {% for floor in floors %}
-                    <option value="{{ floor }}">{{ floor }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Mode
-            <select id="modeSelect">
-                {% for value, label in modes %}
-                    <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Service Provider
-            <select id="providerSelect"></select>
-        </label>
-        <button id="reloadBtn" type="button">Load Heatmap</button>
+<section class="heatmap-hero">
+    <div class="container">
+        <div class="heatmap-header">
+            <div>
+                <h2>Live Signal Heatmap</h2>
+                <p>Dynamic scaling, blended contours, and confidence‑aware visuals.</p>
+            </div>
+            <button id="reloadBtn" type="button" class="btn primary">Refresh View</button>
+        </div>
+        <div class="controls-grid">
+            <label>
+                Block
+                <select id="blockSelect">
+                    {% for block in blocks %}
+                        <option value="{{ block }}">{{ block }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Floor
+                <select id="floorSelect">
+                    {% for floor in floors %}
+                        <option value="{{ floor }}">{{ floor }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Mode
+                <select id="modeSelect">
+                    {% for value, label in modes %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Service Provider
+                <select id="providerSelect"></select>
+            </label>
+            <label>
+                View
+                <select id="renderModeSelect">
+                    <option value="smooth" selected>Blended</option>
+                    <option value="contour">Contour Bands</option>
+                </select>
+            </label>
+            <label>
+                Spread
+                <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
+            </label>
+            <label class="toggle">
+                <input type="checkbox" id="autoSmoothToggle" checked>
+                Auto Smooth
+            </label>
+            <label class="toggle">
+                <input type="checkbox" id="confidenceToggle">
+                Confidence Overlay
+            </label>
+            <label class="toggle">
+                <input type="checkbox" id="interpolateToggle" checked>
+                Show Interpolated
+            </label>
+        </div>
     </div>
 </section>
 
-<section class="viewer-layout">
+<section class="heatmap-layout">
     <div
         class="map-wrap"
         id="mapWrap"
@@ -50,15 +80,31 @@
             alt="Floor map"
         >
         <div id="gridLayer" class="grid-layer"></div>
-        <div id="heatmapLayer" class="heatmap-layer"></div>
+        <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
     </div>
 
     <aside class="legend">
         <h3>Legend</h3>
+        <div class="legend-scale">
+            <span id="legendMin">Min</span>
+            <div class="legend-bar"></div>
+            <span id="legendMax">Max</span>
+        </div>
+        <div class="legend-scale">
+            <span>Interpolated Ramp</span>
+            <div class="legend-bar interp-bar"></div>
+        </div>
+        <div class="legend-badges">
+            <span class="badge">Dynamic scale</span>
+            <span class="badge">Auto smooth</span>
+            <span class="badge">Confidence layer</span>
+        </div>
         <p><span class="swatch green"></span> Strong (-65 dBm and above)</p>
         <p><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</p>
         <p><span class="swatch red"></span> Weak (below -80 dBm)</p>
+        <p><span class="swatch green" style="opacity: 0.45;"></span> Interpolated (low confidence)</p>
         <p><span class="swatch none"></span> No data</p>
+        <p><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay (darker = higher)</p>
     </aside>
 </section>
 
@@ -77,5 +123,5 @@
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/home.js' %}"></script>
+<script src="{% static 'heatmap/js/home.js' %}?v=20260401"></script>
 {% endblock %}

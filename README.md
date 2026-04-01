@@ -4,9 +4,11 @@ Minimal Django application to capture Wi-Fi/mobile signal samples and render flo
 
 ## Features
 
-- Public heatmap viewer at `/`
+- Landing page at `/`
+- Public heatmap viewer at `/heatmap/`
 - Admin scan capture page at `/scan` (login required)
 - Aggregated API at `/api/heatmap/?block=A&floor=2&mode=wifi&service_provider=CampusNet`
+- Config API for Android clients at `/api/config/`
 - Django admin for managing blocks/floors, floor images, grid dimensions, and scan cleanup at `/admin`
 
 ## Quick Start
@@ -83,6 +85,12 @@ Provider-specific example:
 
 ```text
 http://127.0.0.1:8000/api/heatmap/?block=A&floor=1&mode=mobile&service_provider=Jio
+```
+
+Interpolated cells example (disable interpolation with `interpolate=0`):
+
+```text
+http://127.0.0.1:8000/api/heatmap/?block=A&floor=1&mode=wifi&interpolate=1
 ```
 
 ## Notes

@@ -194,6 +194,10 @@ HEATMAP_SERVICE_PROVIDERS = {
     "mobile": ["Airtel", "Jio", "Vi", "BSNL"],
 }
 
+# Optional blocked cells per floor. Keys can be "A:1" or "1".
+# Example: HEATMAP_BLOCKED_CELLS = {"A:1": [0, 1, 2]}
+HEATMAP_BLOCKED_CELLS = {}
+
 # --------------------------------------------------
 # Production security (Render)
 # --------------------------------------------------

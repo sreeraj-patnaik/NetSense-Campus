@@ -2,11 +2,15 @@
 {% load static %}
 
 {% block content %}
-<section class="panel">
-    <h2>Admin Signal Sampling</h2>
-    <p>Select a location on the floor map, then enter signal strength and save.</p>
-
-    <form id="scanForm" method="post" class="scan-form">
+<section class="heatmap-hero">
+    <div class="container">
+        <div class="heatmap-header">
+            <div>
+                <h2>Admin Signal Sampling</h2>
+                <p>Select a location on the floor map, then enter signal strength and save.</p>
+            </div>
+        </div>
+        <form id="scanForm" method="post" class="scan-form">
         {% csrf_token %}
         <label>
             Block
@@ -49,8 +53,9 @@
         </div>
         <input type="hidden" name="cell_x" id="cellXInput" required>
         <input type="hidden" name="cell_y" id="cellYInput" required>
-        <button type="submit">Save Scan</button>
+        <button class="btn primary" type="submit">Save Scan</button>
     </form>
+</div>
 </section>
 
 <section

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from django.conf import settings
 
-from .models import FloorPlan
+from .models import Block, FloorPlan
 
 
 def _settings_floor_dims(floor):
@@ -35,6 +35,7 @@ def get_floor_registry():
                 "cols": max(1, floor.grid_cols),
                 "image_url": floor.image.url if floor.image else "",
                 "floor_name": floor.name or f"Floor {floor.number}",
+                "blocked_cells": floor.blocked_cell_ids(),
             }
     else:
         fallback_blocks = list(getattr(settings, "HEATMAP_BLOCKS", []))
@@ -44,11 +45,18 @@ def get_floor_registry():
             block_floors[block_code] = list(fallback_floors)
             for floor_number in fallback_floors:
                 dims = _settings_floor_dims(floor_number)
+                blocked_cfg = getattr(settings, "HEATMAP_BLOCKED_CELLS", {})
+                blocked_cells = (
+                    blocked_cfg.get(f"{block_code}:{floor_number}")
+                    or blocked_cfg.get(str(floor_number))
+                    or []
+                )
                 floor_configs[f"{block_code}:{floor_number}"] = {
                     "rows": dims["rows"],
                     "cols": dims["cols"],
                     "image_url": "",
                     "floor_name": f"Floor {floor_number}",
+                    "blocked_cells": list(blocked_cells),
                 }
 
     return {
@@ -70,9 +78,115 @@ def get_floor_dimensions(block, floor):
     return _settings_floor_dims(floor)
 
 
+def ensure_floor_plan(block_code, floor_number):
+    block, _ = Block.objects.get_or_create(code=block_code, defaults={"name": ""})
+    floor_plan = FloorPlan.objects.filter(block=block, number=floor_number).first()
+    if floor_plan:
+        return floor_plan
+    dims = get_floor_dimensions(block_code, floor_number)
+    blocked_cfg = getattr(settings, "HEATMAP_BLOCKED_CELLS", {})
+    blocked_cells = (
+        blocked_cfg.get(f"{block_code}:{floor_number}")
+        or blocked_cfg.get(str(floor_number))
+        or []
+    )
+    return FloorPlan.objects.create(
+        block=block,
+        number=floor_number,
+        name=f"Floor {floor_number}",
+        grid_rows=dims["rows"],
+        grid_cols=dims["cols"],
+        blocked_cells=list(blocked_cells),
+        is_active=True,
+    )
+
+
+def get_floor_plan(block_code, floor_number):
+    return (
+        FloorPlan.objects.select_related("block")
+        .filter(block__code=block_code, number=floor_number, is_active=True, block__is_active=True)
+        .first()
+    )
+
+
+def cell_to_id(cell_x, cell_y, cols):
+    return int(cell_y) * int(cols) + int(cell_x)
+
+
+def cell_from_id(cell_id, cols):
+    cell_id = int(cell_id)
+    cols = int(cols)
+    return cell_id % cols, cell_id // cols
+
+
+def is_blocked_cell(block, floor, cell_x, cell_y):
+    registry = get_floor_registry()
+    floor_cfg = registry["floor_configs"].get(f"{block}:{floor}", {})
+    blocked_cells = set(floor_cfg.get("blocked_cells") or [])
+    if not blocked_cells:
+        return False
+    cols = max(1, int(floor_cfg.get("cols", settings.HEATMAP_GRID_COLS)))
+    cell_id = cell_to_id(cell_x, cell_y, cols)
+    return cell_id in blocked_cells
+
+
 def get_service_providers():
     providers = getattr(settings, "HEATMAP_SERVICE_PROVIDERS", {})
     return {
         "wifi": list(providers.get("wifi", [])),
         "mobile": list(providers.get("mobile", [])),
     }
+
+
+def interpolate_missing_cells(*, points, rows, cols, blocked_cells, max_distance=2):
+    if not points:
+        return []
+
+    blocked = set(int(cell_id) for cell_id in (blocked_cells or []))
+    interpolated = []
+
+    for cell_y in range(rows):
+        for cell_x in range(cols):
+            cell_id = cell_to_id(cell_x, cell_y, cols)
+            if cell_id in blocked:
+                continue
+            if (cell_x, cell_y) in points:
+                continue
+
+            neighbors = []
+            for dy in range(-max_distance, max_distance + 1):
+                for dx in range(-max_distance, max_distance + 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx = cell_x + dx
+                    ny = cell_y + dy
+                    if nx < 0 or nx >= cols or ny < 0 or ny >= rows:
+                        continue
+                    neighbor = points.get((nx, ny))
+                    if not neighbor:
+                        continue
+                    distance_sq = dx * dx + dy * dy
+                    if distance_sq == 0:
+                        continue
+                    signal, count = neighbor
+                    weight = (1 / distance_sq) * max(1.0, (count or 1) ** 0.5)
+                    neighbors.append((signal, weight))
+
+            if not neighbors:
+                continue
+            weighted_sum = sum(signal * weight for signal, weight in neighbors)
+            weight_total = sum(weight for _, weight in neighbors)
+            if weight_total <= 0:
+                continue
+            interpolated_signal = weighted_sum / weight_total
+            interpolated.append(
+                {
+                    "cell_x": cell_x,
+                    "cell_y": cell_y,
+                    "signal": round(float(interpolated_signal), 2),
+                    "count": 0,
+                    "interpolated": True,
+                }
+            )
+
+    return interpolated

@@ -6,13 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NetSense Campus</title>
     <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="site-header">
         <div class="container header-inner">
-            <h1><a href="{% url 'home' %}">NetSense Campus</a></h1>
-            <nav>
-                <a href="{% url 'home' %}">Heatmap</a>
+            <div class="brand">
+                <span class="brand-mark">NS</span>
+                <div>
+                    <div class="brand-title"><a href="{% url 'home' %}">NetSense Campus</a></div>
+                    <div class="brand-subtitle">Indoor Signal Intelligence</div>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="{% url 'home' %}">Landing</a>
+                <a href="{% url 'heatmap_view' %}">Heatmap</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'scan' %}">Scan</a>
                     <a href="{% url 'admin:index' %}">Admin</a>
@@ -24,13 +34,15 @@
         </div>
     </header>
 
-    <main class="container">
+    <main>
         {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li class="{{ message.tags }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
+            <div class="container">
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
         {% endif %}
         {% block content %}{% endblock %}
     </main>

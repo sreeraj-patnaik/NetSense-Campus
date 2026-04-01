@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="panel auth-panel">
-    <h2>Admin Login</h2>
-    <form method="post" class="scan-form auth-form">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
+<section class="heatmap-hero">
+    <div class="container">
+        <div class="heatmap-header">
+            <div>
+                <h2>Admin Login</h2>
+                <p>Secure access to scan capture and configuration.</p>
+            </div>
+        </div>
+        <form method="post" class="scan-form auth-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn primary" type="submit">Login</button>
+        </form>
+    </div>
 </section>
 {% endblock %}

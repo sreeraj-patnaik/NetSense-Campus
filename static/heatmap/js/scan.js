@@ -93,6 +93,14 @@
         markerLayer.innerHTML = "";
     }
 
+    function isBlockedCell(cellX, cellY) {
+        const floorCfg = selectedFloorConfig();
+        const blockedCells = new Set(floorCfg.blocked_cells || []);
+        if (!blockedCells.size) return false;
+        const cellId = cellY * cols + cellX;
+        return blockedCells.has(cellId);
+    }
+
     function applyFloorDimensions() {
         const floorCfg = selectedFloorConfig();
         rows = Math.max(1, Number(floorCfg.rows || cfg.rows));
@@ -146,6 +154,12 @@
         const cellHeight = rect.height / rows;
         const cellX = Math.max(0, Math.min(cols - 1, Math.floor(x / cellWidth)));
         const cellY = Math.max(0, Math.min(rows - 1, Math.floor(y / cellHeight)));
+
+        if (isBlockedCell(cellX, cellY)) {
+            clearSelectedCell();
+            selectedCellText.textContent = "Blocked cell";
+            return;
+        }
 
         cellXInput.value = cellX;
         cellYInput.value = cellY;

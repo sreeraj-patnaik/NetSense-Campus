@@ -19,6 +19,7 @@ class FloorPlan(models.Model):
     name = models.CharField(max_length=120, blank=True)
     grid_rows = models.PositiveIntegerField(default=12)
     grid_cols = models.PositiveIntegerField(default=8)
+    blocked_cells = models.JSONField(default=list, blank=True)
     image = models.ImageField(upload_to="floor_maps/", blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -32,6 +33,42 @@ class FloorPlan(models.Model):
         label = self.name or f"Floor {self.number}"
         return f"{self.block.code} - {label}"
 
+    def blocked_cell_ids(self):
+        ids = []
+        cols = int(self.grid_cols or 1)
+        for item in self.blocked_cells or []:
+            if isinstance(item, int):
+                ids.append(int(item))
+                continue
+            if isinstance(item, str):
+                try:
+                    ids.append(int(item))
+                except ValueError:
+                    continue
+                continue
+            if isinstance(item, (list, tuple)) and len(item) == 2:
+                try:
+                    cell_x = int(item[0])
+                    cell_y = int(item[1])
+                except (TypeError, ValueError):
+                    continue
+                ids.append(cell_y * cols + cell_x)
+                continue
+            if isinstance(item, dict):
+                if "cell_id" in item:
+                    try:
+                        ids.append(int(item["cell_id"]))
+                    except (TypeError, ValueError):
+                        continue
+                elif "cell_x" in item and "cell_y" in item:
+                    try:
+                        cell_x = int(item["cell_x"])
+                        cell_y = int(item["cell_y"])
+                    except (TypeError, ValueError):
+                        continue
+                    ids.append(cell_y * cols + cell_x)
+        return ids
+
 
 class Scan(models.Model):
     WIFI = "wifi"
@@ -42,10 +79,10 @@ class Scan(models.Model):
         (MOBILE, "Mobile"),
     ]
 
-    block = models.CharField(max_length=10)
-    floor = models.IntegerField()
+    floor_plan = models.ForeignKey(FloorPlan, on_delete=models.CASCADE, related_name="scans")
     cell_x = models.IntegerField()
     cell_y = models.IntegerField()
+    cell_id = models.IntegerField()
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=WIFI)
     service_provider = models.CharField(max_length=60, blank=True)
     network_name = models.CharField(max_length=100, blank=True)
@@ -55,16 +92,70 @@ class Scan(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["block", "floor", "mode"]),
+            models.Index(fields=["floor_plan", "mode"]),
             models.Index(fields=["cell_x", "cell_y"]),
+            models.Index(fields=["cell_id"]),
         ]
 
     def __str__(self) -> str:
         provider = f"{self.service_provider} " if self.service_provider else ""
         return (
-            f"{self.block}-F{self.floor} ({self.cell_x},{self.cell_y}) "
+            f"{self.block_code}-F{self.floor_number} ({self.cell_x},{self.cell_y}) "
             f"{self.mode} {provider}{self.signal_strength} dBm"
         )
+
+    @property
+    def block_code(self):
+        return self.floor_plan.block.code if self.floor_plan_id else ""
+
+    @property
+    def floor_number(self):
+        return self.floor_plan.number if self.floor_plan_id else None
+
+    def save(self, *args, **kwargs):
+        if self.floor_plan_id:
+            self.cell_id = int(self.cell_y) * int(self.floor_plan.grid_cols) + int(self.cell_x)
+        super().save(*args, **kwargs)
+
+
+class CellAggregate(models.Model):
+    floor_plan = models.ForeignKey(FloorPlan, on_delete=models.CASCADE, related_name="aggregates")
+    cell_x = models.IntegerField()
+    cell_y = models.IntegerField()
+    cell_id = models.IntegerField()
+    mode = models.CharField(max_length=10, choices=Scan.MODE_CHOICES, default=Scan.WIFI)
+    service_provider = models.CharField(max_length=60, blank=True)
+    is_all_providers = models.BooleanField(default=False)
+    median_signal = models.FloatField()
+    scan_count = models.PositiveIntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["floor_plan__block__code", "floor_plan__number", "cell_y", "cell_x"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "floor_plan",
+                    "cell_x",
+                    "cell_y",
+                    "mode",
+                    "service_provider",
+                    "is_all_providers",
+                ],
+                name="uniq_cellaggregate_key",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["floor_plan", "mode", "is_all_providers"]),
+            models.Index(fields=["cell_x", "cell_y"]),
+            models.Index(fields=["cell_id"]),
+        ]
+
+    def __str__(self) -> str:
+        provider = "all" if self.is_all_providers else (self.service_provider or "unknown")
+        block_code = self.floor_plan.block.code if self.floor_plan_id else ""
+        floor_number = self.floor_plan.number if self.floor_plan_id else ""
+        return f"{block_code}-F{floor_number} ({self.cell_x},{self.cell_y}) {self.mode} {provider}"
 
 
 
