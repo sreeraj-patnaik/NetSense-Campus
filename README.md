@@ -5,7 +5,7 @@
 
 
 
-# NetSense Campus (NSC) — Expert Documentation (ExpDoc)
+# NetSense Campus (NSC) —  Documentation
 
 **Document purpose:** Single authoritative, implementation-level reference for the **nsc** repository: architecture, directory layout, Django modules, HTTP APIs, data model, every aggregation/interpolation/rendering formula, client behavior, management commands, and operational notes.
 
