@@ -1,173 +1,146 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block content %}
 <section class="hero">
-    <div class="hero-bg"></div>
     <div class="container hero-grid">
         <div class="hero-copy">
-            <div class="pill">Production-Ready Campus Signal Intelligence</div>
-            <h1>Make invisible connectivity visible.</h1>
+            <span class="pill">Modern campus connectivity intelligence</span>
+            <h1>See indoor signal quality with the clarity of a product dashboard.</h1>
             <p>
-                NetSense Campus blends mobile + Wi‑Fi scans into a live indoor signal heatmap,
-                giving facilities, IT teams, and students clarity on coverage quality in seconds.
+                NetSense Campus turns raw WiFi and mobile scans into a live, grid-based heatmap with
+                median aggregation, interpolation awareness, and a clean executive view for IT teams.
             </p>
             <div class="hero-actions">
                 <a class="btn primary" href="{% url 'heatmap_view' %}">Open Live Heatmap</a>
-                <a class="btn ghost" href="#design-thinking">Design Thinking</a>
+                <a class="btn ghost" href="{% url 'dti' %}">Explore DTI Architecture</a>
             </div>
-            <div class="hero-stats">
-                <div>
-                    <span>Median aggregation</span>
-                    <strong>Noise‑resistant</strong>
+            <div class="hero-metrics">
+                <div class="metric-card reveal">
+                    <span>Aggregation</span>
+                    <strong>Median per cell</strong>
                 </div>
-                <div>
-                    <span>Grid + contour modes</span>
-                    <strong>High clarity</strong>
+                <div class="metric-card reveal">
+                    <span>Coverage</span>
+                    <strong>Measured + inferred</strong>
                 </div>
-                <div>
-                    <span>Interpolation‑aware</span>
-                    <strong>Confident insights</strong>
+                <div class="metric-card reveal">
+                    <span>Output</span>
+                    <strong>API-first visuals</strong>
                 </div>
             </div>
         </div>
-        <div class="hero-card">
-            <div class="mini-map">
-                <div class="mini-glow"></div>
+        <div class="hero-panel">
+            <div class="hero-map" data-parallax="0.12">
                 <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor preview">
             </div>
-            <div class="mini-metrics">
-                <div class="metric-card">
-                    <span>Strong</span>
-                    <strong>-62 dBm</strong>
-                </div>
-                <div class="metric-card">
-                    <span>Median</span>
-                    <strong>-74 dBm</strong>
-                </div>
-                <div class="metric-card">
-                    <span>Weak zones</span>
-                    <strong>12 cells</strong>
-                </div>
+            <div class="hero-badges">
+                <div class="badge">Confidence overlay</div>
+                <div class="badge">Fast heatmap API</div>
+                <div class="badge">Grid-aware scans</div>
+                <div class="badge">Admin ready</div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section parallax" id="project-explain">
+<section class="section alt parallax">
+    <div class="parallax-layer" style="top: 30px; left: 12%;" data-parallax="0.18"></div>
+    <div class="parallax-layer" style="top: 120px; right: 14%;" data-parallax="0.1"></div>
     <div class="container">
         <div class="section-title">
-            <h2>Project Overview</h2>
-            <p>Every layer is focused on one goal: actionable indoor signal intelligence.</p>
+            <h2>Built for a professional campus workflow</h2>
+            <p>Each layer of the system is designed to feel like a Google or Meta internal tool: crisp, fast, and decision-ready.</p>
         </div>
         <div class="card-grid">
-            <article class="card">
-                <h3>Problem</h3>
-                <p>Dead zones, inconsistent mobile coverage, and weak Wi‑Fi are hard to locate indoors.</p>
+            <article class="card reveal">
+                <h3>Insight-first UI</h3>
+                <p>Dynamic scaling, contour or smooth rendering, and clear separation of measured vs inferred values.</p>
             </article>
-            <article class="card">
-                <h3>Solution</h3>
-                <p>Grid‑based scans aggregated into a live heatmap with confidence and interpolation.</p>
+            <article class="card reveal">
+                <h3>Robust data layer</h3>
+                <p>Median aggregation per grid cell reduces noise and keeps outputs reliable for executives.</p>
             </article>
-            <article class="card">
-                <h3>Impact</h3>
-                <p>Faster troubleshooting, smarter router placement, and transparency for users.</p>
+            <article class="card reveal">
+                <h3>Minimal API surface</h3>
+                <p>Three endpoints deliver scan ingestion, heatmap data, and configuration for any client.</p>
             </article>
         </div>
     </div>
 </section>
 
-<section class="section light" id="design-thinking">
+<section class="section">
     <div class="container">
         <div class="section-title">
-            <h2>Design Thinking Phases</h2>
-            <p>A human‑centered loop from empathy to measurable outcomes.</p>
+            <h2>DTI architecture at a glance</h2>
+            <p>Data, Transform, Interface. Each layer is intentional and auditable.</p>
         </div>
-        <div class="timeline">
-            <div class="timeline-step">
-                <span>01</span>
-                <div>
-                    <h4>Empathize</h4>
-                    <p>Interview students, faculty, and IT staff on indoor connectivity pain points.</p>
-                </div>
+        <div class="info-grid">
+            <div class="info-card reveal">
+                <span class="chip">Data</span>
+                <h3>Scans + Aggregates</h3>
+                <p>Blocks, floors, scans, and aggregates define a clean, queryable source of truth.</p>
             </div>
-            <div class="timeline-step">
-                <span>02</span>
-                <div>
-                    <h4>Define</h4>
-                    <p>“Indoor signal performance is invisible to decision‑makers.”</p>
-                </div>
+            <div class="info-card reveal">
+                <span class="chip">Transform</span>
+                <h3>Median + Interpolation</h3>
+                <p>Refresh aggregates per scan and optionally fill empty cells with weighted neighbors.</p>
             </div>
-            <div class="timeline-step">
-                <span>03</span>
-                <div>
-                    <h4>Ideate</h4>
-                    <p>Grid sampling, aggregation, predictive fill, and intuitive visualization.</p>
-                </div>
-            </div>
-            <div class="timeline-step">
-                <span>04</span>
-                <div>
-                    <h4>Prototype</h4>
-                    <p>MVP with Android scanning, Django APIs, and a web heatmap dashboard.</p>
-                </div>
-            </div>
-            <div class="timeline-step">
-                <span>05</span>
-                <div>
-                    <h4>Test</h4>
-                    <p>Validate against real complaints and iterate on accuracy and UX.</p>
-                </div>
+            <div class="info-card reveal">
+                <span class="chip">Interface</span>
+                <h3>APIs + Dashboards</h3>
+                <p>Heatmap and config APIs feed a modern web UI designed for rapid decisions.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section parallax" id="flow">
-    <div class="container">
-        <div class="section-title">
-            <h2>End‑to‑End Flow</h2>
-            <p>From scan to insight in a clean, single pipeline.</p>
+<section class="section alt">
+    <div class="container split">
+        <div>
+            <div class="section-title">
+                <h2>Navigate the product surfaces</h2>
+                <p>Every page is purpose-built for a specific audience, from leadership to field teams.</p>
+            </div>
+            <div class="badge-row">
+                <span class="badge">Landing</span>
+                <span class="badge">DTI Architecture</span>
+                <span class="badge">Project Structure</span>
+                <span class="badge">Data Models + APIs</span>
+                <span class="badge">Workflow</span>
+            </div>
         </div>
-        <div class="flowchart">
-            <div class="flow-node">Android Scanner</div>
-            <div class="flow-arrow"></div>
-            <div class="flow-node">API /scan</div>
-            <div class="flow-arrow"></div>
-            <div class="flow-node">Median Aggregation</div>
-            <div class="flow-arrow"></div>
-            <div class="flow-node">Heatmap UI</div>
+        <div class="card reveal">
+            <h3>Heatmap operations</h3>
+            <p>Switch blocks, floors, providers, and render modes. Save scans when logged in.</p>
+            <a class="btn ghost" href="{% url 'heatmap_view' %}">Open Heatmap</a>
         </div>
     </div>
 </section>
 
-<section class="section light" id="full-explain">
+<section class="section">
     <div class="container">
         <div class="section-title">
-            <h2>Deep Dive: One‑Page System Explanation</h2>
-            <p>Expand each module to see implementation‑level details.</p>
+            <h2>Workflow snapshot</h2>
+            <p>From scan capture to visualization in four deliberate steps.</p>
         </div>
-        <div class="accordion">
-            <details open>
-                <summary>Data Model</summary>
-                <p>Block → FloorPlan → Scan → CellAggregate. FloorPlan is the single source of truth.</p>
-            </details>
-            <details>
-                <summary>Aggregation</summary>
-                <p>Median signal per grid cell with scan_count as confidence. Interpolation fills gaps.</p>
-            </details>
-            <details>
-                <summary>API</summary>
-                <p>POST /api/scan, GET /api/heatmap, GET /api/config. Minimal, fast, stable.</p>
-            </details>
-            <details>
-                <summary>Visualization</summary>
-                <p>Blended thermal gradients or contour bands with live min/max scaling.</p>
-            </details>
-            <details>
-                <summary>Quality Guardrails</summary>
-                <p>Blocked-cell validation, mode/provider filters, and interpolation toggle.</p>
-            </details>
+        <div class="flow">
+            <div class="flow-step reveal">
+                <strong>01</strong>
+                Configure floors and grids
+            </div>
+            <div class="flow-step reveal">
+                <strong>02</strong>
+                Capture scans via API or UI
+            </div>
+            <div class="flow-step reveal">
+                <strong>03</strong>
+                Aggregate and interpolate
+            </div>
+            <div class="flow-step reveal">
+                <strong>04</strong>
+                Visualize and decide
+            </div>
         </div>
     </div>
 </section>
@@ -175,12 +148,10 @@
 <section class="section cta">
     <div class="container cta-inner">
         <div>
-            <h2>Ready to explore your campus?</h2>
-            <p>Launch the live heatmap and start collecting actionable data.</p>
+            <h2>Ready to see your campus in full detail?</h2>
+            <p>Launch the heatmap and start capturing signal intelligence today.</p>
         </div>
-        <a class="btn primary" href="{% url 'heatmap_view' %}">Open Heatmap</a>
+        <a class="btn primary" href="{% url 'heatmap_view' %}">Launch Heatmap</a>
     </div>
 </section>
-
-<script src="{% static 'heatmap/js/landing.js' %}"></script>
 {% endblock %}

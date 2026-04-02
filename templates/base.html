@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="site-header">
@@ -23,6 +23,10 @@
             <nav class="nav-links">
                 <a href="{% url 'home' %}">Landing</a>
                 <a href="{% url 'heatmap_view' %}">Heatmap</a>
+                <a href="{% url 'dti' %}">DTI Architecture</a>
+                <a href="{% url 'project_structure' %}">Project Structure</a>
+                <a href="{% url 'data_models' %}">Data Models + APIs</a>
+                <a href="{% url 'workflow' %}">Workflow</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'scan' %}">Scan</a>
                     <a href="{% url 'admin:index' %}">Admin</a>
@@ -46,5 +50,11 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="footer-mini">
+        <div class="container">NetSense Campus - signal intelligence for modern campuses.</div>
+    </footer>
+
+    <script src="{% static 'heatmap/js/ui.js' %}"></script>
 </body>
 </html>

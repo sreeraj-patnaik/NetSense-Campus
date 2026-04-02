@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block content %}
@@ -6,12 +6,13 @@
     <div class="container">
         <div class="heatmap-header">
             <div>
-                <h2>Live Signal Heatmap</h2>
-                <p>Dynamic scaling, blended contours, and confidence‑aware visuals.</p>
+                <span class="pill">Live signal intelligence</span>
+                <h2>Heatmap Dashboard</h2>
+                <p>Explore median signal strength, interpolation, and confidence in a single view.</p>
             </div>
             <button id="reloadBtn" type="button" class="btn primary">Refresh View</button>
         </div>
-        <div class="controls-grid">
+        <div class="controls-grid reveal">
             <label>
                 Block
                 <select id="blockSelect">
@@ -83,7 +84,7 @@
         <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
     </div>
 
-    <aside class="legend">
+    <aside class="legend reveal">
         <h3>Legend</h3>
         <div class="legend-scale">
             <span id="legendMin">Min</span>
@@ -95,9 +96,9 @@
             <div class="legend-bar interp-bar"></div>
         </div>
         <div class="legend-badges">
-            <span class="badge">Dynamic scale</span>
-            <span class="badge">Auto smooth</span>
-            <span class="badge">Confidence layer</span>
+            <span class="badge-tag">Dynamic scale</span>
+            <span class="badge-tag">Auto smooth</span>
+            <span class="badge-tag">Confidence layer</span>
         </div>
         <p><span class="swatch green"></span> Strong (-65 dBm and above)</p>
         <p><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</p>
@@ -123,5 +124,5 @@
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/home.js' %}?v=20260401"></script>
+<script src="{% static 'heatmap/js/home.js' %}?v=20260402"></script>
 {% endblock %}
