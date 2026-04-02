@@ -6,6 +6,16 @@
 
 ---
 
+## Separate pages (quick links)
+
+- Landing page: `LANDING_PAGE.md`
+- DTI architecture: `DTI_ARCHITECTURE.md`
+- Project structure: `PROJECT_STRUCTURE.md`
+- Data models and APIs: `DATA_MODELS_AND_APIS.md`
+- Workflow steps: `WORKFLOW_STEPS.md`
+
+---
+
 ## 1. Title page (fill institutional details as needed)
 
 | Field | Content |
