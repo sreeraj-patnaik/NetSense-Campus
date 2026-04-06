@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.home_view, name="home"),
+    path("manifest.webmanifest", views.manifest_view, name="manifest"),
     path("sw.js", views.service_worker, name="service_worker"),
     path("heatmap/", views.heatmap_view, name="heatmap_view"),
     path("architecture/", views.dti_view, name="dti"),

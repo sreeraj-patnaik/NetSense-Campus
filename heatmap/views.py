@@ -278,3 +278,32 @@ self.addEventListener("fetch", () => {
     response = HttpResponse(content, content_type="application/javascript")
     response["Cache-Control"] = "no-cache"
     return response
+
+
+def manifest_view(_request):
+    content = """{
+  "name": "NetSense Campus",
+  "short_name": "NetSense",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1a73e8",
+  "icons": [
+    {
+      "src": "/static/heatmap/icons/app-icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/heatmap/icons/app-icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
+"""
+    response = HttpResponse(content, content_type="application/manifest+json")
+    response["Cache-Control"] = "no-cache"
+    return response
