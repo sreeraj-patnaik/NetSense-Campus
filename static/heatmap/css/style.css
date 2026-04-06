@@ -217,6 +217,12 @@ a {
     margin: 1.6rem 0;
 }
 
+.install-status {
+    font-size: 0.85rem;
+    color: var(--muted);
+    align-self: center;
+}
+
 .hero-metrics {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

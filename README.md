@@ -1,16 +1,16 @@
+﻿
 
 
 
 
 
 
-
-# NetSense Campus (NSC) —  Documentation
+# NetSense Campus (NSC) - Documentation
 
 **Document purpose:** Single authoritative, implementation-level reference for the **nsc** repository: architecture, directory layout, Django modules, HTTP APIs, data model, every aggregation/interpolation/rendering formula, client behavior, management commands, and operational notes.
 
-**Last updated:** 2026-04-01  
-**Stack:** Django 5.x, SQLite or PostgreSQL (via `DATABASE_URL`), WhiteNoise, Gunicorn (production).
+**Last updated:** 2026-04-06
+**Stack:** Django 5.x, SQLite or PostgreSQL (via `DATABASE_URL`), WhiteNoise, Gunicorn (production), optional Cloudinary media storage, PWA shell.
 
 ---
 
@@ -46,9 +46,9 @@
 
 **NetSense Campus** is a minimal Django application that:
 
-- Accepts **Wi‑Fi** and **mobile** signal samples on a **per-floor grid** (`cell_x`, `cell_y`).
+- Accepts **Wiâ€‘Fi** and **mobile** signal samples on a **per-floor grid** (`cell_x`, `cell_y`).
 - Persists raw rows as **`Scan`** records.
-- Maintains **`CellAggregate`** rows: **median** signal strength and **scan count** per cell, per mode, for (a) a specific **service provider** and (b) an **“all providers”** bucket.
+- Maintains **`CellAggregate`** rows: **median** signal strength and **scan count** per cell, per mode, for (a) a specific **service provider** and (b) an **â€œall providersâ€** bucket.
 - Serves **`GET /api/heatmap/`** with optional **distance-weighted interpolation** for empty, non-blocked cells.
 - Renders a **browser heatmap** (radial blend or contour bands) with **dynamic min/max scaling**, optional **confidence overlay**, and distinct coloring for **interpolated** vs **measured** cells.
 
@@ -69,12 +69,15 @@ nsc/
   media/                        # user uploads (floor images); see SERVE_MEDIA_FILES
     floor_maps/
   static/
+    manifest.webmanifest
     heatmap/
       css/style.css
       js/home.js
       js/scan.js
+      js/pwa.js
       js/landing.js
       images/                     # e.g. Floor 1.jpeg, floor-placeholder.svg
+      icons/                      # PWA icons (svg)
   templates/
     base.html
     heatmap/home.html
@@ -94,6 +97,7 @@ nsc/
     aggregation.py
     admin.py
     migrations/
+      0007_service_provider.py
     management/commands/
       seed_demo_data.py
       rebuild_aggregates.py
@@ -104,17 +108,17 @@ nsc/
 ## 3. Runtime architecture
 
 ```
-┌─────────────────────┐     POST /api/scan/      ┌──────────────────┐
-│ Android / HTTP      │ ───────────────────────► │ Scan row         │
-│ client              │                          │ refresh_cell_*     │
-└─────────────────────┘                          │ CellAggregate    │
-         │                                         └──────────────────┘
-         │ GET /api/heatmap/                                 ▲
-         ▼                                                 │
-┌─────────────────┐   optional interpolate    ┌────────────┴───────────┐
-│ Browser (home.js)│ ◄────────────────────── │ heatmap_api            │
-└─────────────────┘                           │ + interpolate_missing │
-                                              └────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     POST /api/scan/      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ Android / HTTP      â”‚ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–º â”‚ Scan row         â”‚
+â”‚ client              â”‚                          â”‚ refresh_cell_*     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                          â”‚ CellAggregate    â”‚
+         â”‚                                         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         â”‚ GET /api/heatmap/                                 â–²
+         â–¼                                                 â”‚
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   optional interpolate    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ Browser (home.js)â”‚ â—„â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ â”‚ heatmap_api            â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                           â”‚ + interpolate_missing â”‚
+                                              â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 - **Authoritative grid dimensions** and **blocked cell IDs** for each block/floor come from **`FloorPlan`** when present; otherwise **`HEATMAP_*`** settings in `settings.py` supply fallback blocks/floors/dimensions/blocked lists.
@@ -138,6 +142,7 @@ nsc/
 | Path | Name | View | Auth |
 |------|------|------|------|
 | `` | `home` | `home_view` | Public |
+| `sw.js` | `service_worker` | `service_worker` | Public |
 | `heatmap/` | `heatmap_view` | `heatmap_view` | Public |
 | `scan/` | `scan` | `scan_view` | **`@login_required`** |
 | `api/heatmap/` | `heatmap_api` | `heatmap_api` | Public (JSON) |
@@ -157,7 +162,7 @@ nsc/
 
 ### 5.1 Environment helpers
 
-- **`env_bool(name, default=False)`** — treats `"1"`, `"true"`, `"yes"`, `"on"` (case-insensitive) as true.
+- **`env_bool(name, default=False)`** â€” treats `"1"`, `"true"`, `"yes"`, `"on"` (case-insensitive) as true.
 
 ### 5.2 Core Django
 
@@ -167,10 +172,12 @@ nsc/
 | `DEBUG` | `DJANGO_DEBUG` (default true) | Debug mode |
 | `ALLOWED_HOSTS` | **Hardcoded list** in file | Includes `127.0.0.1`, `localhost`, `.onrender.com`, `netsense.sreeraj.me` |
 | `CSRF_TRUSTED_ORIGINS` | Hardcoded | HTTPS Render + custom domain |
-| `DATABASES` | `DATABASE_URL` → `dj_database_url` if set; else SQLite at `BASE_DIR / "db.sqlite3"` | |
+| `DATABASES` | `DATABASE_URL` â†’ `dj_database_url` if set; else SQLite at `BASE_DIR / "db.sqlite3"` | |
 | `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT` | | WhiteNoise manifest storage |
 | `MEDIA_URL`, `MEDIA_ROOT` | | Uploads under `media/` |
 | `SERVE_MEDIA_FILES` | `DJANGO_SERVE_MEDIA` (default follows `DEBUG`) | Whether `urls.py` serves media |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | env | Enables Cloudinary media storage |
+| `STORAGES["default"]` | code | Cloudinary storage when env vars set, filesystem otherwise |
 
 ### 5.3 Auth redirects
 
@@ -196,7 +203,7 @@ Used when **no active `FloorPlan` rows** exist (see `get_floor_registry()`), and
 
 - `SECURE_PROXY_SSL_HEADER`, `SECURE_SSL_REDIRECT`, HSTS, secure session/CSRF cookies.
 
-**Note:** `README.md` / `render.yaml` mention env vars like `DJANGO_ALLOWED_HOSTS`; **`settings.py` does not read them** — hosts are edited in code unless extended.
+**Note:** `README.md` / `render.yaml` mention env vars like `DJANGO_ALLOWED_HOSTS`; **`settings.py` does not read them** â€” hosts are edited in code unless extended.
 
 ---
 
@@ -214,7 +221,18 @@ All in **`heatmap/models.py`**.
 
 **Ordering:** `code`.
 
-### 6.2 `FloorPlan`
+### 6.2 `ServiceProvider`
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `name` | `CharField(max_length=60)` | Provider label |
+| `mode` | `CharField(choices WIFI/MOBILE)` | `wifi` or `mobile` |
+| `is_active` | `BooleanField(default=True)` | Filters default lists |
+| `created_at` | `DateTimeField(auto_now_add=True)` | |
+
+**Constraint:** `UniqueConstraint(mode, name)` - no duplicates per mode.
+
+### 6.3 `FloorPlan`
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -222,13 +240,13 @@ All in **`heatmap/models.py`**.
 | `number` | `PositiveIntegerField` | Floor number |
 | `name` | `CharField(blank=True)` | Display |
 | `grid_rows`, `grid_cols` | `PositiveIntegerField` | Default 12 / 8 |
-| `blocked_cells` | `JSONField(default=list)` | See §7 |
+| `blocked_cells` | `JSONField(default=list)` | See Â§7 |
 | `image` | `ImageField(upload_to="floor_maps/", blank=True)` | Stored under `MEDIA_ROOT` |
 | `is_active` | `BooleanField(default=True)` | |
 
-**Constraint:** `UniqueConstraint(block, number)` — one plan per block floor.
+**Constraint:** `UniqueConstraint(block, number)` â€” one plan per block floor.
 
-### 6.3 `Scan` (raw sample)
+### 6.4 `Scan` (raw sample)
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -245,7 +263,7 @@ All in **`heatmap/models.py`**.
 
 **`save()` override:** If `floor_plan_id` is set, `cell_id = cell_y * floor_plan.grid_cols + cell_x` (all cast to `int`).
 
-### 6.4 `CellAggregate`
+### 6.5 `CellAggregate`
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -320,7 +338,7 @@ Iterates `blocked_cells` JSON and normalizes each entry to an integer `cell_id`:
 
 **When no active floors exist**, fallback from settings:
 
-- For each `HEATMAP_BLOCKS` × `HEATMAP_FLOORS`, same key structure with `_settings_floor_dims(floor_number)` and `HEATMAP_BLOCKED_CELLS` lookups (`"block:floor"` or `str(floor)`).
+- For each `HEATMAP_BLOCKS` Ã— `HEATMAP_FLOORS`, same key structure with `_settings_floor_dims(floor_number)` and `HEATMAP_BLOCKED_CELLS` lookups (`"block:floor"` or `str(floor)`).
 
 ### 8.2 `get_floor_dimensions(block, floor)`
 
@@ -337,7 +355,11 @@ Returns first **`FloorPlan`** with `block__code`, `number`, `is_active`, `block_
 
 ### 8.5 `get_service_providers()`
 
-Returns `{ "wifi": [...], "mobile": [...] }` from `HEATMAP_SERVICE_PROVIDERS`.
+Returns `{ "wifi": [...], "mobile": [...] }` from **ServiceProvider** rows when available, with `HEATMAP_SERVICE_PROVIDERS` as a fallback/seed list.
+
+### 8.6 `ensure_service_provider(mode, name)`
+
+On successful scan save, creates the provider if it does not exist yet. This keeps the provider lists fresh without manual admin entry.
 
 ---
 
@@ -345,7 +367,7 @@ Returns `{ "wifi": [...], "mobile": [...] }` from `HEATMAP_SERVICE_PROVIDERS`.
 
 ### 9.1 Payload parsing (`_parse_scan_payload`)
 
-- If `Content-Type` starts with `application/json`, body is `json.loads`; invalid JSON → `{}`.
+- If `Content-Type` starts with `application/json`, body is `json.loads`; invalid JSON â†’ `{}`.
 - Else uses `request.POST` (form).
 
 ### 9.2 Validation (`_validate_scan_payload`)
@@ -353,14 +375,14 @@ Returns `{ "wifi": [...], "mobile": [...] }` from `HEATMAP_SERVICE_PROVIDERS`.
 Steps in order:
 
 1. Read: `block`, `floor`, `mode`, `service_provider`, `network_name`, `signal_strength`, `cell_x`, `cell_y`.
-2. **Coerce to int:** `floor`, `signal_strength`, `cell_x`, `cell_y`. Failure → *"Invalid input. Ensure floor, cell and signal values are numeric."*
-3. **`block`** must be in `registry["blocks"]` → *"Invalid block."*
-4. **`floor`** must be in `registry["block_floors"][block]` → *"Invalid floor."*
-5. **`mode`** must be `wifi` or `mobile` → *"Invalid mode."*
-6. **Service provider:** if empty/whitespace → **`"Unknown"`**. If `HEATMAP_SERVICE_PROVIDERS[mode]` is non-empty, provider must be in that list **or** `"Unknown"` → *"Invalid service provider for selected mode."*
+2. **Coerce to int:** `floor`, `signal_strength`, `cell_x`, `cell_y`. Failure â†’ *"Invalid input. Ensure floor, cell and signal values are numeric."*
+3. **`block`** must be in `registry["blocks"]` â†’ *"Invalid block."*
+4. **`floor`** must be in `registry["block_floors"][block]` â†’ *"Invalid floor."*
+5. **`mode`** must be `wifi` or `mobile` â†’ *"Invalid mode."*
+6. **Service provider:** if empty/whitespace -> **`"Unknown"`**. No strict list validation; provider names are created on save.
 7. **Bounds:** `0 <= cell_x < cols`, `0 <= cell_y < rows` using `get_floor_dimensions`.
-8. **`is_blocked_cell`** → *"Selected cell is blocked."*
-9. **`get_floor_plan(block, floor)`** must exist → *"Floor plan is not configured."*
+8. **`is_blocked_cell`** â†’ *"Selected cell is blocked."*
+9. **`get_floor_plan(block, floor)`** must exist â†’ *"Floor plan is not configured."*
 
 **Success payload** (used for `Scan.objects.create`):
 
@@ -371,7 +393,7 @@ Steps in order:
 ### 9.3 Web: `scan_view`
 
 - GET: render `heatmap/scan.html` with `_viewer_context()`.
-- POST: validate `request.POST` (not JSON), create `Scan`, `refresh_cell_aggregates(scan)`, flash success, redirect to `scan`.
+- POST: validate `request.POST` (not JSON), create `Scan`, ensure provider exists, `refresh_cell_aggregates(scan)`, flash success, redirect to `scan`.
 
 ### 9.4 API: `scan_api`
 
@@ -398,7 +420,7 @@ Steps in order:
 ### 10.1 `_median(values)`
 
 - Uses `statistics.median` from the Python standard library.
-- Empty list → `None` (callers only pass non-empty lists in current code).
+- Empty list â†’ `None` (callers only pass non-empty lists in current code).
 - Return type cast to **`float`**.
 
 **Even count behavior:** median is the **mean of the two middle values** (per Python 3 `statistics.median`).
@@ -410,13 +432,13 @@ Parameters: `floor_plan`, `cell_x`, `cell_y`, `mode`, `service_provider`, `is_al
 - `cell_id = cell_to_id(cell_x, cell_y, floor_plan.grid_cols)`.
 - `CellAggregate.objects.update_or_create(...)` with unique fields + `defaults`: `median_signal`, `scan_count=len(signal_values)`, `cell_id`.
 
-### 10.3 `refresh_cell_aggregates(scan)` — **atomic transaction**
+### 10.3 `refresh_cell_aggregates(scan)` â€” **atomic transaction**
 
 After one new `Scan`:
 
-1. **Provider bucket:** all `Scan` rows for same `floor_plan`, `mode`, **`service_provider` or `"Unknown"`** (normalized: `scan.service_provider or "Unknown"`), same `cell_x`, `cell_y`. Collect `signal_strength` values → upsert with `is_all_providers=False`, `service_provider=<that string>`.
+1. **Provider bucket:** all `Scan` rows for same `floor_plan`, `mode`, **`service_provider` or `"Unknown"`** (normalized: `scan.service_provider or "Unknown"`), same `cell_x`, `cell_y`. Collect `signal_strength` values â†’ upsert with `is_all_providers=False`, `service_provider=<that string>`.
 
-2. **All-providers bucket:** all `Scan` rows for same `floor_plan`, `mode`, same cell, **any** `service_provider` → upsert with `is_all_providers=True`, `service_provider=""`.
+2. **All-providers bucket:** all `Scan` rows for same `floor_plan`, `mode`, same cell, **any** `service_provider` â†’ upsert with `is_all_providers=True`, `service_provider=""`.
 
 So each ingest updates **two** aggregates per cell/mode (if both buckets have data).
 
@@ -425,8 +447,8 @@ So each ingest updates **two** aggregates per cell/mode (if both buckets have da
 - Filters scans to `floor_plan`; optionally to `wifi` or `mobile`.
 - **Deletes** existing `CellAggregate` for that floor (optionally filtered by `mode`).
 - Single pass over scans: builds `grouped` dict:
-  - Key `(cell_x, cell_y, mode, provider, False)` — `provider = scan.service_provider or "Unknown"` — appends signal.
-  - Key `(cell_x, cell_y, mode, "", True)` — appends signal for **all-providers** bucket.
+  - Key `(cell_x, cell_y, mode, provider, False)` â€” `provider = scan.service_provider or "Unknown"` â€” appends signal.
+  - Key `(cell_x, cell_y, mode, "", True)` â€” appends signal for **all-providers** bucket.
 - For each group, `_upsert_aggregate`.
 
 **Use:** repair after bulk imports, `seed_demo_data`, or when API finds no aggregates.
@@ -441,18 +463,18 @@ So each ingest updates **two** aggregates per cell/mode (if both buckets have da
 
 ### 11.1 Inputs
 
-- **`points`:** `dict` mapping `(cell_x, cell_y)` → `(signal, count)` for **measured** cells (typically from aggregates).
+- **`points`:** `dict` mapping `(cell_x, cell_y)` â†’ `(signal, count)` for **measured** cells (typically from aggregates).
 - **`rows`, `cols`:** grid size for the nested loops.
 - **`blocked_cells`:** iterable of **cell_id** integers (must match registry normalization).
-- **`max_distance`:** Chebyshev window radius default **2** (loops `dx, dy ∈ [-2,2]` excluding `(0,0)`).
+- **`max_distance`:** Chebyshev window radius default **2** (loops `dx, dy âˆˆ [-2,2]` excluding `(0,0)`).
 
 ### 11.2 Early exit
 
-If `points` is empty → return `[]` (no interpolation).
+If `points` is empty â†’ return `[]` (no interpolation).
 
 ### 11.3 Per-cell algorithm
 
-For each `(cell_x, cell_y)` in `range(rows) × range(cols)`:
+For each `(cell_x, cell_y)` in `range(rows) Ã— range(cols)`:
 
 1. Skip if `cell_id = cell_y * cols + cell_x` is in **`blocked`** (from `blocked_cells`).
 2. Skip if `(cell_x, cell_y)` **already in `points`**.
@@ -465,9 +487,9 @@ For each `(cell_x, cell_y)` in `range(rows) × range(cols)`:
 weight = (1 / distance_sq) * max(1.0, (count or 1) ** 0.5)
 ```
 
-So: **inverse-square** in grid space, times **at least 1**, times **√(count)** when count ≥ 1 (since `max(1, sqrt(count))` for count ≥ 1).
+So: **inverse-square** in grid space, times **at least 1**, times **âˆš(count)** when count â‰¥ 1 (since `max(1, sqrt(count))` for count â‰¥ 1).
 
-4. If no neighbors → skip cell (no fill).
+4. If no neighbors â†’ skip cell (no fill).
 5. Else:
 
 ```
@@ -490,11 +512,11 @@ Rounded to **2 decimal places** in output.
 
 | Param | Required | Default | Behavior |
 |-------|----------|---------|----------|
-| `block` | Yes | — | Block code |
-| `floor` | Yes | — | Integer floor number |
+| `block` | Yes | â€” | Block code |
+| `floor` | Yes | â€” | Integer floor number |
 | `mode` | No | `wifi` | If `wifi` or `mobile`, filter aggregates |
-| `service_provider` | No | `""` | Empty or **`all`** (case-insensitive) → **`is_all_providers=True`**; else specific provider, `is_all_providers=False` |
-| `interpolate` | No | **on** | Any value **≠** trimmed `"0"` enables interpolation |
+| `service_provider` | No | `""` | Empty or **`all`** (case-insensitive) â†’ **`is_all_providers=True`**; else specific provider, `is_all_providers=False` |
+| `interpolate` | No | **on** | Any value **â‰ ** trimmed `"0"` enables interpolation |
 
 ### 12.2 Errors
 
@@ -537,7 +559,7 @@ If `interpolate` is true:
 - Build `points` dict from **current payload only** (measured cells).
 - **`extend`** list with `interpolate_missing_cells(..., max_distance=2)`.
 
-**Result:** JSON array = **measured cells first**, then **interpolated** entries (each with `interpolated: true`). Client may dedupe by cell if needed; typically measured wins if both existed — server does not duplicate measured cells in interpolation.
+**Result:** JSON array = **measured cells first**, then **interpolated** entries (each with `interpolated: true`). Client may dedupe by cell if needed; typically measured wins if both existed â€” server does not duplicate measured cells in interpolation.
 
 ### 12.6 Mode filter edge case
 
@@ -570,14 +592,14 @@ Injected in `heatmap/home.html`: `rows`, `cols`, `defaultFloorImage`, `heatmapAp
 
 ### 14.2 Data fetch
 
-- URL: `heatmapApiUrl` + `URLSearchParams`: `block`, `floor`, `mode`, `interpolate` (`1` or `0`), optional `service_provider` (only if provider dropdown has a value — **All** uses `all` value which triggers server-side all-providers bucket).
+- URL: `heatmapApiUrl` + `URLSearchParams`: `block`, `floor`, `mode`, `interpolate` (`1` or `0`), optional `service_provider` (only if provider dropdown has a value â€” **All** uses `all` value which triggers server-side all-providers bucket).
 
 ### 14.3 Scaling
 
 - `realPoints = points.filter(p => !p.interpolated)`
 - `scalePoints = realPoints.length ? realPoints : points` (if only interpolated exists, scale from them)
 - `minSignal = min(signals)`, `maxSignal = max(signals)`
-- `range = max(1, maxSignal - minSignal)` — **avoids division by zero**
+- `range = max(1, maxSignal - minSignal)` â€” **avoids division by zero**
 - Normalized: `normalized = clamp01((point.signal - minSignal) / range)` where `clamp01` = [0,1]
 
 Legend shows **one decimal**: `minSignal.toFixed(1)`, `maxSignal.toFixed(1)`.
@@ -585,17 +607,17 @@ Legend shows **one decimal**: `minSignal.toFixed(1)`, `maxSignal.toFixed(1)`.
 ### 14.4 Render modes
 
 - **`smooth` (Blended):** radial gradient from center to `radius`, alpha falloff to 0 at edge.
-- **`contour`:** `banded = round(normalized * 6) / 6` — **7 bands** (0, 1/6, …, 1). Filled **circle** (not gradient) with radius `max(cellWidth, cellHeight) * 0.9`.
+- **`contour`:** `banded = round(normalized * 6) / 6` â€” **7 bands** (0, 1/6, â€¦, 1). Filled **circle** (not gradient) with radius `max(cellWidth, cellHeight) * 0.9`.
 
 ### 14.5 Colors
 
-- **Measured:** `colorRamp(t)` — red `[209,52,52]` → yellow `[240,196,33]` → green `[34,163,74]` at t=0, 0.5, 1.
-- **Interpolated:** `colorRampInterpolated(t)` — blue/cyan palette.
+- **Measured:** `colorRamp(t)` â€” red `[209,52,52]` â†’ yellow `[240,196,33]` â†’ green `[34,163,74]` at t=0, 0.5, 1.
+- **Interpolated:** `colorRampInterpolated(t)` â€” blue/cyan palette.
 
-### 14.6 Alpha and “spread”
+### 14.6 Alpha and â€œspreadâ€
 
 - Base alpha: **0.2** interpolated, **0.6** measured.
-- `countBoost = min(1, sqrt(point.count || 1) / 6)` → `alpha = clamp01(alphaBase + countBoost * 0.2)`.
+- `countBoost = min(1, sqrt(point.count || 1) / 6)` â†’ `alpha = clamp01(alphaBase + countBoost * 0.2)`.
 
 **Auto smooth:**
 
@@ -604,7 +626,7 @@ density = realPoints.length / max(1, rows * cols)
 autoSpread = 2.2 - min(1, density * 2.2) * 1.1
 ```
 
-Capped behavior: higher density → lower spread multiplier. Manual spread: range input **0.8–2.4**, step **0.1**, default **1.6**; `max(0.6, value)`.
+Capped behavior: higher density â†’ lower spread multiplier. Manual spread: range input **0.8â€“2.4**, step **0.1**, default **1.6**; `max(0.6, value)`.
 
 **Radius:** `max(cellWidth, cellHeight) * spreadMultiplier` (smooth) or `* 0.9` (contour).
 
@@ -621,9 +643,10 @@ When enabled: `maxCount = max(1, ...realPoints counts)`; per real point, `confid
 
 ## 15. Frontend: scan UI (`static/heatmap/js/scan.js`)
 
-- Click map → computes `cellX`, `cellY` from click position / cell size; rejects blocked cells using **`floorCfg.blocked_cells` as Set of cell_ids** (same `cell_y * cols + cell_x` formula).
+- Click map -> computes `cellX`, `cellY` from click position / cell size; rejects blocked cells using **`floorCfg.blocked_cells` as Set of cell_ids** (same `cell_y * cols + cell_x` formula).
 - Hidden inputs `cell_x`, `cell_y` submitted with form; **required** in HTML.
-- Provider dropdown: only lists `HEATMAP` providers for mode; if none, single **Unknown** option.
+- Provider input uses a **datalist** sourced from provider registry; free text allowed.
+- **Auto Scan** (mobile-only UI): attempts to infer **Wi-Fi vs Mobile** using `navigator.connection` and updates mode + provider input.
 - Resize redraws selection marker.
 
 ---
@@ -648,6 +671,7 @@ When enabled: `maxCount = max(1, ...realPoints counts)`; per real point, `confid
 - **BlockAdmin:** inlines `FloorPlan`; list/filter/search on code/name/active.
 - **FloorPlanAdmin:** grid, blocked JSON, image + preview.
 - **ScanAdmin**, **CellAggregateAdmin:** list/filter for debugging and data cleanup.
+- **ServiceProviderAdmin:** manage provider preferences (wifi/mobile lists).
 
 ---
 
@@ -682,11 +706,11 @@ Iterates registry blocks/floors, `ensure_floor_plan`, `rebuild_aggregates_for_fl
 
 ## 20. Edge cases and behavioral notes
 
-1. **Single measured point:** `minSignal == maxSignal` → `range` forced to **1** → normalized 0.5 mid-ramp unless exactly at bounds.
+1. **Single measured point:** `minSignal == maxSignal` â†’ `range` forced to **1** â†’ normalized 0.5 mid-ramp unless exactly at bounds.
 2. **No aggregates until first scan:** API rebuilds from `Scan` if queryset empty.
 3. **Provider "Unknown":** Explicit string used in per-provider aggregates; empty `service_provider` on scan becomes **Unknown** in aggregation filters.
 4. **Interpolation:** Does not fill blocked cells; does not use cells without neighbors within `max_distance`.
-5. **Invalid `mode` on API:** May return aggregates for both modes or unintended filter behavior — always send `wifi` or `mobile`.
+5. **Invalid `mode` on API:** May return aggregates for both modes or unintended filter behavior â€” always send `wifi` or `mobile`.
 6. **`cell_id` consistency:** Must use same `cols` as floor for indexing; `Scan.save()` overwrites `cell_id` using `floor_plan.grid_cols`.
 
 ---
@@ -695,7 +719,8 @@ Iterates registry blocks/floors, `ensure_floor_plan`, `rebuild_aggregates_for_fl
 
 - **`render.yaml`:** Python 3.12.8, `collectstatic`, migrate + gunicorn, `DJANGO_DEBUG=false`, `DJANGO_SERVE_MEDIA=true`, generated secret.
 - **Static:** WhiteNoise `CompressedManifestStaticFilesStorage`.
-- **Media:** Ephemeral on default Render disk unless persistent disk or external object storage is added (see `README.md`).
+- **Media:** Cloudinary is supported via env vars (`CLOUDINARY_*`) and is recommended for production persistence.
+- **PWA:** `manifest.webmanifest` and `/sw.js` enable installable mobile app shell (online-only).
 
 ---
 
@@ -716,3 +741,5 @@ Early migrations introduced `Scan` with inline block/floor; later migrations add
 ---
 
 *End of ExpDoc.*
+
+
