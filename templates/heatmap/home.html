@@ -2,112 +2,136 @@
 {% load static %}
 
 {% block content %}
-<section class="heatmap-hero">
-    <div class="container">
-        <div class="heatmap-header">
-            <div>
-                <span class="pill">Live signal intelligence</span>
-                <h2>Heatmap Dashboard</h2>
-                <p>Explore median signal strength, interpolation, and confidence in a single view.</p>
+<section class="dashboard-hero">
+    <div class="container dashboard-head">
+        <div>
+            <span class="pill">Live signal intelligence</span>
+            <h1>Heatmap Dashboard</h1>
+            <p>Operational view for median strength, interpolation, and confidence overlays.</p>
+        </div>
+        <div class="dashboard-actions">
+            <button id="reloadBtn" type="button" class="btn ghost">Refresh View</button>
+            <button id="controlToggle" type="button" class="btn primary">Open Controls</button>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-body">
+    <div class="container dashboard-shell">
+        <div class="dashboard-map">
+            <div class="map-header">
+                <div>
+                    <h3>Floor Plan Coverage</h3>
+                    <span class="muted">Dynamic grid overlay with real-time signal rendering.</span>
+                </div>
+                <div class="map-chips">
+                    <span class="chip">Live grid</span>
+                    <span class="chip">Provider buckets</span>
+                </div>
             </div>
-            <button id="reloadBtn" type="button" class="btn primary">Refresh View</button>
-        </div>
-        <div class="controls-grid reveal">
-            <label>
-                Block
-                <select id="blockSelect">
-                    {% for block in blocks %}
-                        <option value="{{ block }}">{{ block }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Floor
-                <select id="floorSelect">
-                    {% for floor in floors %}
-                        <option value="{{ floor }}">{{ floor }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Mode
-                <select id="modeSelect">
-                    {% for value, label in modes %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Service Provider
-                <select id="providerSelect"></select>
-            </label>
-            <label>
-                View
-                <select id="renderModeSelect">
-                    <option value="smooth" selected>Blended</option>
-                    <option value="contour">Contour Bands</option>
-                </select>
-            </label>
-            <label>
-                Spread
-                <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
-            </label>
-            <label class="toggle">
-                <input type="checkbox" id="autoSmoothToggle" checked>
-                Auto Smooth
-            </label>
-            <label class="toggle">
-                <input type="checkbox" id="confidenceToggle">
-                Confidence Overlay
-            </label>
-            <label class="toggle">
-                <input type="checkbox" id="interpolateToggle" checked>
-                Show Interpolated
-            </label>
+            <div
+                class="map-wrap"
+                id="mapWrap"
+                data-rows="{{ grid_rows }}"
+                data-cols="{{ grid_cols }}"
+            >
+                <img
+                    id="floorMap"
+                    src="{% static 'heatmap/images/Floor 1.jpeg' %}"
+                    alt="Floor map"
+                >
+                <div id="gridLayer" class="grid-layer"></div>
+                <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
+            </div>
+            <div class="legend modern-legend">
+                <div class="legend-head">
+                    <h4>Legend</h4>
+                    <span class="muted">Signal strength scale</span>
+                </div>
+                <div class="legend-scale">
+                    <span id="legendMin">Min</span>
+                    <div class="legend-bar"></div>
+                    <span id="legendMax">Max</span>
+                </div>
+                <div class="legend-scale">
+                    <span>Interpolated Ramp</span>
+                    <div class="legend-bar interp-bar"></div>
+                </div>
+                <div class="legend-grid">
+                    <div><span class="swatch green"></span> Strong (-65 dBm and above)</div>
+                    <div><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</div>
+                    <div><span class="swatch red"></span> Weak (below -80 dBm)</div>
+                    <div><span class="swatch green" style="opacity: 0.45;"></span> Interpolated (low confidence)</div>
+                    <div><span class="swatch none"></span> No data</div>
+                    <div><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="heatmap-layout">
-    <div
-        class="map-wrap"
-        id="mapWrap"
-        data-rows="{{ grid_rows }}"
-        data-cols="{{ grid_cols }}"
-    >
-        <img
-            id="floorMap"
-            src="{% static 'heatmap/images/Floor 1.jpeg' %}"
-            alt="Floor map"
-        >
-        <div id="gridLayer" class="grid-layer"></div>
-        <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
+<aside class="control-drawer" id="controlDrawer" aria-hidden="true">
+    <div class="drawer-header">
+        <div>
+            <span class="eyebrow">Controls</span>
+            <h3>Heatmap Settings</h3>
+        </div>
+        <button id="controlClose" type="button" class="icon-btn" aria-label="Close controls">✕</button>
     </div>
-
-    <aside class="legend reveal">
-        <h3>Legend</h3>
-        <div class="legend-scale">
-            <span id="legendMin">Min</span>
-            <div class="legend-bar"></div>
-            <span id="legendMax">Max</span>
-        </div>
-        <div class="legend-scale">
-            <span>Interpolated Ramp</span>
-            <div class="legend-bar interp-bar"></div>
-        </div>
-        <div class="legend-badges">
-            <span class="badge-tag">Dynamic scale</span>
-            <span class="badge-tag">Auto smooth</span>
-            <span class="badge-tag">Confidence layer</span>
-        </div>
-        <p><span class="swatch green"></span> Strong (-65 dBm and above)</p>
-        <p><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</p>
-        <p><span class="swatch red"></span> Weak (below -80 dBm)</p>
-        <p><span class="swatch green" style="opacity: 0.45;"></span> Interpolated (low confidence)</p>
-        <p><span class="swatch none"></span> No data</p>
-        <p><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay (darker = higher)</p>
-    </aside>
-</section>
+    <div class="controls-grid">
+        <label>
+            Block
+            <select id="blockSelect">
+                {% for block in blocks %}
+                    <option value="{{ block }}">{{ block }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Floor
+            <select id="floorSelect">
+                {% for floor in floors %}
+                    <option value="{{ floor }}">{{ floor }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Mode
+            <select id="modeSelect">
+                {% for value, label in modes %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Service Provider
+            <select id="providerSelect"></select>
+        </label>
+        <label>
+            View
+            <select id="renderModeSelect">
+                <option value="smooth" selected>Blended</option>
+                <option value="contour">Contour Bands</option>
+            </select>
+        </label>
+        <label>
+            Spread
+            <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
+        </label>
+        <label class="toggle">
+            <input type="checkbox" id="autoSmoothToggle" checked>
+            Auto Smooth
+        </label>
+        <label class="toggle">
+            <input type="checkbox" id="confidenceToggle">
+            Confidence Overlay
+        </label>
+        <label class="toggle">
+            <input type="checkbox" id="interpolateToggle" checked>
+            Show Interpolated
+        </label>
+    </div>
+</aside>
 
 {{ block_floors|json_script:"block-floors-data" }}
 {{ floor_configs|json_script:"floor-configs-data" }}
@@ -123,6 +147,32 @@
         floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
+</script>
+<script>
+    (function () {
+        const drawer = document.getElementById("controlDrawer");
+        const toggle = document.getElementById("controlToggle");
+        const closeBtn = document.getElementById("controlClose");
+        if (!drawer || !toggle || !closeBtn) return;
+
+        function openDrawer() {
+            drawer.classList.add("is-open");
+            drawer.setAttribute("aria-hidden", "false");
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove("is-open");
+            drawer.setAttribute("aria-hidden", "true");
+        }
+
+        toggle.addEventListener("click", openDrawer);
+        closeBtn.addEventListener("click", closeDrawer);
+        document.addEventListener("click", (event) => {
+            if (!drawer.classList.contains("is-open")) return;
+            if (drawer.contains(event.target) || toggle.contains(event.target)) return;
+            closeDrawer();
+        });
+    })();
 </script>
 <script src="{% static 'heatmap/js/home.js' %}?v=20260402-2"></script>
 {% endblock %}

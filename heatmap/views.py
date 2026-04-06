@@ -286,19 +286,19 @@ def manifest_view(_request):
   "short_name": "NetSense",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#1a73e8",
+  "background_color": "#0b1324",
+  "theme_color": "#0b1324",
   "icons": [
     {
-      "src": "/static/heatmap/icons/app-icon-192.png",
+      "src": "/static/logo.jpeg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/static/heatmap/icons/app-icon-512.png",
+      "src": "/static/logo.jpeg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ]

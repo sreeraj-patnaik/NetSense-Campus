@@ -1,72 +1,154 @@
 ﻿{% extends "base.html" %}
 
 {% block content %}
-<section class="page-hero">
-    <div class="container">
-        <span class="pill">Design Thinking & Innovation</span>
-        <h1>DTI: Human‑centered logic, system‑level rigor.</h1>
-        <p>A technical framing of design thinking decisions mapped to concrete architecture choices.</p>
+<section class="page-hero hero-split">
+    <div class="container hero-grid">
+        <div>
+            <span class="pill">Design Thinking & Innovation</span>
+            <h1>Human-centered logic backed by system-level rigor.</h1>
+            <p>
+                This page maps design thinking decisions directly to architectural choices,
+                ensuring every feature is explainable, testable, and operationally sound.
+            </p>
+            <div class="hero-tags">
+                <span>Spatial precision</span>
+                <span>Deterministic aggregation</span>
+                <span>Audit-ready outputs</span>
+            </div>
+        </div>
+        <div class="hero-card">
+            <h3>Problem framing</h3>
+            <p>Indoor signal issues need location-aligned evidence and reliable statistics.</p>
+            <div class="hero-card-grid">
+                <div>
+                    <span>Coverage noise</span>
+                    <strong>Median baseline</strong>
+                </div>
+                <div>
+                    <span>Provider variance</span>
+                    <strong>Carrier buckets</strong>
+                </div>
+                <div>
+                    <span>Decision trust</span>
+                    <strong>Explainable outputs</strong>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container info-grid">
-        <div class="info-card reveal">
-            <span class="chip">Empathize</span>
-            <h3>Operational signal pain</h3>
-            <p>Indoor coverage issues lack spatial visibility and are distorted by noisy single readings.</p>
-            <div class="detail-list">
-                <span>Need for location‑aligned evidence</span>
-                <span>Comparative views across providers and modes</span>
-            </div>
+    <div class="container">
+        <div class="section-title">
+            <h2>DTI core principles</h2>
+            <p>Design thinking translated into concrete technical guarantees.</p>
         </div>
-        <div class="info-card reveal">
-            <span class="chip">Define</span>
-            <h3>Problem formalization</h3>
-            <p>Map every measurement to a grid cell and build durable aggregates for decision use.</p>
-            <div class="detail-list">
-                <span><code>cell_id = cell_y * cols + cell_x</code></span>
-                <span>Validated scans only</span>
-            </div>
+        <div class="info-grid">
+            <article class="info-card">
+                <h3>Problem definition</h3>
+                <p>Signal intelligence requires spatial precision, statistical reliability, and operational clarity.</p>
+                <div class="detail-list">
+                    <span>Location-aligned evidence</span>
+                    <span>Provider comparisons</span>
+                    <span>Decision-ready aggregates</span>
+                </div>
+            </article>
+            <article class="info-card">
+                <h3>Technical innovation</h3>
+                <p>Median aggregation and controlled interpolation keep inference transparent.</p>
+                <div class="detail-list">
+                    <span>Deterministic processing</span>
+                    <span>Transparent algorithms</span>
+                    <span>Audit-ready outputs</span>
+                </div>
+            </article>
+            <article class="info-card">
+                <h3>Operational excellence</h3>
+                <p>Minimal API surface, strong validation, and cloud-ready deployment.</p>
+                <div class="detail-list">
+                    <span>RESTful design</span>
+                    <span>Progressive enhancement</span>
+                    <span>Deployment automation</span>
+                </div>
+            </article>
         </div>
-        <div class="info-card reveal">
-            <span class="chip">Ideate</span>
-            <h3>Technical options</h3>
-            <p>Median aggregation, dual buckets, and optional interpolation keep the system explainable.</p>
-            <div class="detail-list">
-                <span>Provider + all‑providers aggregates</span>
-                <span>Interpolated cells labeled explicitly</span>
+    </div>
+</section>
+
+<section class="section light-slab">
+    <div class="container">
+        <div class="section-title">
+            <h2>Design thinking framework</h2>
+            <p>Each phase mapped to a specific implementation decision.</p>
+        </div>
+        <div class="timeline">
+            <div class="timeline-item">
+                <span class="timeline-step">01</span>
+                <div>
+                    <h3>Empathize</h3>
+                    <p>Operational teams need location-aligned evidence, not isolated readings.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <span class="timeline-step">02</span>
+                <div>
+                    <h3>Define</h3>
+                    <p>Every measurement maps to a grid cell, enabling stable comparison.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <span class="timeline-step">03</span>
+                <div>
+                    <h3>Ideate</h3>
+                    <p>Median aggregation with provider buckets ensures explainable insights.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <span class="timeline-step">04</span>
+                <div>
+                    <h3>Prototype</h3>
+                    <p>Django APIs, spatial indexing, and a PWA-first interface.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <span class="timeline-step">05</span>
+                <div>
+                    <h3>Test + Deploy</h3>
+                    <p>Validation checks, automated rebuilds, and cloud deployment on Render.</p>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section alt">
-    <div class="container split">
-        <div class="diagram reveal">
-            <div class="diagram-grid">
-                <div class="diagram-node">Scan Input</div>
-                <div class="diagram-node">Aggregation</div>
-                <div class="diagram-node">Heatmap API</div>
-                <div class="diagram-node">Floor Plans</div>
-                <div class="diagram-node">Interpolation</div>
-                <div class="diagram-node">Dashboard UI</div>
+<section class="section">
+    <div class="container split-section">
+        <div class="split-panel">
+            <h3>System map</h3>
+            <div class="terminal-tree">
+                <div>Scan Input → Validation → Aggregation → Heatmap API</div>
+                <div>Floor Plans → Interpolation → Dashboard UI → Confidence Overlay</div>
             </div>
         </div>
-        <div>
+        <div class="split-copy">
             <div class="section-title">
                 <h2>Innovation signals</h2>
-                <p>Design decisions are visible in the data model and the API contract.</p>
+                <p>Design decisions exposed through models, algorithms, and contracts.</p>
             </div>
-            <div class="badge-row">
-                <span class="badge">Median per cell</span>
-                <span class="badge">Dual aggregate buckets</span>
-                <span class="badge">IDW interpolation</span>
-                <span class="badge">Confidence overlay</span>
+            <div class="pill-row">
+                <span class="chip">Median per cell</span>
+                <span class="chip">Dual buckets</span>
+                <span class="chip">IDW interpolation</span>
+                <span class="chip">Spatial indexing</span>
+                <span class="chip">Confidence overlay</span>
             </div>
-            <div class="kpi" style="margin-top: 1rem;">
-                <strong>Interpolation weight</strong>
-                <span><code>(1 / distance^2) * sqrt(count)</code></span>
+            <div class="code-card">
+                <span class="eyebrow">Interpolation</span>
+                <pre><code>weight = (1 / distance^2) * sqrt(count)</code></pre>
+            </div>
+            <div class="code-card">
+                <span class="eyebrow">Cell identity</span>
+                <pre><code>cell_id = cell_y * cols + cell_x</code></pre>
             </div>
         </div>
     </div>

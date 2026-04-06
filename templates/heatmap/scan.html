@@ -2,92 +2,108 @@
 {% load static %}
 
 {% block content %}
-<section class="heatmap-hero">
-    <div class="container">
-        <div class="heatmap-header">
-            <div>
-                <span class="pill">Authenticated capture</span>
-                <h2>Admin Scan Console</h2>
-                <p>Select a grid cell, enter signal strength, and publish it to the live map.</p>
-            </div>
+<section class="dashboard-hero">
+    <div class="container dashboard-head">
+        <div>
+            <span class="pill">Authenticated capture</span>
+            <h1>Admin Scan Console</h1>
+            <p>Capture signals with device-assisted scanning and publish updates to the map.</p>
+        </div>
+        <div class="dashboard-actions">
+            <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
         </div>
     </div>
 </section>
 
-<section class="scan-layout container">
-    <div>
-        <form id="scanForm" method="post" class="scan-form reveal">
-            {% csrf_token %}
-            <label>
-                Block
-                <select name="block" id="scanBlock">
-                    {% for block in blocks %}
-                        <option value="{{ block }}">{{ block }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Floor
-                <select name="floor" id="scanFloor">
-                    {% for floor in floors %}
-                        <option value="{{ floor }}">{{ floor }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Mode
-                <select name="mode" id="scanMode">
-                    {% for value, label in modes %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Service Provider
-                <input
-                    name="service_provider"
-                    id="serviceProviderInput"
-                    list="serviceProviderList"
-                    required
-                    placeholder="Start typing..."
-                >
-                <datalist id="serviceProviderList"></datalist>
-            </label>
-            <div class="auto-scan-row">
-                <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
-                <span class="auto-scan-status" id="autoScanStatus">Detects network mode on mobile.</span>
+<section class="scan-shell">
+    <div class="container scan-grid">
+        <div class="scan-card">
+            <div class="panel-header">
+                <div>
+                    <h3>Scan Input</h3>
+                    <span class="muted">Secure, validated submissions.</span>
+                </div>
+                <span class="chip">Live device capture</span>
             </div>
-            <div class="auto-scan-debug" id="autoScanDebug" hidden></div>
-            <label>
-                Network Name / SSID
-                <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
-            </label>
-            <label>
-                Signal (dBm)
-                <input name="signal_strength" id="signalStrengthInput" type="number" required placeholder="-72">
-            </label>
-            <div class="cell-readout">
-                Selected Cell: <strong id="selectedCellText">None</strong>
-            </div>
-            <input type="hidden" name="cell_x" id="cellXInput" required>
-            <input type="hidden" name="cell_y" id="cellYInput" required>
-            <button class="btn primary" type="submit">Save Scan</button>
-        </form>
-    </div>
+            <form id="scanForm" method="post" class="scan-form">
+                {% csrf_token %}
+                <label>
+                    Block
+                    <select name="block" id="scanBlock">
+                        {% for block in blocks %}
+                            <option value="{{ block }}">{{ block }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Floor
+                    <select name="floor" id="scanFloor">
+                        {% for floor in floors %}
+                            <option value="{{ floor }}">{{ floor }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Mode
+                    <select name="mode" id="scanMode">
+                        {% for value, label in modes %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Service Provider
+                    <input
+                        name="service_provider"
+                        id="serviceProviderInput"
+                        list="serviceProviderList"
+                        required
+                        placeholder="Start typing..."
+                    >
+                    <datalist id="serviceProviderList"></datalist>
+                </label>
+                <div class="auto-scan-status" id="autoScanStatus">Detects network mode on mobile.</div>
+                <div class="auto-scan-debug" id="autoScanDebug" hidden></div>
+                <label>
+                    Network Name / SSID
+                    <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
+                </label>
+                <label>
+                    Signal (dBm)
+                    <input name="signal_strength" id="signalStrengthInput" type="number" required placeholder="-72">
+                </label>
+                <div class="cell-readout">
+                    Selected Cell: <strong id="selectedCellText">None</strong>
+                </div>
+                <input type="hidden" name="cell_x" id="cellXInput" required>
+                <input type="hidden" name="cell_y" id="cellYInput" required>
+                <button class="btn primary" type="submit">Save Scan</button>
+            </form>
+        </div>
 
-    <div
-        class="map-wrap scan-map reveal"
-        id="scanMapWrap"
-        data-rows="{{ grid_rows }}"
-        data-cols="{{ grid_cols }}"
-    >
-        <img
-            id="scanFloorMap"
-            src="{% static 'heatmap/images/floor-placeholder.svg' %}"
-            alt="Floor map for scanning"
-        >
-        <div id="scanGridLayer" class="grid-layer"></div>
-        <div id="scanMarkerLayer" class="heatmap-layer"></div>
+        <div class="scan-card scan-map">
+            <div class="panel-header">
+                <div>
+                    <h3>Floor Grid</h3>
+                    <span class="muted">Tap to select the target cell.</span>
+                </div>
+                <span class="chip">Interactive grid</span>
+            </div>
+            <div
+                class="map-wrap"
+                id="scanMapWrap"
+                data-rows="{{ grid_rows }}"
+                data-cols="{{ grid_cols }}"
+            >
+                <img
+                    id="scanFloorMap"
+                    src="{% static 'heatmap/images/floor-placeholder.svg' %}"
+                    alt="Floor map for scanning"
+                >
+                <div id="scanGridLayer" class="grid-layer"></div>
+                <div id="scanMarkerLayer" class="heatmap-layer"></div>
+            </div>
+        </div>
     </div>
 </section>
 

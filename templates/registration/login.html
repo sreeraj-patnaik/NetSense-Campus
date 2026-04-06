@@ -1,12 +1,30 @@
 ﻿{% extends "base.html" %}
 
 {% block content %}
-<section class="section">
-    <div class="container">
-        <div class="auth-card reveal">
+<section class="auth-hero">
+    <div class="container auth-grid">
+        <div class="auth-copy">
             <span class="pill">Administrator access</span>
+            <h1>Secure sign in</h1>
+            <p>Authorized access to scan capture, system settings, and operational controls.</p>
+            <div class="auth-highlights">
+                <div>
+                    <strong>Role-based access</strong>
+                    <span>Admin-only tools.</span>
+                </div>
+                <div>
+                    <strong>Audit ready</strong>
+                    <span>Tracked system usage.</span>
+                </div>
+                <div>
+                    <strong>Secure by default</strong>
+                    <span>CSRF-protected forms.</span>
+                </div>
+            </div>
+        </div>
+        <div class="auth-card">
             <h2>Admin Login</h2>
-            <p>Secure access to scan capture and system configuration.</p>
+            <p>Use your NetSense credentials to continue.</p>
             <form method="post">
                 {% csrf_token %}
                 {{ form.as_p }}

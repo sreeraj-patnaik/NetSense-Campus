@@ -2,119 +2,198 @@
 {% load static %}
 
 {% block content %}
-<section class="hero">
-    <div class="container hero-grid">
-        <div class="hero-copy">
-            <span class="pill">Production-grade signal intelligence</span>
-            <h1>Indoor coverage analytics with audit‑ready data and explainable inference.</h1>
+<section class="landing-hero">
+    <div class="container landing-hero-grid">
+        <div class="landing-hero-copy">
+            <span class="pill">NetSense Campus</span>
+            <h1>Turn campus signal data into clear, trusted coverage intelligence.</h1>
             <p>
-                NetSense Campus transforms raw Wi‑Fi and mobile scans into a spatially indexed heatmap
-                using median aggregation, provider bucketing, and controlled interpolation.
+                Capture Wi-Fi and mobile scans, lock them into grid coordinates, and render
+                a decision-grade heatmap with explainable, deterministic logic.
             </p>
-            <div class="hero-actions">
+            <div class="landing-hero-actions">
                 <a class="btn primary" href="{% url 'heatmap_view' %}">Open Live Heatmap</a>
-                <a class="btn ghost" href="{% url 'data_models' %}">Data Models + APIs</a>
+                <a class="btn ghost" href="{% url 'scan' %}">Open Scan Console</a>
                 <button class="btn ghost" id="installAppBtn" type="button" hidden>Download App</button>
                 <span class="install-status" id="installAppStatus" hidden></span>
             </div>
-            <div class="hero-metrics">
-                <div class="metric-card reveal">
+            <div class="landing-kpis">
+                <div class="landing-kpi">
                     <span>Aggregation</span>
                     <strong>Median per cell</strong>
                 </div>
-                <div class="metric-card reveal">
+                <div class="landing-kpi">
                     <span>Interpolation</span>
-                    <strong>IDW, max dist = 2</strong>
+                    <strong>IDW, max distance 2</strong>
                 </div>
-                <div class="metric-card reveal">
-                    <span>APIs</span>
-                    <strong>Scan, Heatmap, Config</strong>
+                <div class="landing-kpi">
+                    <span>Delivery</span>
+                    <strong>Scan, Heatmap, Config APIs</strong>
                 </div>
             </div>
         </div>
-        <div class="hero-panel">
-            <div class="hero-map" data-parallax="0.12">
-                <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor preview">
+        <div class="landing-hero-panel">
+            <div class="landing-hero-visual">
+                <div class="signal-orbit">
+                    <span class="orbit-dot"></span>
+                    <span class="orbit-dot"></span>
+                    <span class="orbit-dot"></span>
+                </div>
+                <div class="signal-card">
+                    <span class="eyebrow">Live telemetry</span>
+                    <h3>Coverage snapshot</h3>
+                    <div class="signal-metrics">
+                        <div>
+                            <span>Cell coverage</span>
+                            <strong>94%</strong>
+                        </div>
+                        <div>
+                            <span>Weak zones</span>
+                            <strong>12</strong>
+                        </div>
+                        <div>
+                            <span>Active scans</span>
+                            <strong>326</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="signal-map">
+                    <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor preview">
+                </div>
             </div>
-            <div class="hero-badges">
-                <div class="badge">Cell‑indexed grid</div>
-                <div class="badge">Provider bucketing</div>
-                <div class="badge">Confidence overlay</div>
-                <div class="badge">Admin ready</div>
+            <div class="landing-hero-list">
+                <div>
+                    <span class="eyebrow">Signal snapshot</span>
+                    <h3>Production-ready coverage intelligence.</h3>
+                </div>
+                <div class="landing-hero-items">
+                    <div class="landing-hero-item">
+                        <strong>Grid indexed capture</strong>
+                        <p>Block, floor, and cell metadata with strict validation.</p>
+                    </div>
+                    <div class="landing-hero-item">
+                        <strong>Provider-aware buckets</strong>
+                        <p>Separate mobile carriers and Wi-Fi profiles for clarity.</p>
+                    </div>
+                    <div class="landing-hero-item">
+                        <strong>Audit-ready outputs</strong>
+                        <p>Deterministic JSON payloads for judges and reviewers.</p>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="section alt parallax">
-    <div class="parallax-layer" style="top: 30px; left: 12%;" data-parallax="0.18"></div>
-    <div class="parallax-layer" style="top: 120px; right: 14%;" data-parallax="0.1"></div>
-    <div class="container">
-        <div class="section-title">
-            <h2>Technical highlights</h2>
-            <p>Built to be transparent, stable, and easy to integrate in real environments.</p>
-        </div>
-        <div class="card-grid">
-            <article class="card reveal">
-                <h3>Deterministic aggregation</h3>
-                <p>Per‑cell medians reduce outliers and enable a repeatable baseline for decisions.</p>
-                <div class="detail-list">
-                    <span><code>CellAggregate</code> per provider</span>
-                    <span>All‑providers bucket for comparison</span>
-                </div>
-            </article>
-            <article class="card reveal">
-                <h3>Controlled interpolation</h3>
-                <p>Single‑pass inverse‑square weighting with scan‑count boosting.</p>
-                <div class="detail-list">
-                    <span><code>weight = (1 / d^2) * sqrt(count)</code></span>
-                    <span>No chaining across inferred cells</span>
-                </div>
-            </article>
-            <article class="card reveal">
-                <h3>API‑first delivery</h3>
-                <p>Minimal endpoints to ingest scans and render heatmap data fast.</p>
-                <div class="detail-list">
-                    <span><code>POST /api/scan/</code></span>
-                    <span><code>GET /api/heatmap/</code></span>
-                    <span><code>GET /api/config/</code></span>
-                </div>
-            </article>
         </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container split">
-        <div>
-            <div class="section-title">
-                <h2>Precision pipeline</h2>
-                <p>A clear path from scan capture to visualization ensures trust and reproducibility.</p>
-            </div>
-            <div class="detail-list">
-                <span><strong>Input:</strong> validated scans with block, floor, and cell coordinates</span>
-                <span><strong>Compute:</strong> median aggregation + optional IDW interpolation</span>
-                <span><strong>Output:</strong> ordered JSON payload for heatmap rendering</span>
-            </div>
+    <div class="container">
+        <div class="section-title">
+            <h2>Core capabilities</h2>
+            <p>Everything needed to collect, compute, and communicate signal health.</p>
         </div>
-        <div class="spec-card reveal">
-            <h3>Signal confidence indicators</h3>
-            <p>Heatmap overlay uses scan count to visualize measurement density.</p>
-            <div class="kpi">
-                <strong>Count‑weighted alpha</strong>
-                <span><code>alpha = base + 0.2 * sqrt(count)/6</code></span>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <h3>Deterministic aggregation</h3>
+                <p>Per-cell medians reduce outliers and create stable baselines.</p>
+                <div class="detail-list">
+                    <span><code>CellAggregate</code> per provider</span>
+                    <span>All-providers bucket for comparison</span>
+                </div>
+            </article>
+            <article class="feature-card">
+                <h3>Controlled interpolation</h3>
+                <p>Single-pass weighting keeps inference safe and explainable.</p>
+                <div class="detail-list">
+                    <span><code>weight = 1/d^2 * sqrt(count)</code></span>
+                    <span>Max distance window of 2</span>
+                </div>
+            </article>
+            <article class="feature-card">
+                <h3>Operational insights</h3>
+                <p>Surface weak zones with density-aware confidence overlays.</p>
+                <div class="detail-list">
+                    <span>Count-weighted alpha visual</span>
+                    <span>Structured export for audits</span>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section landing-slab">
+    <div class="container">
+        <div class="section-title">
+            <h2>Operational workflow</h2>
+            <p>A simple, repeatable path from scan to decision-ready visuals.</p>
+        </div>
+        <div class="step-grid">
+            <div class="step-card">
+                <span class="step-index">01</span>
+                <h3>Capture</h3>
+                <p>Collect Wi-Fi and mobile scans with block, floor, and cell metadata.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-index">02</span>
+                <h3>Validate</h3>
+                <p>Normalize provider names and verify signal ranges before storage.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-index">03</span>
+                <h3>Aggregate</h3>
+                <p>Compute medians per grid cell and provider for stable baselines.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-index">04</span>
+                <h3>Visualize</h3>
+                <p>Render heatmaps with confidence overlays and exportable payloads.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section cta">
+<section class="section">
+    <div class="container split-section">
+        <div class="split-copy">
+            <div class="section-title">
+                <h2>Architecture in one view</h2>
+                <p>Transparent data flow built for reviewers, judges, and operators.</p>
+            </div>
+            <div class="detail-list">
+                <span><strong>Input:</strong> mobile and Wi-Fi scans with cell coordinates</span>
+                <span><strong>Compute:</strong> deterministic aggregation with optional IDW</span>
+                <span><strong>Output:</strong> ordered JSON for heatmap rendering</span>
+            </div>
+        </div>
+        <div class="split-panel">
+            <h3>System outputs</h3>
+            <div class="split-metrics">
+                <div>
+                    <span>Coverage confidence</span>
+                    <strong>Density weighted</strong>
+                </div>
+                <div>
+                    <span>Provider comparison</span>
+                    <strong>Carrier buckets</strong>
+                </div>
+                <div>
+                    <span>Audit trail</span>
+                    <strong>Structured logs</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section cta-band">
     <div class="container cta-inner">
         <div>
-            <h2>Ready for evaluation?</h2>
-            <p>Show judges a clean architecture, real algorithms, and a working product surface.</p>
+            <h2>Ready to explore?</h2>
+            <p>Review architecture details or jump straight into live analysis.</p>
         </div>
-        <a class="btn primary" href="{% url 'project_structure' %}">Open Project Structure</a>
+        <div class="cta-actions">
+            <a class="btn primary" href="{% url 'project_structure' %}">Project Structure</a>
+            <a class="btn ghost" href="{% url 'data_models' %}">Data Models + APIs</a>
+        </div>
     </div>
 </section>
 {% endblock %}

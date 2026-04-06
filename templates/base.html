@@ -5,68 +5,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NetSense Campus</title>
-    <meta name="description" content="NetSense Campus delivers indoor signal intelligence with clean heatmaps, audit-ready data, and explainable insights.">
-    <meta name="theme-color" content="#1a73e8">
-    <meta property="og:title" content="NetSense Campus">
-    <meta property="og:description" content="Indoor signal intelligence with live heatmaps, explainable models, and clean system architecture.">
-    <meta property="og:type" content="website">
-    <link rel="manifest" href="/manifest.webmanifest?v=1">
-    <link rel="apple-touch-icon" href="{% static 'heatmap/icons/app-icon-192.png' %}">
-    <link rel="icon" href="{% static 'heatmap/icons/app-icon-192.png' %}">
+    <meta name="description" content="Enterprise-grade indoor signal intelligence platform delivering deterministic coverage analysis, audit-ready insights, and operational decision support for modern campuses.">
+    <meta name="theme-color" content="#0ea5e9">
+
+    <!-- Favicon and Icons -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="NetSense Campus">
-    <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}?v=20260402-2">
+    <link rel="manifest" href="/manifest.webmanifest?v=2">
+    <link rel="apple-touch-icon" href="{% static 'logo.jpeg' %}">
+    <link rel="icon" href="{% static 'logo.jpeg' %}">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="NetSense Campus - Enterprise Signal Intelligence">
+    <meta property="og:description" content="Professional indoor signal intelligence with live heatmaps, explainable models, and clean system architecture.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{% static 'logo.jpeg' %}">
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}?v=20260406-8">
 </head>
 <body>
+    <!-- Modern Navigation -->
     <header class="site-header">
         <div class="container header-inner">
-            <div class="brand">
-                <span class="brand-mark">NS</span>
+            <a class="brand" href="{% url 'home' %}">
+                <img class="brand-logo" src="{% static 'logo.jpeg' %}" alt="NetSense Campus logo">
                 <div>
-                    <div class="brand-title"><a href="{% url 'home' %}">NetSense Campus</a></div>
-                    <div class="brand-subtitle">Indoor Signal Intelligence</div>
+                    <div class="brand-title">NetSense Campus</div>
+                    <div class="brand-subtitle">Signal Intelligence</div>
                 </div>
-            </div>
-            <nav class="nav-links">
-                <a href="{% url 'home' %}">Landing</a>
-                <a href="{% url 'heatmap_view' %}">Heatmap</a>
-                <a href="{% url 'dti' %}">DTI Architecture</a>
-                <a href="{% url 'project_structure' %}">Project Structure</a>
-                <a href="{% url 'data_models' %}">Data Models + APIs</a>
-                <a href="{% url 'workflow' %}">Workflow</a>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'scan' %}">Scan</a>
-                    <a href="{% url 'admin:index' %}">Admin</a>
-                    <a href="{% url 'logout' %}">Logout</a>
-                {% else %}
-                    <a href="{% url 'login' %}">Admin Login</a>
-                {% endif %}
+            </a>
+
+            <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav class="nav-links" data-nav>
+                <div class="nav-group">
+                    <a href="{% url 'home' %}">Home</a>
+                    <a href="{% url 'heatmap_view' %}">Dashboard</a>
+                    <a href="{% url 'dti' %}">Technology</a>
+                    <a href="{% url 'project_structure' %}">Architecture</a>
+                    <a href="{% url 'data_models' %}">Documentation</a>
+                    <a href="{% url 'workflow' %}">Workflow</a>
+                </div>
+                <div class="nav-actions">
+                    {% if user.is_authenticated %}
+                        <a class="nav-cta" href="{% url 'scan' %}">Data Entry</a>
+                        <a href="{% url 'admin:index' %}">Admin</a>
+                        <a href="{% url 'logout' %}">Sign Out</a>
+                    {% else %}
+                        <a class="nav-cta" href="{% url 'login' %}">Sign In</a>
+                    {% endif %}
+                </div>
             </nav>
         </div>
     </header>
 
+    <!-- Main Content -->
     <main>
         {% if messages %}
             <div class="container">
-                <ul class="messages">
+                <div class="messages">
                     {% for message in messages %}
-                        <li class="{{ message.tags }}">{{ message }}</li>
+                        <li class="message message-{{ message.tags }}">{{ message }}</li>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer-mini">
-        <div class="container">NetSense Campus - signal intelligence for modern campuses.</div>
+    <!-- Modern Footer -->
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <img class="footer-logo" src="{% static 'logo.jpeg' %}" alt="NetSense Campus logo">
+                <div>
+                    <h3>NetSense Campus</h3>
+                    <p>Indoor signal intelligence for modern campuses and large facilities.</p>
+                </div>
+            </div>
+            <div class="footer-links">
+                <span class="footer-title">Explore</span>
+                <a href="{% url 'home' %}">Home</a>
+                <a href="{% url 'heatmap_view' %}">Dashboard</a>
+                <a href="{% url 'scan' %}">Data Entry</a>
+                <a href="{% url 'workflow' %}">Workflow</a>
+            </div>
+            <div class="footer-links">
+                <span class="footer-title">Architecture</span>
+                <a href="{% url 'dti' %}">Technology</a>
+                <a href="{% url 'project_structure' %}">Project Structure</a>
+                <a href="{% url 'data_models' %}">Data Models + APIs</a>
+            </div>
+            <div class="footer-links">
+                <span class="footer-title">Access</span>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'admin:index' %}">Admin</a>
+                    <a href="{% url 'logout' %}">Sign Out</a>
+                {% else %}
+                    <a href="{% url 'login' %}">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <span>&copy; 2026 NetSense Campus. All rights reserved.</span>
+            <span>Built for indoor coverage intelligence.</span>
+        </div>
     </footer>
 
-    <script src="{% static 'heatmap/js/ui.js' %}"></script>
-    <script src="{% static 'heatmap/js/pwa.js' %}"></script>
-</body>
-</html>
+    <!-- Scripts -->

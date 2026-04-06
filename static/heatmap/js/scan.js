@@ -16,6 +16,7 @@
     const selectedCellText = document.getElementById("selectedCellText");
     const autoScanBtn = document.getElementById("autoScanBtn");
     const autoScanStatus = document.getElementById("autoScanStatus");
+    const autoScanDebug = document.getElementById("autoScanDebug");
     let rows = cfg.rows;
     let cols = cfg.cols;
 
@@ -189,6 +190,12 @@
         autoScanStatus.dataset.tone = tone || "info";
     }
 
+    function setAutoScanDebug(message) {
+        if (!autoScanDebug) return;
+        autoScanDebug.textContent = message;
+        autoScanDebug.hidden = !message;
+    }
+
     function inferNetworkMode() {
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (!connection) return null;
@@ -206,6 +213,7 @@
             if (window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
                 try {
                     const raw = window.NetSenseBridge.getNetworkInfo();
+                    setAutoScanDebug(`Bridge response: ${raw}`);
                     const info = JSON.parse(raw || "{}");
                     if (info.error === "permission") {
                         setAutoScanStatus("Allow Location permission to read dBm/SSID, then retry.", "warning");
@@ -235,6 +243,7 @@
                     return;
                 } catch (error) {
                     console.warn("Auto scan bridge failed", error);
+                    setAutoScanDebug(`Bridge error: ${error}`);
                 }
             }
 
@@ -254,6 +263,7 @@
                 );
             } else {
                 setAutoScanStatus("Auto detect not supported on this browser. Pick mode manually.", "warning");
+                setAutoScanDebug("Bridge missing. Window.NetSenseBridge not found.");
             }
         });
     }
@@ -266,5 +276,8 @@
 
     if (autoScanStatus && window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
         setAutoScanStatus("Native auto scan ready. Tap Auto Scan.", "info");
+        setAutoScanDebug("Bridge detected.");
+    } else {
+        setAutoScanDebug("Bridge missing on load. If using APK, reinstall latest build.");
     }
 })();

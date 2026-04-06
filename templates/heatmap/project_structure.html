@@ -5,81 +5,85 @@
     <div class="container">
         <span class="pill">Repository layout</span>
         <h1>Project Structure</h1>
-        <p>A clean separation of configuration, domain logic, frontend delivery, and operations.</p>
+        <p>Executive overview of code, configuration, and delivery surfaces.</p>
     </div>
 </section>
 
 <section class="section">
-    <div class="container split">
-        <div class="diagram reveal">
-            <pre>
-manage.py
-requirements.txt
-render.yaml
-README.md
-expdoc.md
-db.sqlite3
-media/
-  floor_maps/
-static/
-  heatmap/
-    css/style.css
-    js/home.js
-    js/scan.js
-    js/landing.js
-    images/
-templates/
-  base.html
-  heatmap/home.html
-  heatmap/scan.html
-  heatmap/landing.html
-  registration/login.html
-netsense/
-  settings.py
-  urls.py
-  wsgi.py
-  asgi.py
-heatmap/
-  models.py
-  views.py
-  urls.py
-  utils.py
-  aggregation.py
-  admin.py
-  migrations/
-  management/commands/
-    seed_demo_data.py
-    rebuild_aggregates.py
+    <div class="container split-section">
+        <div class="split-panel terminal-panel">
+            <div class="terminal-head">
+                <span>repo@nsc</span>
+                <span class="terminal-status">main</span>
+            </div>
+            <pre class="terminal-tree">
+.
+├── manage.py
+├── requirements.txt
+├── render.yaml
+├── README.md
+├── media/
+│   └── floor_maps/
+├── static/
+│   ├── logo.jpeg
+│   ├── manifest.webmanifest
+│   └── heatmap/
+│       ├── css/style.css
+│       ├── js/home.js
+│       ├── js/scan.js
+│       └── images/
+├── templates/
+│   ├── base.html
+│   ├── heatmap/home.html
+│   ├── heatmap/scan.html
+│   └── registration/login.html
+├── netsense/
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── heatmap/
+    ├── models.py
+    ├── views.py
+    ├── urls.py
+    ├── utils.py
+    ├── aggregation.py
+    └── management/commands/
+        ├── seed_demo_data.py
+        └── rebuild_aggregates.py
             </pre>
         </div>
-        <div class="spec-card reveal">
-            <h3>Separation of concerns</h3>
-            <p>`netsense/` handles global configuration and routing; `heatmap/` owns domain logic.</p>
-            <div class="detail-list">
-                <span><strong>Data:</strong> models + aggregation + interpolation</span>
-                <span><strong>Interface:</strong> templates + static JS/CSS</span>
-                <span><strong>Ops:</strong> Render blueprint + management commands</span>
+        <div class="split-copy">
+            <div class="section-title">
+                <h2>Key modules</h2>
+                <p>Where the most important system responsibilities live.</p>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="section alt">
-    <div class="container tech-grid">
-        <div class="info-card reveal">
-            <span class="chip">netsense/</span>
-            <h3>Project package</h3>
-            <p>Settings, URL routing, WSGI/ASGI entrypoints, security and deployment hooks.</p>
-        </div>
-        <div class="info-card reveal">
-            <span class="chip">heatmap/</span>
-            <h3>Main application</h3>
-            <p>Scan ingestion, aggregation engine, interpolation utilities, and API views.</p>
-        </div>
-        <div class="info-card reveal">
-            <span class="chip">static + templates</span>
-            <h3>Frontend delivery</h3>
-            <p>Heatmap renderer, scan UI, landing pages, and shared styles.</p>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Core app</h3>
+                    <p>Scan ingestion, aggregation engine, interpolation utilities, and API views.</p>
+                    <div class="detail-list">
+                        <span><code>heatmap/models.py</code></span>
+                        <span><code>heatmap/aggregation.py</code></span>
+                        <span><code>heatmap/views.py</code></span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3>Frontend delivery</h3>
+                    <p>Templates, JS renderer, and styling for the dashboard and scanning UI.</p>
+                    <div class="detail-list">
+                        <span><code>templates/</code></span>
+                        <span><code>static/heatmap/</code></span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3>Operations</h3>
+                    <p>Deployment blueprint and management commands for data refresh.</p>
+                    <div class="detail-list">
+                        <span><code>render.yaml</code></span>
+                        <span><code>management/commands</code></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

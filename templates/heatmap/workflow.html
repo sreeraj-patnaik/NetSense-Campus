@@ -5,40 +5,52 @@
     <div class="container">
         <span class="pill">Operational workflow</span>
         <h1>Workflow Steps</h1>
-        <p>The end‑to‑end path from setup to decision‑ready visualization.</p>
+        <p>Executive pipeline view from setup to decision-ready visualization.</p>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="section-title">
+        <div class="section-header">
             <h2>System pipeline</h2>
-            <p>Each stage is deterministic and traceable for audit‑ready outputs.</p>
+            <p>Each stage is deterministic and traceable for audit-ready outputs.</p>
         </div>
-        <div class="flow">
-            <div class="flow-step reveal">
-                <strong>01</strong>
-                Configure blocks, floors, and grid dimensions
+        <div class="workflow-track">
+            <div class="workflow-step">
+                <span class="workflow-index">01</span>
+                <div>
+                    <h3>Configure</h3>
+                    <p>Define blocks, floors, and grid dimensions for each floor plan.</p>
+                </div>
             </div>
-            <div class="flow-step reveal">
-                <strong>02</strong>
-                POST scans via <code>/api/scan/</code> or use the authenticated UI
+            <div class="workflow-step">
+                <span class="workflow-index">02</span>
+                <div>
+                    <h3>Capture</h3>
+                    <p>POST scans via <code>/api/scan/</code> or use the authenticated UI.</p>
+                </div>
             </div>
-            <div class="flow-step reveal">
-                <strong>03</strong>
-                Refresh median aggregates for provider + all‑providers buckets
+            <div class="workflow-step">
+                <span class="workflow-index">03</span>
+                <div>
+                    <h3>Aggregate</h3>
+                    <p>Refresh median aggregates for provider + all-providers buckets.</p>
+                </div>
             </div>
-            <div class="flow-step reveal">
-                <strong>04</strong>
-                GET <code>/api/heatmap/</code> and render the dynamic heatmap
+            <div class="workflow-step">
+                <span class="workflow-index">04</span>
+                <div>
+                    <h3>Visualize</h3>
+                    <p>GET <code>/api/heatmap/</code> and render the dynamic heatmap.</p>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section alt">
-    <div class="container tech-grid">
-        <div class="spec-card reveal">
+<section class="section revamp-slab">
+    <div class="container revamp-grid-3">
+        <div class="revamp-card">
             <h3>Scan validation</h3>
             <div class="detail-list">
                 <span>Block and floor must exist</span>
@@ -46,18 +58,18 @@
                 <span>Cell bounds and blocked cells enforced</span>
             </div>
         </div>
-        <div class="spec-card reveal">
+        <div class="revamp-card">
             <h3>Aggregation guarantees</h3>
             <div class="detail-list">
                 <span>Median computed from all scans in bucket</span>
-                <span>Provider + all‑providers stored separately</span>
+                <span>Provider + all-providers stored separately</span>
                 <span>Atomic refresh per scan</span>
             </div>
         </div>
-        <div class="spec-card reveal">
+        <div class="revamp-card">
             <h3>Interpolation rules</h3>
             <div class="detail-list">
-                <span>Single‑pass only</span>
+                <span>Single-pass only</span>
                 <span>Max distance window of 2</span>
                 <span>Interpolated cells are labeled</span>
             </div>
