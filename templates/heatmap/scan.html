@@ -57,13 +57,14 @@
                 <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
                 <span class="auto-scan-status" id="autoScanStatus">Detects network mode on mobile.</span>
             </div>
+            <div class="auto-scan-debug" id="autoScanDebug" hidden></div>
             <label>
                 Network Name / SSID
                 <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
             </label>
             <label>
                 Signal (dBm)
-                <input name="signal_strength" type="number" required placeholder="-72">
+                <input name="signal_strength" id="signalStrengthInput" type="number" required placeholder="-72">
             </label>
             <div class="cell-readout">
                 Selected Cell: <strong id="selectedCellText">None</strong>

@@ -27,6 +27,7 @@
         event.preventDefault();
         deferredPrompt = event;
         if (installBtn) installBtn.hidden = false;
+        setStatus("");
     });
 
     if (installBtn) {
@@ -36,7 +37,7 @@
                 return;
             }
             if (!deferredPrompt) {
-                setStatus("Install not ready yet. Try again or use browser menu.");
+                setStatus("Install not ready. Use browser menu -> Install app (⋮).");
                 return;
             }
             deferredPrompt.prompt();
@@ -50,5 +51,10 @@
     if (isIos() && installBtn) {
         installBtn.hidden = false;
         setStatus("On iOS: Share -> Add to Home Screen.");
+    }
+
+    if (installBtn && !isIos()) {
+        installBtn.hidden = false;
+        setStatus("If no prompt: browser menu -> Install app (⋮).");
     }
 })();

@@ -8,6 +8,7 @@
     const providerInput = document.getElementById("serviceProviderInput");
     const providerList = document.getElementById("serviceProviderList");
     const networkNameInput = document.getElementById("networkNameInput");
+    const signalStrengthInput = document.getElementById("signalStrengthInput");
     const gridLayer = document.getElementById("scanGridLayer");
     const markerLayer = document.getElementById("scanMarkerLayer");
     const cellXInput = document.getElementById("cellXInput");
@@ -201,6 +202,42 @@
 
     if (autoScanBtn) {
         autoScanBtn.addEventListener("click", function () {
+            setAutoScanStatus("Scanning device network...", "info");
+            if (window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
+                try {
+                    const raw = window.NetSenseBridge.getNetworkInfo();
+                    const info = JSON.parse(raw || "{}");
+                    if (info.error === "permission") {
+                        setAutoScanStatus("Allow Location permission to read dBm/SSID, then retry.", "warning");
+                        return;
+                    }
+                    if (info.mode) {
+                        modeSelect.value = info.mode;
+                    }
+                    renderProviderOptions();
+                    updateNetworkLabel();
+                    if (info.provider) {
+                        providerInput.value = info.provider;
+                    } else if (!providerInput.value) {
+                        providerInput.value = "Unknown";
+                    }
+                    if (info.ssid && networkNameInput && modeSelect.value === "wifi") {
+                        networkNameInput.value = info.ssid;
+                    }
+                    if (signalStrengthInput && info.dbm !== undefined && info.dbm !== "") {
+                        signalStrengthInput.value = info.dbm;
+                    }
+                    if (info.dbm !== undefined && info.dbm !== "") {
+                        setAutoScanStatus("Auto scan populated from device network.", "success");
+                    } else {
+                        setAutoScanStatus("Network detected, but dBm unavailable. Check permissions.", "warning");
+                    }
+                    return;
+                } catch (error) {
+                    console.warn("Auto scan bridge failed", error);
+                }
+            }
+
             const inferred = inferNetworkMode();
             if (inferred) {
                 modeSelect.value = inferred;
@@ -226,4 +263,8 @@
     renderProviderOptions();
     updateNetworkLabel();
     applyFloorDimensions();
+
+    if (autoScanStatus && window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
+        setAutoScanStatus("Native auto scan ready. Tap Auto Scan.", "info");
+    }
 })();

@@ -1,0 +1,4 @@
+com.netsense.campus.test.app-updated_navigation_xml-0 C:\Users\Sreeraj Patnaik\Desktop\nsc\android\app\build\generated\updated_navigation_xml\debugAndroidTest
+com.netsense.campus.test.app-packageDebugAndroidTestResources-1 C:\Users\Sreeraj Patnaik\Desktop\nsc\android\app\build\intermediates\incremental\debugAndroidTest\packageDebugAndroidTestResources\merged.dir
+com.netsense.campus.test.app-packageDebugAndroidTestResources-2 C:\Users\Sreeraj Patnaik\Desktop\nsc\android\app\build\intermediates\incremental\debugAndroidTest\packageDebugAndroidTestResources\stripped.dir
+com.netsense.campus.test.app-debugAndroidTest-3 C:\Users\Sreeraj Patnaik\Desktop\nsc\android\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

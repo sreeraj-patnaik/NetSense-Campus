@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ns_dark">#0F172A</color>
+    <color name="ns_primary">#1A73E8</color>
+    <string name="app_name">NetSense Campus</string>
+    <style name="Theme.NetSense" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ns_primary</item>
+        <item name="colorSecondary">@color/ns_primary</item>
+        <item name="android:statusBarColor">@color/ns_dark</item>
+    </style>
+</resources>

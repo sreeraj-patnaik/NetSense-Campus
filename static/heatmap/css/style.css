@@ -759,6 +759,17 @@ textarea:focus {
     color: #b45309;
 }
 
+.auto-scan-debug {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+    color: #475569;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px dashed rgba(15, 23, 42, 0.2);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    word-break: break-word;
+}
+
 .cell-readout {
     padding: 0.45rem 0.65rem;
     border: 1px dashed rgba(26, 115, 232, 0.5);

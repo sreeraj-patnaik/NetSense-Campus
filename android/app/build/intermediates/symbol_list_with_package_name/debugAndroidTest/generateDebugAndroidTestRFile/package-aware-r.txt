@@ -1,0 +1,1 @@
+com.netsense.campus.test

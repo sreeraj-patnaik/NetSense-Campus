@@ -1,0 +1,9 @@
+R_DEF: Internal format may change without notice
+local
+color ns_dark
+color ns_primary
+drawable app_icon
+id webview
+layout activity_main
+string app_name
+style Theme.NetSense

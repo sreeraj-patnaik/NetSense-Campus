@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.netsense.campus.app-merged_res-31:/layout_activity_main.xml.flat",
+        "source": "com.netsense.campus.app-main-33:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.netsense.campus.app-merged_res-31:/drawable_app_icon.jpeg.flat",
+        "source": "com.netsense.campus.app-main-33:/drawable/app_icon.jpeg"
+    }
+]

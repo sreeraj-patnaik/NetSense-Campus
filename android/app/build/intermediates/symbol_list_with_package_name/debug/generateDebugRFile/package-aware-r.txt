@@ -1,0 +1,8 @@
+com.netsense.campus
+color ns_dark
+color ns_primary
+drawable app_icon
+id webview
+layout activity_main
+string app_name
+style Theme_NetSense
