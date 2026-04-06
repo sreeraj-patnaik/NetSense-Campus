@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Block, CellAggregate, FloorPlan, Scan
+from .models import Block, CellAggregate, FloorPlan, Scan, ServiceProvider
 
 
 class FloorPlanInline(admin.TabularInline):
@@ -89,3 +89,11 @@ class CellAggregateAdmin(admin.ModelAdmin):
     list_filter = ("floor_plan", "mode", "is_all_providers", "service_provider")
     search_fields = ("floor_plan__block__code", "service_provider")
     ordering = ("floor_plan__block__code", "floor_plan__number", "cell_y", "cell_x")
+
+
+@admin.register(ServiceProvider)
+class ServiceProviderAdmin(admin.ModelAdmin):
+    list_display = ("name", "mode", "is_active", "created_at")
+    list_filter = ("mode", "is_active")
+    search_fields = ("name",)
+    ordering = ("mode", "name")

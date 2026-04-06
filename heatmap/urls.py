@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.home_view, name="home"),
+    path("sw.js", views.service_worker, name="service_worker"),
     path("heatmap/", views.heatmap_view, name="heatmap_view"),
     path("architecture/", views.dti_view, name="dti"),
     path("project-structure/", views.project_structure_view, name="project_structure"),

@@ -44,8 +44,19 @@
             </label>
             <label>
                 Service Provider
-                <select name="service_provider" id="serviceProviderSelect" required></select>
+                <input
+                    name="service_provider"
+                    id="serviceProviderInput"
+                    list="serviceProviderList"
+                    required
+                    placeholder="Start typing..."
+                >
+                <datalist id="serviceProviderList"></datalist>
             </label>
+            <div class="auto-scan-row">
+                <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
+                <span class="auto-scan-status" id="autoScanStatus">Detects network mode on mobile.</span>
+            </div>
             <label>
                 Network Name / SSID
                 <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">

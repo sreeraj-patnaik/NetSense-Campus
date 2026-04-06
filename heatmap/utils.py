@@ -2,7 +2,9 @@ from collections import defaultdict
 
 from django.conf import settings
 
-from .models import Block, FloorPlan
+from django.db.utils import OperationalError, ProgrammingError
+
+from .models import Block, FloorPlan, ServiceProvider
 
 
 def _settings_floor_dims(floor):
@@ -132,10 +134,50 @@ def is_blocked_cell(block, floor, cell_x, cell_y):
 
 def get_service_providers():
     providers = getattr(settings, "HEATMAP_SERVICE_PROVIDERS", {})
+    fallback_wifi = list(providers.get("wifi", []))
+    fallback_mobile = list(providers.get("mobile", []))
+
+    db_wifi = []
+    db_mobile = []
+    try:
+        for row in ServiceProvider.objects.filter(is_active=True).order_by("mode", "name"):
+            if row.mode == ServiceProvider.MOBILE:
+                db_mobile.append(row.name)
+            else:
+                db_wifi.append(row.name)
+    except (OperationalError, ProgrammingError):
+        return {
+            "wifi": fallback_wifi,
+            "mobile": fallback_mobile,
+        }
+
+    def _unique(values):
+        seen = set()
+        result = []
+        for item in values:
+            if item in seen:
+                continue
+            seen.add(item)
+            result.append(item)
+        return result
+
     return {
-        "wifi": list(providers.get("wifi", [])),
-        "mobile": list(providers.get("mobile", [])),
+        "wifi": _unique(db_wifi + fallback_wifi),
+        "mobile": _unique(db_mobile + fallback_mobile),
     }
+
+
+def ensure_service_provider(mode, name):
+    cleaned = (name or "").strip() or "Unknown"
+    try:
+        ServiceProvider.objects.get_or_create(
+            mode=mode,
+            name=cleaned,
+            defaults={"is_active": True},
+        )
+    except (OperationalError, ProgrammingError):
+        return cleaned
+    return cleaned
 
 
 def interpolate_missing_cells(*, points, rows, cols, blocked_cells, max_distance=2):

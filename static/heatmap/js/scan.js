@@ -5,13 +5,16 @@
     const blockSelect = document.getElementById("scanBlock");
     const floorSelect = document.getElementById("scanFloor");
     const modeSelect = document.getElementById("scanMode");
-    const providerSelect = document.getElementById("serviceProviderSelect");
+    const providerInput = document.getElementById("serviceProviderInput");
+    const providerList = document.getElementById("serviceProviderList");
     const networkNameInput = document.getElementById("networkNameInput");
     const gridLayer = document.getElementById("scanGridLayer");
     const markerLayer = document.getElementById("scanMarkerLayer");
     const cellXInput = document.getElementById("cellXInput");
     const cellYInput = document.getElementById("cellYInput");
     const selectedCellText = document.getElementById("selectedCellText");
+    const autoScanBtn = document.getElementById("autoScanBtn");
+    const autoScanStatus = document.getElementById("autoScanStatus");
     let rows = cfg.rows;
     let cols = cfg.cols;
 
@@ -121,27 +124,20 @@
 
     function renderProviderOptions() {
         const providers = modeProviders(modeSelect.value);
-        const currentValue = providerSelect.value;
-        providerSelect.innerHTML = "";
+        const currentValue = providerInput.value;
+        providerList.innerHTML = "";
 
         providers.forEach((provider) => {
             const option = document.createElement("option");
             option.value = provider;
-            option.textContent = provider;
-            providerSelect.appendChild(option);
+            providerList.appendChild(option);
         });
 
-        if (providers.length === 0) {
-            const option = document.createElement("option");
-            option.value = "Unknown";
-            option.textContent = "Unknown";
-            providerSelect.appendChild(option);
+        if (!currentValue && providers.length) {
+            providerInput.value = providers[0];
         }
-
-        if (providers.includes(currentValue)) {
-            providerSelect.value = currentValue;
-        } else {
-            providerSelect.selectedIndex = 0;
+        if (!providers.length && !providerInput.value) {
+            providerInput.value = "Unknown";
         }
     }
 
@@ -185,6 +181,45 @@
             drawSelectedCell(Number(cellXInput.value), Number(cellYInput.value));
         }
     });
+
+    function setAutoScanStatus(message, tone) {
+        if (!autoScanStatus) return;
+        autoScanStatus.textContent = message;
+        autoScanStatus.dataset.tone = tone || "info";
+    }
+
+    function inferNetworkMode() {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (!connection) return null;
+        const rawType = connection.type || connection.effectiveType || "";
+        const type = String(rawType).toLowerCase();
+        if (type.includes("wifi") || type.includes("ethernet")) return "wifi";
+        if (type.includes("cellular")) return "mobile";
+        if (["slow-2g", "2g", "3g", "4g", "5g"].includes(type)) return "mobile";
+        return null;
+    }
+
+    if (autoScanBtn) {
+        autoScanBtn.addEventListener("click", function () {
+            const inferred = inferNetworkMode();
+            if (inferred) {
+                modeSelect.value = inferred;
+                renderProviderOptions();
+                updateNetworkLabel();
+                if (!providerInput.value) {
+                    providerInput.value = "Unknown";
+                }
+                setAutoScanStatus(
+                    inferred === "wifi"
+                        ? "Wi-Fi detected. Enter SSID/provider if missing."
+                        : "Mobile data detected. Enter carrier if missing.",
+                    "success"
+                );
+            } else {
+                setAutoScanStatus("Auto detect not supported on this browser. Pick mode manually.", "warning");
+            }
+        });
+    }
 
     syncFloorOptions();
     setMapImage();

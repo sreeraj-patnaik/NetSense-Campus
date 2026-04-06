@@ -13,6 +13,30 @@ class Block(models.Model):
         return f"{self.code} - {self.name}" if self.name else self.code
 
 
+class ServiceProvider(models.Model):
+    WIFI = "wifi"
+    MOBILE = "mobile"
+
+    MODE_CHOICES = [
+        (WIFI, "WiFi"),
+        (MOBILE, "Mobile"),
+    ]
+
+    name = models.CharField(max_length=60)
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=WIFI)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["mode", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["mode", "name"], name="uniq_service_provider_mode_name"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.mode})"
+
+
 class FloorPlan(models.Model):
     block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="floors")
     number = models.PositiveIntegerField()

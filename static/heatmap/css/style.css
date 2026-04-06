@@ -733,6 +733,26 @@ textarea:focus {
     box-shadow: var(--shadow-soft);
 }
 
+.auto-scan-row {
+    display: none;
+    align-items: center;
+    gap: 0.8rem;
+    grid-column: 1 / -1;
+}
+
+.auto-scan-status {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.auto-scan-status[data-tone="success"] {
+    color: #0f766e;
+}
+
+.auto-scan-status[data-tone="warning"] {
+    color: #b45309;
+}
+
 .cell-readout {
     padding: 0.45rem 0.65rem;
     border: 1px dashed rgba(26, 115, 232, 0.5);
@@ -817,5 +837,8 @@ code {
     }
     .map-wrap {
         height: min(55vh, 460px);
+    }
+    .auto-scan-row {
+        display: flex;
     }
 }

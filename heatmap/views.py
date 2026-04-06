@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 import json
 
 from django.http import JsonResponse
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect, render
 
@@ -16,6 +17,7 @@ from .utils import (
     get_service_providers,
     interpolate_missing_cells,
     is_blocked_cell,
+    ensure_service_provider,
 )
 
 
@@ -85,11 +87,8 @@ def _validate_scan_payload(data):
     if mode not in [Scan.WIFI, Scan.MOBILE]:
         return None, "Invalid mode."
 
-    providers = get_service_providers().get(mode, [])
     if not service_provider:
         service_provider = "Unknown"
-    if providers and service_provider not in providers and service_provider != "Unknown":
-        return None, "Invalid service provider for selected mode."
 
     floor_dims = get_floor_dimensions(block, floor)
     if cell_x < 0 or cell_x >= floor_dims["cols"]:
@@ -151,6 +150,7 @@ def scan_view(request):
             return redirect("scan")
 
         scan = Scan.objects.create(**payload)
+        ensure_service_provider(scan.mode, scan.service_provider)
         refresh_cell_aggregates(scan)
         messages.success(request, "Scan saved.")
         return redirect("scan")
@@ -236,6 +236,7 @@ def scan_api(request):
         return JsonResponse({"error": error}, status=400)
 
     scan = Scan.objects.create(**payload)
+    ensure_service_provider(scan.mode, scan.service_provider)
     refresh_cell_aggregates(scan)
     return JsonResponse(
         {
@@ -259,3 +260,21 @@ def config_api(request):
             "service_providers": get_service_providers(),
         }
     )
+
+
+def service_worker(_request):
+    content = """self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("fetch", () => {
+  // Online-only app: allow the request to hit the network.
+});
+"""
+    response = HttpResponse(content, content_type="application/javascript")
+    response["Cache-Control"] = "no-cache"
+    return response
