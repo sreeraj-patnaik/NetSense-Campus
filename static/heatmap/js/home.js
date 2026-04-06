@@ -123,6 +123,11 @@
         floorMap.src = floorCfg.image_url || cfg.defaultFloorImage;
     }
 
+    function syncMapAspectRatio() {
+        if (!floorMap.naturalWidth || !floorMap.naturalHeight) return;
+        mapWrap.style.setProperty("--map-aspect", `${floorMap.naturalWidth} / ${floorMap.naturalHeight}`);
+    }
+
     function applyFloorDimensions() {
         const floorCfg = selectedFloorConfig();
         rows = Math.max(1, Number(floorCfg.rows || cfg.rows));
@@ -135,11 +140,13 @@
     function waitForImageLoad() {
         return new Promise((resolve) => {
             if (floorMap.complete && floorMap.naturalWidth > 0) {
+                syncMapAspectRatio();
                 resolve();
                 return;
             }
             const onLoad = () => {
                 floorMap.removeEventListener("load", onLoad);
+                syncMapAspectRatio();
                 resolve();
             };
             floorMap.addEventListener("load", onLoad);

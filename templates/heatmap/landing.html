@@ -5,15 +5,15 @@
 <section class="hero">
     <div class="container hero-grid">
         <div class="hero-copy">
-            <span class="pill">Modern campus connectivity intelligence</span>
-            <h1>See indoor signal quality with the clarity of a product dashboard.</h1>
+            <span class="pill">Production-grade signal intelligence</span>
+            <h1>Indoor coverage analytics with audit‑ready data and explainable inference.</h1>
             <p>
-                NetSense Campus turns raw WiFi and mobile scans into a live, grid-based heatmap with
-                median aggregation, interpolation awareness, and a clean executive view for IT teams.
+                NetSense Campus transforms raw Wi‑Fi and mobile scans into a spatially indexed heatmap
+                using median aggregation, provider bucketing, and controlled interpolation.
             </p>
             <div class="hero-actions">
                 <a class="btn primary" href="{% url 'heatmap_view' %}">Open Live Heatmap</a>
-                <a class="btn ghost" href="{% url 'dti' %}">Explore DTI Architecture</a>
+                <a class="btn ghost" href="{% url 'data_models' %}">Data Models + APIs</a>
             </div>
             <div class="hero-metrics">
                 <div class="metric-card reveal">
@@ -21,12 +21,12 @@
                     <strong>Median per cell</strong>
                 </div>
                 <div class="metric-card reveal">
-                    <span>Coverage</span>
-                    <strong>Measured + inferred</strong>
+                    <span>Interpolation</span>
+                    <strong>IDW, max dist = 2</strong>
                 </div>
                 <div class="metric-card reveal">
-                    <span>Output</span>
-                    <strong>API-first visuals</strong>
+                    <span>APIs</span>
+                    <strong>Scan, Heatmap, Config</strong>
                 </div>
             </div>
         </div>
@@ -35,9 +35,9 @@
                 <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor preview">
             </div>
             <div class="hero-badges">
+                <div class="badge">Cell‑indexed grid</div>
+                <div class="badge">Provider bucketing</div>
                 <div class="badge">Confidence overlay</div>
-                <div class="badge">Fast heatmap API</div>
-                <div class="badge">Grid-aware scans</div>
                 <div class="badge">Admin ready</div>
             </div>
         </div>
@@ -49,97 +49,58 @@
     <div class="parallax-layer" style="top: 120px; right: 14%;" data-parallax="0.1"></div>
     <div class="container">
         <div class="section-title">
-            <h2>Built for a professional campus workflow</h2>
-            <p>Each layer of the system is designed to feel like a Google or Meta internal tool: crisp, fast, and decision-ready.</p>
+            <h2>Technical highlights</h2>
+            <p>Built to be transparent, stable, and easy to integrate in real environments.</p>
         </div>
         <div class="card-grid">
             <article class="card reveal">
-                <h3>Insight-first UI</h3>
-                <p>Dynamic scaling, contour or smooth rendering, and clear separation of measured vs inferred values.</p>
+                <h3>Deterministic aggregation</h3>
+                <p>Per‑cell medians reduce outliers and enable a repeatable baseline for decisions.</p>
+                <div class="detail-list">
+                    <span><code>CellAggregate</code> per provider</span>
+                    <span>All‑providers bucket for comparison</span>
+                </div>
             </article>
             <article class="card reveal">
-                <h3>Robust data layer</h3>
-                <p>Median aggregation per grid cell reduces noise and keeps outputs reliable for executives.</p>
+                <h3>Controlled interpolation</h3>
+                <p>Single‑pass inverse‑square weighting with scan‑count boosting.</p>
+                <div class="detail-list">
+                    <span><code>weight = (1 / d^2) * sqrt(count)</code></span>
+                    <span>No chaining across inferred cells</span>
+                </div>
             </article>
             <article class="card reveal">
-                <h3>Minimal API surface</h3>
-                <p>Three endpoints deliver scan ingestion, heatmap data, and configuration for any client.</p>
+                <h3>API‑first delivery</h3>
+                <p>Minimal endpoints to ingest scans and render heatmap data fast.</p>
+                <div class="detail-list">
+                    <span><code>POST /api/scan/</code></span>
+                    <span><code>GET /api/heatmap/</code></span>
+                    <span><code>GET /api/config/</code></span>
+                </div>
             </article>
         </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container">
-        <div class="section-title">
-            <h2>DTI architecture at a glance</h2>
-            <p>Data, Transform, Interface. Each layer is intentional and auditable.</p>
-        </div>
-        <div class="info-grid">
-            <div class="info-card reveal">
-                <span class="chip">Data</span>
-                <h3>Scans + Aggregates</h3>
-                <p>Blocks, floors, scans, and aggregates define a clean, queryable source of truth.</p>
-            </div>
-            <div class="info-card reveal">
-                <span class="chip">Transform</span>
-                <h3>Median + Interpolation</h3>
-                <p>Refresh aggregates per scan and optionally fill empty cells with weighted neighbors.</p>
-            </div>
-            <div class="info-card reveal">
-                <span class="chip">Interface</span>
-                <h3>APIs + Dashboards</h3>
-                <p>Heatmap and config APIs feed a modern web UI designed for rapid decisions.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section alt">
     <div class="container split">
         <div>
             <div class="section-title">
-                <h2>Navigate the product surfaces</h2>
-                <p>Every page is purpose-built for a specific audience, from leadership to field teams.</p>
+                <h2>Precision pipeline</h2>
+                <p>A clear path from scan capture to visualization ensures trust and reproducibility.</p>
             </div>
-            <div class="badge-row">
-                <span class="badge">Landing</span>
-                <span class="badge">DTI Architecture</span>
-                <span class="badge">Project Structure</span>
-                <span class="badge">Data Models + APIs</span>
-                <span class="badge">Workflow</span>
+            <div class="detail-list">
+                <span><strong>Input:</strong> validated scans with block, floor, and cell coordinates</span>
+                <span><strong>Compute:</strong> median aggregation + optional IDW interpolation</span>
+                <span><strong>Output:</strong> ordered JSON payload for heatmap rendering</span>
             </div>
         </div>
-        <div class="card reveal">
-            <h3>Heatmap operations</h3>
-            <p>Switch blocks, floors, providers, and render modes. Save scans when logged in.</p>
-            <a class="btn ghost" href="{% url 'heatmap_view' %}">Open Heatmap</a>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container">
-        <div class="section-title">
-            <h2>Workflow snapshot</h2>
-            <p>From scan capture to visualization in four deliberate steps.</p>
-        </div>
-        <div class="flow">
-            <div class="flow-step reveal">
-                <strong>01</strong>
-                Configure floors and grids
-            </div>
-            <div class="flow-step reveal">
-                <strong>02</strong>
-                Capture scans via API or UI
-            </div>
-            <div class="flow-step reveal">
-                <strong>03</strong>
-                Aggregate and interpolate
-            </div>
-            <div class="flow-step reveal">
-                <strong>04</strong>
-                Visualize and decide
+        <div class="spec-card reveal">
+            <h3>Signal confidence indicators</h3>
+            <p>Heatmap overlay uses scan count to visualize measurement density.</p>
+            <div class="kpi">
+                <strong>Count‑weighted alpha</strong>
+                <span><code>alpha = base + 0.2 * sqrt(count)/6</code></span>
             </div>
         </div>
     </div>
@@ -148,10 +109,10 @@
 <section class="section cta">
     <div class="container cta-inner">
         <div>
-            <h2>Ready to see your campus in full detail?</h2>
-            <p>Launch the heatmap and start capturing signal intelligence today.</p>
+            <h2>Ready for evaluation?</h2>
+            <p>Show judges a clean architecture, real algorithms, and a working product surface.</p>
         </div>
-        <a class="btn primary" href="{% url 'heatmap_view' %}">Launch Heatmap</a>
+        <a class="btn primary" href="{% url 'project_structure' %}">Open Project Structure</a>
     </div>
 </section>
 {% endblock %}

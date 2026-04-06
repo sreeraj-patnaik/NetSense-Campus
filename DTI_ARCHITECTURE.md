@@ -1,42 +1,56 @@
-﻿# DTI Architecture
+﻿# DTI (Design Thinking & Innovation)
 
-This page presents the DTI architecture for NetSense Campus. DTI is treated here as Data, Transform, Interface.
+This page presents the system through a Design Thinking & Innovation lens while staying implementation-grounded.
 
-## DTI Layers
+## Design Thinking (Technical Interpretation)
 
-### Data
+### Empathize (Operational Pain Points)
 
-- Models: `Block`, `FloorPlan`, `Scan`, `CellAggregate` in `heatmap/models.py`.
-- Storage: SQLite by default or PostgreSQL via `DATABASE_URL`.
-- Source of truth for grids, blocked cells, and floor images: `FloorPlan`.
+- Indoor signal issues are hard to localize without spatial context.
+- Raw dBm values are noisy and not decision-friendly.
+- Teams need clear Wi-Fi vs mobile comparisons on the same floor grid.
 
-### Transform
+### Define (Problem Frame)
 
-- Scan validation and normalization: `_validate_scan_payload` in `heatmap/views.py`.
-- Aggregation: `refresh_cell_aggregates` and `rebuild_aggregates_for_floor` in `heatmap/aggregation.py`.
-- Interpolation: `interpolate_missing_cells` in `heatmap/utils.py`.
+- Capture repeatable, validated samples tied to `block`, `floor`, and `cell`.
+- Summarize signal per cell in a robust, queryable way.
+- Expose a minimal API for scanners and dashboards.
 
-### Interface
+### Ideate (Technical Options Considered)
 
-- APIs: `/api/scan/`, `/api/heatmap/`, `/api/config/` in `heatmap/views.py`.
-- Web pages: landing `/`, heatmap `/heatmap/`, scan UI `/scan/`.
-- Client rendering: `static/heatmap/js/home.js` and `static/heatmap/js/scan.js`.
+- Median vs mean: median is resistant to outliers.
+- Keep raw `Scan` rows to preserve auditability (not only aggregates).
+- Optional interpolation to fill gaps while labeling inferred cells.
 
-## Data Flow
+### Prototype (System Architecture Choices)
+
+- Django monolith with three APIs: `/api/scan/`, `/api/heatmap/`, `/api/config/`.
+- Grid-based indexing: `cell_id = cell_y * cols + cell_x`.
+- Dual aggregation buckets: per-provider and all-providers.
+
+### Test (Behavioral Guarantees)
+
+- Validation rejects invalid blocks, floors, modes, and blocked cells.
+- Heatmap API auto-rebuilds aggregates when none exist.
+- Interpolation is single-pass and never chains inferred values.
+
+## Innovation (Implementation-Level Highlights)
+
+- **Dual aggregates**: `CellAggregate` stores per-provider and all-provider medians for fast queries.
+- **Median aggregation**: uses `statistics.median` to reduce noise in cell values.
+- **Interpolation formula**: inverse-square distance * sqrt(count) weighting for neighbor influence.
+- **Explicit labeling**: interpolated cells are tagged `interpolated: true` in API payloads.
+- **Dynamic scaling**: UI normalizes min/max per fetch for consistent readability.
+
+## Traceable Data Flow
 
 ```
-Scan (web or API)
-  -> Validate payload
-  -> Create Scan row
-  -> Refresh CellAggregate (median, count)
-  -> Heatmap API read
-  -> Optional interpolation for empty cells
-  -> Heatmap UI render
+POST /api/scan/
+  -> validate payload
+  -> create Scan
+  -> refresh CellAggregate (median, count)
+GET /api/heatmap/
+  -> query aggregates
+  -> optional interpolation
+  -> JSON payload for UI
 ```
-
-## Interfaces By Audience
-
-- Staff scan UI: authenticated `/scan/`.
-- Public heatmap viewer: `/heatmap/`.
-- Device ingest: `POST /api/scan/`.
-- Read-only integration: `GET /api/heatmap/`, `GET /api/config/`.

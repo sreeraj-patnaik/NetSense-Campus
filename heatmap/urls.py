@@ -5,6 +5,10 @@ from . import views
 urlpatterns = [
     path("", views.home_view, name="home"),
     path("heatmap/", views.heatmap_view, name="heatmap_view"),
+    path("architecture/", views.dti_view, name="dti"),
+    path("project-structure/", views.project_structure_view, name="project_structure"),
+    path("data-models-apis/", views.data_models_view, name="data_models"),
+    path("workflow/", views.workflow_view, name="workflow"),
     path("scan/", views.scan_view, name="scan"),
     path("api/heatmap/", views.heatmap_api, name="heatmap_api"),
     path("api/scan/", views.scan_api, name="scan_api"),

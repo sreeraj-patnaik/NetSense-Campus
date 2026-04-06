@@ -1,33 +1,24 @@
 ﻿# Workflow Steps
 
-This page captures the end-to-end workflow from setup to visualization.
+This page captures the end-to-end operational workflow from setup to visualization.
 
-## Setup
+## End-to-End Flow
 
-1. Create `Block` and `FloorPlan` entries in Django admin.
-2. Upload a floor image and define grid rows, cols, and blocked cells.
-3. Confirm service providers in settings or defaults.
+1. Admin creates a `Block` and a `FloorPlan` with grid rows/cols and optional blocked cells.
+2. Client posts a scan to `/api/scan/` or uses the authenticated `/scan/` UI.
+3. Server validates payload and saves a `Scan` with a computed `cell_id`.
+4. `refresh_cell_aggregates` updates two buckets per cell: provider and all-providers.
+5. Client requests `/api/heatmap/` and receives aggregates plus optional interpolation.
+6. UI renders the heatmap using dynamic min/max scaling and optional confidence overlay.
 
-## Scan Ingestion
+## Heatmap Read Path (Technical)
 
-1. User or device submits a scan to `/api/scan/` or the authenticated `/scan/` UI.
-2. Server validates block, floor, mode, cell bounds, and blocked cells.
-3. A `Scan` row is saved with a computed `cell_id`.
+- `GET /api/heatmap/` filters by `block`, `floor`, `mode`, `service_provider`.
+- If no aggregates exist, `rebuild_aggregates_for_floor` is triggered.
+- Interpolated points are generated only from measured cells and never chained.
 
-## Aggregation
+## Scan Ingestion Path (Technical)
 
-1. The new scan triggers `refresh_cell_aggregates`.
-2. Median and scan count are updated for the provider bucket.
-3. Median and scan count are updated for the all-providers bucket.
-
-## Heatmap Read
-
-1. Client requests `/api/heatmap/?block=...&floor=...`.
-2. Server returns `CellAggregate` rows for the selected mode and provider bucket.
-3. If enabled, interpolation fills empty, non-blocked cells.
-
-## Visualization
-
-1. `static/heatmap/js/home.js` scales signals to a dynamic min/max range.
-2. The heatmap is rendered in smooth or contour mode.
-3. Optional confidence overlay highlights higher scan density.
+- Supports JSON or form payloads.
+- Enforces bounds and blocked-cell checks against floor config.
+- `Scan.save()` recomputes `cell_id` from `grid_cols`.

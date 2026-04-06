@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block content %}
@@ -6,71 +6,77 @@
     <div class="container">
         <div class="heatmap-header">
             <div>
-                <h2>Admin Signal Sampling</h2>
-                <p>Select a location on the floor map, then enter signal strength and save.</p>
+                <span class="pill">Authenticated capture</span>
+                <h2>Admin Scan Console</h2>
+                <p>Select a grid cell, enter signal strength, and publish it to the live map.</p>
             </div>
         </div>
-        <form id="scanForm" method="post" class="scan-form">
-        {% csrf_token %}
-        <label>
-            Block
-            <select name="block" id="scanBlock">
-                {% for block in blocks %}
-                    <option value="{{ block }}">{{ block }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Floor
-            <select name="floor" id="scanFloor">
-                {% for floor in floors %}
-                    <option value="{{ floor }}">{{ floor }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Mode
-            <select name="mode" id="scanMode">
-                {% for value, label in modes %}
-                    <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Service Provider
-            <select name="service_provider" id="serviceProviderSelect" required></select>
-        </label>
-        <label>
-            Network Name / SSID
-            <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
-        </label>
-        <label>
-            Signal (dBm)
-            <input name="signal_strength" type="number" required placeholder="-72">
-        </label>
-        <div class="cell-readout">
-            Selected Cell: <strong id="selectedCellText">None</strong>
-        </div>
-        <input type="hidden" name="cell_x" id="cellXInput" required>
-        <input type="hidden" name="cell_y" id="cellYInput" required>
-        <button class="btn primary" type="submit">Save Scan</button>
-    </form>
-</div>
+    </div>
 </section>
 
-<section
-    class="map-wrap scan-map"
-    id="scanMapWrap"
-    data-rows="{{ grid_rows }}"
-    data-cols="{{ grid_cols }}"
->
-    <img
-        id="scanFloorMap"
-        src="{% static 'heatmap/images/floor-placeholder.svg' %}"
-        alt="Floor map for scanning"
+<section class="scan-layout container">
+    <div>
+        <form id="scanForm" method="post" class="scan-form reveal">
+            {% csrf_token %}
+            <label>
+                Block
+                <select name="block" id="scanBlock">
+                    {% for block in blocks %}
+                        <option value="{{ block }}">{{ block }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Floor
+                <select name="floor" id="scanFloor">
+                    {% for floor in floors %}
+                        <option value="{{ floor }}">{{ floor }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Mode
+                <select name="mode" id="scanMode">
+                    {% for value, label in modes %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Service Provider
+                <select name="service_provider" id="serviceProviderSelect" required></select>
+            </label>
+            <label>
+                Network Name / SSID
+                <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
+            </label>
+            <label>
+                Signal (dBm)
+                <input name="signal_strength" type="number" required placeholder="-72">
+            </label>
+            <div class="cell-readout">
+                Selected Cell: <strong id="selectedCellText">None</strong>
+            </div>
+            <input type="hidden" name="cell_x" id="cellXInput" required>
+            <input type="hidden" name="cell_y" id="cellYInput" required>
+            <button class="btn primary" type="submit">Save Scan</button>
+        </form>
+    </div>
+
+    <div
+        class="map-wrap scan-map reveal"
+        id="scanMapWrap"
+        data-rows="{{ grid_rows }}"
+        data-cols="{{ grid_cols }}"
     >
-    <div id="scanGridLayer" class="grid-layer"></div>
-    <div id="scanMarkerLayer" class="heatmap-layer"></div>
+        <img
+            id="scanFloorMap"
+            src="{% static 'heatmap/images/floor-placeholder.svg' %}"
+            alt="Floor map for scanning"
+        >
+        <div id="scanGridLayer" class="grid-layer"></div>
+        <div id="scanMarkerLayer" class="heatmap-layer"></div>
+    </div>
 </section>
 
 {{ block_floors|json_script:"scan-block-floors-data" }}

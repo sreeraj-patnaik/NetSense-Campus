@@ -1,19 +1,18 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block content %}
-<section class="heatmap-hero">
+<section class="section">
     <div class="container">
-        <div class="heatmap-header">
-            <div>
-                <h2>Admin Login</h2>
-                <p>Secure access to scan capture and configuration.</p>
-            </div>
+        <div class="auth-card reveal">
+            <span class="pill">Administrator access</span>
+            <h2>Admin Login</h2>
+            <p>Secure access to scan capture and system configuration.</p>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="btn primary" type="submit">Login</button>
+            </form>
         </div>
-        <form method="post" class="scan-form auth-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn primary" type="submit">Login</button>
-        </form>
     </div>
 </section>
 {% endblock %}

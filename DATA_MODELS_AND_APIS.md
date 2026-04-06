@@ -1,58 +1,76 @@
-﻿# Data Models And APIs
+﻿# Data Models and APIs
 
-This page documents the core data models and the public API surface.
+This page documents the core models, algorithms, and APIs that power the product.
 
 ## Data Models
 
 ### Block
 
-- Fields: `code`, `name`, `is_active`.
-- Notes: `code` is unique and used for routing and lookups.
+- `code` (unique), `name`, `is_active`.
+- Ordering by `code`.
 
 ### FloorPlan
 
-- Fields: `block`, `number`, `name`, `grid_rows`, `grid_cols`, `blocked_cells`, `image`, `is_active`.
-- Constraints: unique `(block, number)`.
-- Notes: single source of truth for grid dimensions and blocked cells.
+- `block` FK, `number`, `name`.
+- `grid_rows`, `grid_cols` (defaults 12/8).
+- `blocked_cells` JSON list, `image` upload, `is_active`.
+- Unique constraint on `(block, number)`.
 
-### Scan
+### Scan (raw sample)
 
-- Fields: `floor_plan`, `cell_x`, `cell_y`, `cell_id`, `mode`, `service_provider`, `network_name`, `signal_strength`, `created_at`.
+- `floor_plan` FK, `cell_x`, `cell_y`, `cell_id`.
+- `mode` (`wifi` or `mobile`), `service_provider`, `network_name`.
+- `signal_strength` (dBm), `created_at`.
 - Indexes: `(floor_plan, mode)`, `(cell_x, cell_y)`, `(cell_id)`.
-- Notes: `cell_id` is derived from `cell_y * grid_cols + cell_x` on save.
+- `cell_id` computed as `cell_y * grid_cols + cell_x` in `save()`.
 
 ### CellAggregate
 
-- Fields: `floor_plan`, `cell_x`, `cell_y`, `cell_id`, `mode`, `service_provider`, `is_all_providers`, `median_signal`, `scan_count`, `updated_at`.
-- Constraints: unique composite key on floor, cell, mode, provider, and bucket.
-- Purpose: precomputed medians for fast heatmap queries.
+- `floor_plan`, `cell_x`, `cell_y`, `cell_id`.
+- `mode`, `service_provider`, `is_all_providers`.
+- `median_signal`, `scan_count`, `updated_at`.
+- Unique composite constraint on floor/cell/mode/provider/bucket.
+- Indexes: `(floor_plan, mode, is_all_providers)`, `(cell_x, cell_y)`, `(cell_id)`.
+
+## Core Algorithms
+
+### Median Aggregation
+
+- Uses Python `statistics.median` on all signals per cell bucket.
+- Two buckets per cell/mode: specific provider and all-providers.
+
+### Interpolation
+
+- Single-pass fill for empty cells within `max_distance=2`.
+- Weight = `(1 / distance_sq) * max(1, sqrt(count))`.
+- Output includes `interpolated: true` and `count: 0`.
 
 ## API Endpoints
 
 ### `POST /api/scan/`
 
-- Purpose: ingest a scan from a device or client.
-- Auth: none, CSRF exempt.
-- Payload: JSON or form body.
-- Required fields: `block`, `floor`, `cell_x`, `cell_y`, `mode`, `signal_strength`.
-- Optional fields: `service_provider`, `network_name`.
-- Response: `{ status, scan_id, block, floor, cell_x, cell_y }`.
+- Accepts JSON or form body.
+- Validates block, floor, mode, cell bounds, blocked cells.
+- Returns `{ status, scan_id, block, floor, cell_x, cell_y }`.
 
 ### `GET /api/heatmap/`
 
-- Purpose: return aggregate heatmap points, optionally interpolated.
-- Query params: `block`, `floor` required.
-- Optional params: `mode` (`wifi` or `mobile`), `service_provider`, `interpolate` (`0` to disable).
-- Response: array of points with `cell_x`, `cell_y`, `signal`, `count`, `interpolated`.
+- Required query params: `block`, `floor`.
+- Optional: `mode`, `service_provider`, `interpolate`.
+- Returns ordered cell list with `signal`, `count`, `interpolated`.
+- Auto-rebuilds aggregates if none exist.
 
 ### `GET /api/config/`
 
-- Purpose: return configuration needed by clients.
-- Response: `blocks`, `block_floors`, `floor_configs`, `service_providers`.
+- Returns `blocks`, `block_floors`, `floor_configs`, `service_providers`.
 
-## Related Implementation Files
+## Validation Rules (Scan Payload)
 
-- Models: `heatmap/models.py`.
-- API handlers: `heatmap/views.py`.
-- Aggregation: `heatmap/aggregation.py`.
-- Interpolation: `heatmap/utils.py`.
+1. `floor`, `cell_x`, `cell_y`, `signal_strength` must be numeric.
+2. `block` must exist in registry.
+3. `floor` must be allowed for the block.
+4. `mode` must be `wifi` or `mobile`.
+5. `service_provider` validated against configured providers (or `Unknown`).
+6. `cell_x`, `cell_y` within grid bounds.
+7. Cell must not be blocked.
+8. FloorPlan must exist.

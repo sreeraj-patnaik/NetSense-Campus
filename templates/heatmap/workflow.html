@@ -1,0 +1,67 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="pill">Operational workflow</span>
+        <h1>Workflow Steps</h1>
+        <p>The end‑to‑end path from setup to decision‑ready visualization.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-title">
+            <h2>System pipeline</h2>
+            <p>Each stage is deterministic and traceable for audit‑ready outputs.</p>
+        </div>
+        <div class="flow">
+            <div class="flow-step reveal">
+                <strong>01</strong>
+                Configure blocks, floors, and grid dimensions
+            </div>
+            <div class="flow-step reveal">
+                <strong>02</strong>
+                POST scans via <code>/api/scan/</code> or use the authenticated UI
+            </div>
+            <div class="flow-step reveal">
+                <strong>03</strong>
+                Refresh median aggregates for provider + all‑providers buckets
+            </div>
+            <div class="flow-step reveal">
+                <strong>04</strong>
+                GET <code>/api/heatmap/</code> and render the dynamic heatmap
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section alt">
+    <div class="container tech-grid">
+        <div class="spec-card reveal">
+            <h3>Scan validation</h3>
+            <div class="detail-list">
+                <span>Block and floor must exist</span>
+                <span>Mode must be <code>wifi</code> or <code>mobile</code></span>
+                <span>Cell bounds and blocked cells enforced</span>
+            </div>
+        </div>
+        <div class="spec-card reveal">
+            <h3>Aggregation guarantees</h3>
+            <div class="detail-list">
+                <span>Median computed from all scans in bucket</span>
+                <span>Provider + all‑providers stored separately</span>
+                <span>Atomic refresh per scan</span>
+            </div>
+        </div>
+        <div class="spec-card reveal">
+            <h3>Interpolation rules</h3>
+            <div class="detail-list">
+                <span>Single‑pass only</span>
+                <span>Max distance window of 2</span>
+                <span>Interpolated cells are labeled</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

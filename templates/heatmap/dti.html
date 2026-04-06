@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="pill">Design Thinking & Innovation</span>
+        <h1>DTI: Human‑centered logic, system‑level rigor.</h1>
+        <p>A technical framing of design thinking decisions mapped to concrete architecture choices.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container info-grid">
+        <div class="info-card reveal">
+            <span class="chip">Empathize</span>
+            <h3>Operational signal pain</h3>
+            <p>Indoor coverage issues lack spatial visibility and are distorted by noisy single readings.</p>
+            <div class="detail-list">
+                <span>Need for location‑aligned evidence</span>
+                <span>Comparative views across providers and modes</span>
+            </div>
+        </div>
+        <div class="info-card reveal">
+            <span class="chip">Define</span>
+            <h3>Problem formalization</h3>
+            <p>Map every measurement to a grid cell and build durable aggregates for decision use.</p>
+            <div class="detail-list">
+                <span><code>cell_id = cell_y * cols + cell_x</code></span>
+                <span>Validated scans only</span>
+            </div>
+        </div>
+        <div class="info-card reveal">
+            <span class="chip">Ideate</span>
+            <h3>Technical options</h3>
+            <p>Median aggregation, dual buckets, and optional interpolation keep the system explainable.</p>
+            <div class="detail-list">
+                <span>Provider + all‑providers aggregates</span>
+                <span>Interpolated cells labeled explicitly</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section alt">
+    <div class="container split">
+        <div class="diagram reveal">
+            <div class="diagram-grid">
+                <div class="diagram-node">Scan Input</div>
+                <div class="diagram-node">Aggregation</div>
+                <div class="diagram-node">Heatmap API</div>
+                <div class="diagram-node">Floor Plans</div>
+                <div class="diagram-node">Interpolation</div>
+                <div class="diagram-node">Dashboard UI</div>
+            </div>
+        </div>
+        <div>
+            <div class="section-title">
+                <h2>Innovation signals</h2>
+                <p>Design decisions are visible in the data model and the API contract.</p>
+            </div>
+            <div class="badge-row">
+                <span class="badge">Median per cell</span>
+                <span class="badge">Dual aggregate buckets</span>
+                <span class="badge">IDW interpolation</span>
+                <span class="badge">Confidence overlay</span>
+            </div>
+            <div class="kpi" style="margin-top: 1rem;">
+                <strong>Interpolation weight</strong>
+                <span><code>(1 / distance^2) * sqrt(count)</code></span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

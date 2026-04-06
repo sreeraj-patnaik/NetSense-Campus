@@ -1,0 +1,86 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="pill">Repository layout</span>
+        <h1>Project Structure</h1>
+        <p>A clean separation of configuration, domain logic, frontend delivery, and operations.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container split">
+        <div class="diagram reveal">
+            <pre>
+manage.py
+requirements.txt
+render.yaml
+README.md
+expdoc.md
+db.sqlite3
+media/
+  floor_maps/
+static/
+  heatmap/
+    css/style.css
+    js/home.js
+    js/scan.js
+    js/landing.js
+    images/
+templates/
+  base.html
+  heatmap/home.html
+  heatmap/scan.html
+  heatmap/landing.html
+  registration/login.html
+netsense/
+  settings.py
+  urls.py
+  wsgi.py
+  asgi.py
+heatmap/
+  models.py
+  views.py
+  urls.py
+  utils.py
+  aggregation.py
+  admin.py
+  migrations/
+  management/commands/
+    seed_demo_data.py
+    rebuild_aggregates.py
+            </pre>
+        </div>
+        <div class="spec-card reveal">
+            <h3>Separation of concerns</h3>
+            <p>`netsense/` handles global configuration and routing; `heatmap/` owns domain logic.</p>
+            <div class="detail-list">
+                <span><strong>Data:</strong> models + aggregation + interpolation</span>
+                <span><strong>Interface:</strong> templates + static JS/CSS</span>
+                <span><strong>Ops:</strong> Render blueprint + management commands</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section alt">
+    <div class="container tech-grid">
+        <div class="info-card reveal">
+            <span class="chip">netsense/</span>
+            <h3>Project package</h3>
+            <p>Settings, URL routing, WSGI/ASGI entrypoints, security and deployment hooks.</p>
+        </div>
+        <div class="info-card reveal">
+            <span class="chip">heatmap/</span>
+            <h3>Main application</h3>
+            <p>Scan ingestion, aggregation engine, interpolation utilities, and API views.</p>
+        </div>
+        <div class="info-card reveal">
+            <span class="chip">static + templates</span>
+            <h3>Frontend delivery</h3>
+            <p>Heatmap renderer, scan UI, landing pages, and shared styles.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

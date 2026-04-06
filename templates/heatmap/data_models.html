@@ -1,0 +1,113 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="pill">Models and endpoints</span>
+        <h1>Data Models and APIs</h1>
+        <p>Core entities, constraints, and API contracts that power the product surface.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Core data models</h2>
+            <p>Schema is optimized for spatial indexing, provider bucketing, and fast heatmap reads.</p>
+        </div>
+        <table class="table reveal">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Purpose</th>
+                    <th>Key fields</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Block</td>
+                    <td>Campus partition</td>
+                    <td><code>code</code>, <code>name</code>, <code>is_active</code></td>
+                </tr>
+                <tr>
+                    <td>FloorPlan</td>
+                    <td>Grid and floor configuration</td>
+                    <td><code>grid_rows</code>, <code>grid_cols</code>, <code>blocked_cells</code>, <code>image</code></td>
+                </tr>
+                <tr>
+                    <td>Scan</td>
+                    <td>Raw signal sample</td>
+                    <td><code>cell_x</code>, <code>cell_y</code>, <code>mode</code>, <code>signal_strength</code></td>
+                </tr>
+                <tr>
+                    <td>CellAggregate</td>
+                    <td>Median per cell, per provider</td>
+                    <td><code>median_signal</code>, <code>scan_count</code>, <code>is_all_providers</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="section alt">
+    <div class="container tech-grid">
+        <div class="spec-card reveal">
+            <h3>Indexes</h3>
+            <p>Optimized for spatial and mode filtering.</p>
+            <div class="detail-list">
+                <span><code>(floor_plan, mode)</code></span>
+                <span><code>(cell_x, cell_y)</code></span>
+                <span><code>(cell_id)</code></span>
+            </div>
+        </div>
+        <div class="spec-card reveal">
+            <h3>Cell identity</h3>
+            <p>Stable cell indexing across backend and UI.</p>
+            <div class="detail-list">
+                <span><code>cell_id = cell_y * cols + cell_x</code></span>
+                <span>Computed at save time</span>
+            </div>
+        </div>
+        <div class="spec-card reveal">
+            <h3>Aggregation</h3>
+            <p>Two buckets per cell per mode.</p>
+            <div class="detail-list">
+                <span>Provider‑specific</span>
+                <span>All‑providers</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-title">
+            <h2>API surface</h2>
+            <p>Small, stable endpoints for ingestion, visualization, and configuration.</p>
+        </div>
+        <div class="info-grid">
+            <div class="info-card reveal">
+                <span class="chip">POST /api/scan/</span>
+                <h3>Ingest scans</h3>
+                <p>Validates block, floor, mode, bounds, and blocked cells before insert.</p>
+                <div class="detail-list">
+                    <span>Payload: <code>block</code>, <code>floor</code>, <code>cell_x</code>, <code>cell_y</code>, <code>mode</code>, <code>signal_strength</code></span>
+                </div>
+            </div>
+            <div class="info-card reveal">
+                <span class="chip">GET /api/heatmap/</span>
+                <h3>Read heatmap</h3>
+                <p>Returns aggregates and optional interpolation; auto‑rebuild if empty.</p>
+                <div class="detail-list">
+                    <span>Params: <code>block</code>, <code>floor</code>, <code>mode</code>, <code>service_provider</code>, <code>interpolate</code></span>
+                </div>
+            </div>
+            <div class="info-card reveal">
+                <span class="chip">GET /api/config/</span>
+                <h3>Fetch config</h3>
+                <p>Delivers blocks, floor configs, and service provider lists.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

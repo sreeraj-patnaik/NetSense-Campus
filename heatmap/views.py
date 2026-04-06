@@ -125,6 +125,22 @@ def heatmap_view(request):
     return render(request, "heatmap/home.html", _viewer_context())
 
 
+def dti_view(request):
+    return render(request, "heatmap/dti.html", _viewer_context())
+
+
+def project_structure_view(request):
+    return render(request, "heatmap/project_structure.html", _viewer_context())
+
+
+def data_models_view(request):
+    return render(request, "heatmap/data_models.html", _viewer_context())
+
+
+def workflow_view(request):
+    return render(request, "heatmap/workflow.html", _viewer_context())
+
+
 @login_required
 def scan_view(request):
     context = _viewer_context()
