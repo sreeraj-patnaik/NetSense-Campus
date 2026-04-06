@@ -179,6 +179,10 @@ STORAGES = {
     },
 }
 
+WHITENOISE_MIMETYPES = {
+    ".webmanifest": "application/manifest+json",
+}
+
 # --------------------------------------------------
 # Authentication
 # --------------------------------------------------
