@@ -7,7 +7,14 @@
         <div class="landing-hero-copy">
             <span class="pill">Live signal intelligence</span>
             <h1>Heatmap Dashboard</h1>
-            <p>Operational view for median strength, interpolation, and confidence overlays.</p>
+            <p>Operational view for confidence, weak zones, and best-provider insights.</p>
+            {% if access_status == "pending" %}
+                <div class="auto-scan-status" data-tone="warning">Access pending approval by institution admin.</div>
+            {% elif access_status == "none" %}
+                <div class="auto-scan-status" data-tone="warning">No approved institution access yet. Contact your admin.</div>
+            {% elif access_status == "no_blocks" %}
+                <div class="auto-scan-status" data-tone="warning">No blocks are configured for your institution yet.</div>
+            {% endif %}
         </div>
         <div class="dashboard-actions">
             <button id="reloadBtn" type="button" class="btn ghost">Refresh View</button>
@@ -36,7 +43,7 @@
             >
                 <img
                     id="floorMap"
-                    src="{% static 'heatmap/images/Floor 1.jpeg' %}"
+                    src="{{ initial_floor_image }}"
                     alt="Floor map"
                 >
                 <div id="gridLayer" class="grid-layer"></div>
@@ -163,7 +170,6 @@
                         <option value="60000">60s</option>
                     </select>
                 </label>
-                <button id="notifyBtn" type="button" class="btn ghost">Enable Notifications</button>
                 <button id="exportBtn" type="button" class="btn ghost">Export PNG</button>
             </div>
         </div>
@@ -178,13 +184,11 @@
     window.NETSENSE_CONFIG = {
         rows: {{ grid_rows }},
         cols: {{ grid_cols }},
-        defaultFloorImage: "{% static 'heatmap/images/Floor 1.jpeg' %}",
+        defaultFloorImage: "{{ initial_floor_image }}",
         heatmapApiUrl: "{% url 'heatmap_api' %}",
         weakClustersApiUrl: "{% url 'weak_clusters_api' %}",
         bestProviderApiUrl: "{% url 'best_provider_api' %}",
-        notificationSubscribeUrl: "{% url 'notifications_subscribe_api' %}",
-        notificationUnsubscribeUrl: "{% url 'notifications_unsubscribe_api' %}",
-        vapidPublicKey: "{{ vapid_public_key }}",
+        accessStatus: "{{ access_status }}",
         blockFloors: JSON.parse(document.getElementById("block-floors-data").textContent),
         floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)

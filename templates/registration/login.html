@@ -23,13 +23,16 @@
             </div>
         </div>
         <div class="auth-card">
-            <h2>Admin Login</h2>
+            <h2>Login</h2>
             <p>Use your NetSense credentials to continue.</p>
             <form method="post">
                 {% csrf_token %}
                 {{ form.as_p }}
                 <button class="btn primary" type="submit">Login</button>
             </form>
+            <p class="muted" style="margin-top: 1rem;">
+                Need access? <a href="{% url 'signup' %}">Request access</a>.
+            </p>
         </div>
     </div>
 </section>

@@ -26,22 +26,43 @@
             <div class="workflow-step">
                 <span class="workflow-index">02</span>
                 <div>
+                    <h3>Request Access</h3>
+                    <p>Users sign up and select their institution for approval.</p>
+                </div>
+            </div>
+            <div class="workflow-step">
+                <span class="workflow-index">03</span>
+                <div>
+                    <h3>Approve</h3>
+                    <p>Institution admins review and approve access requests.</p>
+                </div>
+            </div>
+            <div class="workflow-step">
+                <span class="workflow-index">04</span>
+                <div>
                     <h3>Capture</h3>
                     <p>POST scans via <code>/api/scan/</code> or use the authenticated UI.</p>
                 </div>
             </div>
             <div class="workflow-step">
-                <span class="workflow-index">03</span>
+                <span class="workflow-index">05</span>
                 <div>
                     <h3>Aggregate</h3>
                     <p>Refresh median aggregates for provider + all-providers buckets.</p>
                 </div>
             </div>
             <div class="workflow-step">
-                <span class="workflow-index">04</span>
+                <span class="workflow-index">06</span>
                 <div>
                     <h3>Visualize</h3>
-                    <p>GET <code>/api/heatmap/</code> and render the dynamic heatmap.</p>
+                    <p>GET <code>/api/heatmap/</code> and render confidence-aware heatmaps.</p>
+                </div>
+            </div>
+            <div class="workflow-step">
+                <span class="workflow-index">07</span>
+                <div>
+                    <h3>Analyze</h3>
+                    <p>Detect weak zones and best-provider cells for targeted action.</p>
                 </div>
             </div>
         </div>
@@ -62,6 +83,7 @@
             <h3>Aggregation guarantees</h3>
             <div class="detail-list">
                 <span>Median computed from all scans in bucket</span>
+                <span>Variance + confidence tracked per cell</span>
                 <span>Provider + all-providers stored separately</span>
                 <span>Atomic refresh per scan</span>
             </div>

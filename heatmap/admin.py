@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Block, CellAggregate, FloorPlan, Scan, ServiceProvider
+from .models import Block, CellAggregate, FloorPlan, Scan, ServiceProvider, Institution, InstitutionMembership
 
 
 class FloorPlanInline(admin.TabularInline):
@@ -20,9 +20,9 @@ class FloorPlanInline(admin.TabularInline):
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "is_active")
-    list_filter = ("is_active",)
-    search_fields = ("code", "name")
+    list_display = ("code", "name", "institution", "is_active")
+    list_filter = ("institution", "is_active")
+    search_fields = ("code", "name", "institution__name")
     inlines = (FloorPlanInline,)
 
 
@@ -97,3 +97,19 @@ class ServiceProviderAdmin(admin.ModelAdmin):
     list_filter = ("mode", "is_active")
     search_fields = ("name",)
     ordering = ("mode", "name")
+
+
+@admin.register(Institution)
+class InstitutionAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "is_active", "created_at")
+    list_filter = ("is_active",)
+    search_fields = ("name", "code")
+    ordering = ("name",)
+
+
+@admin.register(InstitutionMembership)
+class InstitutionMembershipAdmin(admin.ModelAdmin):
+    list_display = ("user", "institution", "status", "role", "can_scan", "created_at", "approved_at")
+    list_filter = ("status", "role", "can_scan", "institution")
+    search_fields = ("user__username", "user__email", "institution__name")
+    ordering = ("-created_at",)

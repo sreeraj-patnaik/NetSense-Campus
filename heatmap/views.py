@@ -12,14 +12,18 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db import models
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 from .aggregation import rebuild_aggregates_for_floor, refresh_cell_aggregates
-from .models import CellAggregate, NotificationSubscription, Scan
+from .models import CellAggregate, Scan, Block, Institution, InstitutionMembership
+from .forms import SignupForm
 from .utils import (
     compute_confidence,
     ensure_service_provider,
@@ -122,8 +126,18 @@ def _format_ai_answer(text: str) -> str:
 # -----------------------------------------------------------------------------
 
 
-def _viewer_context():
+def _viewer_context(user=None):
     registry = get_floor_registry()
+    registry = _filter_registry_for_user(user, registry)
+    access_status = "public"
+    if user and user.is_authenticated:
+        approved = _approved_institutions(user)
+        if approved.exists():
+            access_status = "approved"
+        elif InstitutionMembership.objects.filter(user=user, status=InstitutionMembership.PENDING).exists():
+            access_status = "pending"
+        else:
+            access_status = "none"
     blocks = registry["blocks"]
     block_floors = registry["block_floors"]
     floor_configs = registry["floor_configs"]
@@ -132,20 +146,101 @@ def _viewer_context():
     floors = block_floors.get(initial_block, [])
     initial_floor = floors[0] if floors else ""
     initial_cfg = floor_configs.get(f"{initial_block}:{initial_floor}", {})
+    initial_floor_image = initial_cfg.get("image_url", "")
+
+    if access_status == "approved" and not blocks:
+        access_status = "no_blocks"
 
     return {
         "blocks": blocks,
         "floors": floors,
         "initial_block": initial_block,
         "initial_floor": initial_floor,
+        "initial_floor_image": initial_floor_image if access_status == "approved" else "",
         "grid_rows": max(1, _coerce_int(initial_cfg.get("rows"), settings.HEATMAP_GRID_ROWS) or settings.HEATMAP_GRID_ROWS),
         "grid_cols": max(1, _coerce_int(initial_cfg.get("cols"), settings.HEATMAP_GRID_COLS) or settings.HEATMAP_GRID_COLS),
         "block_floors": block_floors,
         "floor_configs": floor_configs,
         "service_providers": get_service_providers(),
         "modes": Scan.MODE_CHOICES,
-        "vapid_public_key": getattr(settings, "VAPID_PUBLIC_KEY", ""),
+        "access_status": access_status,
     }
+
+
+def _approved_institutions(user):
+    if not user or not user.is_authenticated:
+        return Institution.objects.none()
+    return Institution.objects.filter(
+        is_active=True,
+        memberships__user=user,
+        memberships__status=InstitutionMembership.APPROVED,
+    ).distinct()
+
+
+def _is_institution_admin(user):
+    if not user or not user.is_authenticated:
+        return False
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+        role=InstitutionMembership.ADMIN,
+    ).exists()
+
+
+def _user_can_scan(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+    ).filter(
+        models.Q(role=InstitutionMembership.ADMIN) | models.Q(can_scan=True)
+    ).exists()
+
+
+def _filter_registry_for_user(user, registry):
+    if not user or not user.is_authenticated:
+        return registry
+    if user.is_superuser:
+        return registry
+
+    allowed_institutions = _approved_institutions(user)
+    allowed_blocks = set(
+        Block.objects.filter(
+            institution__in=allowed_institutions,
+            is_active=True,
+        ).values_list("code", flat=True)
+    )
+    filtered_blocks = [code for code in registry["blocks"] if code in allowed_blocks]
+    block_floors = {code: registry["block_floors"].get(code, []) for code in filtered_blocks}
+    floor_configs = {
+        key: value
+        for key, value in registry["floor_configs"].items()
+        if key.split(":", 1)[0] in allowed_blocks
+    }
+    return {
+        "blocks": filtered_blocks,
+        "block_floors": block_floors,
+        "floor_configs": floor_configs,
+    }
+
+
+def _user_can_access_floor(user, floor_plan):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    if not floor_plan or not floor_plan.block_id:
+        return False
+    if not floor_plan.block.institution_id:
+        return False
+    return InstitutionMembership.objects.filter(
+        user=user,
+        institution_id=floor_plan.block.institution_id,
+        status=InstitutionMembership.APPROVED,
+    ).exists()
 
 
 # -----------------------------------------------------------------------------
@@ -162,8 +257,9 @@ def _parse_scan_payload(request):
     return request.POST
 
 
-def _validate_scan_payload(data):
+def _validate_scan_payload(data, user=None):
     registry = get_floor_registry()
+    registry = _filter_registry_for_user(user, registry)
 
     block = (data.get("block") or "").strip()
     floor = _coerce_int(data.get("floor"))
@@ -221,38 +317,38 @@ def _validate_scan_payload(data):
 
 
 def home_view(request):
-    return render(request, "heatmap/landing.html", _viewer_context())
+    return render(request, "heatmap/landing.html", _viewer_context(request.user))
 
 
 @login_required
 def heatmap_view(request):
-    return render(request, "heatmap/home.html", _viewer_context())
+    return render(request, "heatmap/home.html", _viewer_context(request.user))
 
 
 def dti_view(request):
-    return render(request, "heatmap/dti.html", _viewer_context())
+    return render(request, "heatmap/dti.html", _viewer_context(request.user))
 
 
 def project_structure_view(request):
-    return render(request, "heatmap/project_structure.html", _viewer_context())
+    return render(request, "heatmap/project_structure.html", _viewer_context(request.user))
 
 
 def data_models_view(request):
-    return render(request, "heatmap/data_models.html", _viewer_context())
+    return render(request, "heatmap/data_models.html", _viewer_context(request.user))
 
 
 def workflow_view(request):
-    return render(request, "heatmap/workflow.html", _viewer_context())
+    return render(request, "heatmap/workflow.html", _viewer_context(request.user))
 
 
 @login_required
 def scan_view(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden("Admin access required.")
+    if not _user_can_scan(request.user):
+        return HttpResponseForbidden("Scan access required.")
 
-    context = _viewer_context()
+    context = _viewer_context(request.user)
     if request.method == "POST":
-        payload, error = _validate_scan_payload(request.POST)
+        payload, error = _validate_scan_payload(request.POST, request.user)
         if error:
             messages.error(request, error)
             return redirect("scan")
@@ -260,11 +356,94 @@ def scan_view(request):
         scan = Scan.objects.create(**payload)
         ensure_service_provider(scan.mode, scan.service_provider)
         refresh_cell_aggregates(scan)
-        _notify_weak_clusters(scan.floor_plan, scan.mode, scan.service_provider)
         messages.success(request, "Scan saved.")
         return redirect("scan")
 
     return render(request, "heatmap/scan.html", context)
+
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect("heatmap_view")
+
+    if request.method == "POST":
+        form = SignupForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.email = form.cleaned_data.get("email", "")
+            user.save()
+            institution = form.cleaned_data["institution"]
+            InstitutionMembership.objects.create(
+                user=user,
+                institution=institution,
+                status=InstitutionMembership.PENDING,
+                role=InstitutionMembership.MEMBER,
+            )
+            messages.success(request, "Account created. Await institution approval.")
+            return redirect("login")
+    else:
+        form = SignupForm()
+
+    return render(request, "registration/signup.html", {"form": form})
+
+
+@login_required
+def institution_requests_view(request):
+    if not _is_institution_admin(request.user):
+        return HttpResponseForbidden("Institution admin access required.")
+
+    if request.user.is_staff or request.user.is_superuser:
+        admin_institutions = Institution.objects.filter(is_active=True)
+    else:
+        admin_institutions = Institution.objects.filter(
+            is_active=True,
+            memberships__user=request.user,
+            memberships__status=InstitutionMembership.APPROVED,
+            memberships__role=InstitutionMembership.ADMIN,
+        ).distinct()
+
+    if request.method == "POST":
+        membership_id = request.POST.get("membership_id")
+        action = request.POST.get("action")
+        membership = (
+            InstitutionMembership.objects.select_related("institution", "user")
+            .filter(id=membership_id, institution__in=admin_institutions)
+            .first()
+        )
+        if not membership:
+            messages.error(request, "Request not found.")
+            return redirect("institution_requests")
+
+        if action == "approve" or action == "approve_scan":
+            membership.status = InstitutionMembership.APPROVED
+            membership.approved_at = timezone.now()
+            if action == "approve_scan":
+                membership.can_scan = True
+                membership.save(update_fields=["status", "approved_at", "can_scan"])
+            else:
+                membership.save(update_fields=["status", "approved_at"])
+            messages.success(request, f"Approved {membership.user.username}.")
+        elif action == "reject":
+            membership.status = InstitutionMembership.REJECTED
+            membership.approved_at = None
+            membership.save(update_fields=["status", "approved_at"])
+            messages.success(request, f"Rejected {membership.user.username}.")
+        else:
+            messages.error(request, "Invalid action.")
+        return redirect("institution_requests")
+
+    pending = InstitutionMembership.objects.filter(
+        status=InstitutionMembership.PENDING,
+        institution__in=admin_institutions,
+    ).select_related("user", "institution")
+
+    return render(
+        request,
+        "heatmap/institution_requests.html",
+        {
+            "pending": pending,
+        },
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -426,6 +605,8 @@ def heatmap_api(request):
     floor_plan = get_floor_plan(block, floor)
     if not floor_plan:
         return JsonResponse({"error": "floor not configured"}, status=404)
+    if not _user_can_access_floor(request.user, floor_plan):
+        return JsonResponse({"error": "access denied"}, status=403)
 
     queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
 
@@ -488,6 +669,8 @@ def weak_clusters_api(request):
     floor_plan = get_floor_plan(block, floor)
     if not floor_plan:
         return JsonResponse({"error": "floor not configured"}, status=404)
+    if not _user_can_access_floor(request.user, floor_plan):
+        return JsonResponse({"error": "access denied"}, status=403)
 
     queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
     if not queryset.exists():
@@ -530,6 +713,8 @@ def best_provider_api(request):
     floor_plan = get_floor_plan(block, floor)
     if not floor_plan:
         return JsonResponse({"error": "floor not configured"}, status=404)
+    if not _user_can_access_floor(request.user, floor_plan):
+        return JsonResponse({"error": "access denied"}, status=403)
 
     queryset = CellAggregate.objects.filter(
         floor_plan=floor_plan,
@@ -560,56 +745,6 @@ def best_provider_api(request):
     return JsonResponse({"cells": list(best_by_cell.values())})
 
 
-@csrf_exempt
-def notifications_subscribe_api(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST required"}, status=405)
-
-    try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "invalid JSON"}, status=400)
-
-    subscription = payload.get("subscription") or {}
-    endpoint = subscription.get("endpoint") or ""
-    keys = subscription.get("keys") or {}
-    p256dh = keys.get("p256dh") or ""
-    auth = keys.get("auth") or ""
-
-    if not endpoint or not p256dh or not auth:
-        return JsonResponse({"error": "invalid subscription"}, status=400)
-
-    block = (payload.get("block") or "").strip()
-    floor = _coerce_int(payload.get("floor"))
-
-    NotificationSubscription.objects.update_or_create(
-        endpoint=endpoint,
-        defaults={
-            "p256dh": p256dh,
-            "auth": auth,
-            "block": block,
-            "floor": floor,
-        },
-    )
-    return JsonResponse({"status": "ok"})
-
-
-@csrf_exempt
-def notifications_unsubscribe_api(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST required"}, status=405)
-
-    try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "invalid JSON"}, status=400)
-
-    endpoint = (payload.get("endpoint") or "").strip()
-    if not endpoint:
-        return JsonResponse({"error": "endpoint required"}, status=400)
-
-    NotificationSubscription.objects.filter(endpoint=endpoint).delete()
-    return JsonResponse({"status": "ok"})
 
 
 def next_scan_api(request):
@@ -630,6 +765,8 @@ def next_scan_api(request):
     floor_plan = get_floor_plan(block, floor)
     if not floor_plan:
         return JsonResponse({"error": "floor not configured"}, status=404)
+    if not _user_can_access_floor(request.user, floor_plan):
+        return JsonResponse({"error": "access denied"}, status=403)
 
     registry = get_floor_registry()
     floor_cfg = registry["floor_configs"].get(f"{block}:{floor}", {})
@@ -705,7 +842,7 @@ def config_api(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "authentication required"}, status=401)
 
-    registry = get_floor_registry()
+    registry = _filter_registry_for_user(request.user, get_floor_registry())
     return JsonResponse(
         {
             "blocks": registry["blocks"],
@@ -725,16 +862,19 @@ def config_api(request):
 def scan_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=405)
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+    if not _user_can_scan(request.user):
+        return JsonResponse({"error": "scan access required"}, status=403)
 
     data = _parse_scan_payload(request)
-    payload, error = _validate_scan_payload(data)
+    payload, error = _validate_scan_payload(data, request.user)
     if error:
         return JsonResponse({"error": error}, status=400)
 
     scan = Scan.objects.create(**payload)
     ensure_service_provider(scan.mode, scan.service_provider)
     refresh_cell_aggregates(scan)
-    _notify_weak_clusters(scan.floor_plan, scan.mode, scan.service_provider)
 
     return JsonResponse(
         {
@@ -765,104 +905,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", () => {
   // Online-only app: allow the request to hit the network.
 });
-
-self.addEventListener("push", (event) => {
-  let payload = {};
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch (err) {
-    payload = { title: "NetSense Update", body: event.data ? event.data.text() : "" };
-  }
-  const title = payload.title || "NetSense Update";
-  const options = {
-    body: payload.body || "New signal intelligence available.",
-    icon: payload.icon || "/static/logo.jpeg",
-    badge: payload.badge || "/static/logo.jpeg",
-    data: payload.data || { url: "/" },
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (client.url.includes(target) && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(target);
-      }
-      return undefined;
-    })
-  );
-});
 """
     response = HttpResponse(content, content_type="application/javascript; charset=utf-8")
     response["Cache-Control"] = "no-cache"
     return response
-
-
-def _send_web_push(subscription: NotificationSubscription, payload: dict[str, Any]) -> bool:
-    vapid_public = getattr(settings, "VAPID_PUBLIC_KEY", "")
-    vapid_private = getattr(settings, "VAPID_PRIVATE_KEY", "")
-    vapid_email = getattr(settings, "VAPID_CLAIMS_EMAIL", "mailto:admin@example.com")
-    if not vapid_public or not vapid_private:
-        return False
-
-    try:
-        from pywebpush import webpush, WebPushException
-    except Exception:
-        return False
-
-    try:
-        webpush(
-            subscription_info={
-                "endpoint": subscription.endpoint,
-                "keys": {
-                    "p256dh": subscription.p256dh,
-                    "auth": subscription.auth,
-                },
-            },
-            data=json.dumps(payload),
-            vapid_private_key=vapid_private,
-            vapid_claims={"sub": vapid_email},
-        )
-        return True
-    except Exception as exc:
-        if isinstance(exc, WebPushException):
-            NotificationSubscription.objects.filter(endpoint=subscription.endpoint).delete()
-        return False
-
-
-def _notify_weak_clusters(floor_plan, mode: str, service_provider: str):
-    queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
-    points = {}
-    for row in queryset:
-        points[(row.cell_x, row.cell_y)] = (float(row.median_signal), int(row.scan_count))
-    clusters = find_weak_clusters(points, threshold=-80)
-    if not clusters:
-        return
-
-    block_code = floor_plan.block.code if floor_plan.block_id else ""
-    floor_number = floor_plan.number if floor_plan else None
-    cluster_count = len(clusters)
-    payload = {
-        "title": "Weak zones detected",
-        "body": f"{block_code} Floor {floor_number}: {cluster_count} weak clusters found.",
-        "data": {"url": "/heatmap/"},
-    }
-
-    subscriptions = NotificationSubscription.objects.all()
-    for sub in subscriptions:
-        if sub.block and sub.block != block_code:
-            continue
-        if sub.floor is not None and sub.floor != floor_number:
-            continue
-        _send_web_push(sub, payload)
 
 
 def manifest_view(_request):

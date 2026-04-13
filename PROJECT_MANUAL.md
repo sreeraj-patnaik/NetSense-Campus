@@ -54,9 +54,9 @@ Conventions: **Bold** highlights terms; `monospace` is code, paths, or API names
 
 ## 1. Abstract
 
-**NetSense Campus (NSC)** is a web application that makes **indoor radio signal quality** visible on a **floor plan**. The system collects **Wi‑Fi** and **cellular (mobile)** signal samples aligned to a **discrete grid** over each building floor. Raw measurements are stored as **Scan** records. For each grid cell, the application maintains **CellAggregate** rows that store the **median** signal strength (in dBm) and a **scan count**, both for a specific **service provider** and for an **all providers** combined view.
+**NetSense Campus (NSC)** is a web application that makes **indoor radio signal quality** visible on a **floor plan**. The system collects **Wi‑Fi** and **cellular (mobile)** signal samples aligned to a **discrete grid** over each building floor. Raw measurements are stored as **Scan** records. For each grid cell, the application maintains **CellAggregate** rows that store the **median** signal strength (in dBm), **variance**, and a **scan count**, both for a specific **service provider** and for an **all providers** combined view.
 
-The server exposes a **heatmap API** that returns per-cell values and, optionally, **interpolated** estimates for cells that have no direct measurements. Interpolation uses **inverse distance weighting** on the grid, respects **blocked** cells (walls, voids), and does not chain through synthetic values in a single pass. A **browser-based viewer** renders the data with **dynamic scaling**, optional **confidence shading**, and two visual modes: **blended** (radial gradients) and **contour** (quantized bands). A separate **authenticated scan page** and a **machine-facing scan API** support data entry from staff or external clients (for example, Android scanners).
+The server exposes a **heatmap API** that returns per-cell values with **confidence** and, optionally, **interpolated** estimates for cells that have no direct measurements. Interpolation uses **inverse distance weighting** on the grid, respects **blocked** cells (walls, voids), and does not chain through synthetic values in a single pass. A **browser-based viewer** renders the data with **dynamic scaling**, **confidence shading**, **weak-zone overlays**, and **best-provider** mode. A separate **authenticated scan page** and **scan API** support data entry from approved users.
 
 The implementation is intentionally **small and maintainable**: one primary Django app (`heatmap`), minimal URL surface, configuration through Django **settings** with **database-backed overrides** for blocks, floors, grids, and floor images. This manual explains **what** each part does and **why** design choices were made, then documents **APIs**, **algorithms**, **deployment**, and **operations** in detail suitable for academic or industry handover.
 
@@ -104,7 +104,7 @@ Stakeholders need answers to: *Where is coverage weak?* *Does mobile or Wi‑Fi 
 ### 3.4 Out of scope (current MVP)
 
 - Real-time push updates (the heatmap **polls** via fetch on user actions and resize).  
-- User accounts per scanner (only **staff login** for the web scan page; API scan is unauthenticated by design but should be protected externally if exposed).  
+- Advanced role hierarchies beyond institution membership and admin approval.  
 - Automatic calibration of floor images to real-world coordinates (grid is **abstract** relative to the image).  
 - 3D or multi-floor interpolation across vertical space.
 
@@ -114,6 +114,8 @@ Stakeholders need answers to: *Where is coverage weak?* *Does mobile or Wi‑Fi 
 
 | Term | Meaning |
 |------|---------|
+| **Institution** | Organization boundary for access control. |
+| **Membership** | User access request and approval status for an institution. |
 | **Block** | A building or wing identifier (for example `A`, `B`). |
 | **Floor plan** | Database row linking a block to a floor number, grid size, optional image, and blocked cells. |
 | **Cell** | One element of the grid, addressed by `cell_x`, `cell_y` (origin typically top-left in UI math). |
@@ -130,9 +132,9 @@ Stakeholders need answers to: *Where is coverage weak?* *Does mobile or Wi‑Fi 
 
 ### 5.1 Logical flow
 
-Data enters through either the **web scan form** (authenticated) or **`POST /api/scan/`** (CSRF-exempt JSON or form). Each accepted sample creates a **Scan** row and triggers **`refresh_cell_aggregates`**, which updates **CellAggregate** for that cell.
+| /api/scan/ | Auth required; CSRF exempt. |
 
-Consumers call **`GET /api/heatmap/`** with block, floor, mode, and optional provider. The view reads aggregates, optionally **rebuilds** them if missing, optionally **appends interpolated** points, and returns JSON. The **heatmap page** JavaScript fetches that JSON and paints to a **canvas** layered on the floor image.
+Consumers call **`GET /api/heatmap/`** with block, floor, mode, and optional provider. The view reads aggregates, optionally **rebuilds** them if missing, optionally **appends interpolated** points, and returns JSON. Analysis endpoints provide **weak-zone clusters**, **best-provider** cells, and **next-scan** suggestions. The **heatmap page** JavaScript fetches that JSON and paints to a **canvas** layered on the floor image.
 
 ### 5.2 Why this shape
 
@@ -143,7 +145,7 @@ Consumers call **`GET /api/heatmap/`** with block, floor, mode, and optional pro
 ### 5.3 Diagram (text)
 
 ```
-Clients (browser, Android) --> POST /api/scan/ --> Scan
+| /api/scan/ | Auth required; CSRF exempt. |
                                       |
                                       v
                             refresh_cell_aggregates
@@ -210,25 +212,33 @@ These exist so the app can run **before** any `FloorPlan` rows exist, and as num
 
 ## 8. Data model and design rationale
 
-### 8.1 Block
+### 8.1 Institution
+
+Represents the **organization boundary** for access control (university, campus, client).
+
+### 8.2 InstitutionMembership
+
+Links users to institutions with `pending`, `approved`, or `rejected` status. Institution admins approve access.
+
+### 8.3 Block
 
 Represents a **building code**. `is_active` excludes stale blocks from the registry without deleting history.
 
-### 8.2 FloorPlan
+### 8.4 FloorPlan
 
 One row per **(block, floor number)**. Holds **authoritative** `grid_rows` and `grid_cols`, **blocked_cells** JSON, optional **image**, and **is_active**.
 
 **Why JSON for blocked cells:** Flexible admin entry (IDs, coordinates, or mixed legacy shapes) normalized by `blocked_cell_ids()` in Python.
 
-### 8.3 Scan
+### 8.5 Scan
 
 A single **raw** observation: foreign key to `FloorPlan`, cell coordinates, `mode`, optional `service_provider`, `network_name`, integer `signal_strength` (dBm), timestamp.
 
 **Why `cell_id` on save:** Fast indexing and consistency checks; recomputed whenever the scan is saved from `cell_y * grid_cols + cell_x`.
 
-### 8.4 CellAggregate
+### 8.6 CellAggregate
 
-Summaries for fast heatmap queries. Unique on `(floor_plan, cell_x, cell_y, mode, service_provider, is_all_providers)`.
+Summaries for fast heatmap queries with `median_signal`, `signal_variance`, and `scan_count`. Unique on `(floor_plan, cell_x, cell_y, mode, service_provider, is_all_providers)`.
 
 **Why `is_all_providers` flag:** Distinguishes the combined bucket (`True`, empty `service_provider`) from a real provider name without overloading NULL semantics across databases.
 
@@ -303,7 +313,7 @@ If **no** active floor plans, builds the same keys from `HEATMAP_*` settings.
 ### 11.3 Web versus API
 
 - **Web `/scan/`** uses POST form data, CSRF token, login required—suitable for trusted staff browsers.  
-- **`/api/scan/`** is POST-only, CSRF-exempt—**why:** simple integration for non-browser clients; **trade-off:** must be protected externally (VPN, API gateway, firewall) if public.
+| /api/scan/ | Auth required; CSRF exempt. |
 
 ---
 
@@ -426,8 +436,9 @@ Rebuilds aggregates for every block/floor in the registry. **Why:** maintenance 
 | Route | Notes |
 |-------|-------|
 | `/scan/` | Login required; CSRF on POST. |
-| `/api/scan/` | No login; CSRF exempt—**treat as sensitive**. |
-| `/api/heatmap/`, `/api/config/` | Read-only JSON; public. |
+| /api/scan/ | Auth required; CSRF exempt. |
+| /api/heatmap/, /api/config/ | Read-only JSON; auth required. |
+| /api/weak-clusters/, /api/best-provider/, /api/next-scan/ | Analysis JSON; auth required. |
 
 Session and CSRF cookies become **secure** when `DEBUG` is false, alongside HTTPS headers.
 
@@ -503,7 +514,7 @@ python manage.py runserver
 ## 22. Demonstration workflow
 
 1. Open `http://127.0.0.1:8000/` for the landing page.  
-2. Open `http://127.0.0.1:8000/heatmap/` for the public heatmap.  
+2. Open `http://127.0.0.1:8000/heatmap/` for the authenticated heatmap.  
 3. Log in at `http://127.0.0.1:8000/login/`, then capture scans at `http://127.0.0.1:8000/scan/`.  
 4. Inspect JSON, for example:
 
@@ -580,7 +591,7 @@ Early schema stored block/floor on `Scan` directly. Later migrations introduce *
 | URL | Purpose |
 |-----|---------|
 | `/` | Landing |
-| `/heatmap/` | Public heatmap |
+| `/heatmap/` | authenticated heatmap |
 | `/scan/` | Authenticated scan capture |
 | `/login/`, `/logout/` | Auth |
 | `/admin/` | Django admin |
@@ -618,3 +629,6 @@ Early schema stored block/floor on `Scan` directly. Later migrations introduce *
 ---
 
 *End of NetSense Campus Project Manual.*
+
+
+

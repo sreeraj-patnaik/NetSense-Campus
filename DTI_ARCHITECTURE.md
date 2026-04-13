@@ -24,7 +24,9 @@ This page presents the system through a Design Thinking & Innovation lens while 
 
 ### Prototype (System Architecture Choices)
 
-- Django monolith with three APIs: `/api/scan/`, `/api/heatmap/`, `/api/config/`.
+- Django monolith with core APIs: `/api/scan/`, `/api/heatmap/`, `/api/config/`.
+- Analysis APIs: `/api/weak-clusters/`, `/api/best-provider/`, `/api/next-scan/`.
+- Institution access control with approval-based membership.
 - Grid-based indexing: `cell_id = cell_y * cols + cell_x`.
 - Dual aggregation buckets: per-provider and all-providers.
 
@@ -38,9 +40,12 @@ This page presents the system through a Design Thinking & Innovation lens while 
 
 - **Dual aggregates**: `CellAggregate` stores per-provider and all-provider medians for fast queries.
 - **Median aggregation**: uses `statistics.median` to reduce noise in cell values.
+- **Confidence scoring**: combines scan count, variance, and recency.
 - **Interpolation formula**: inverse-square distance * sqrt(count) weighting for neighbor influence.
 - **Explicit labeling**: interpolated cells are tagged `interpolated: true` in API payloads.
 - **Dynamic scaling**: UI normalizes min/max per fetch for consistent readability.
+- **Weak-zone clustering**: groups low-signal cells for rapid triage.
+- **Best-provider view**: highlights strongest carrier per cell.
 
 ## Traceable Data Flow
 
@@ -53,4 +58,10 @@ GET /api/heatmap/
   -> query aggregates
   -> optional interpolation
   -> JSON payload for UI
+GET /api/weak-clusters/
+  -> group weak cells into clusters
+GET /api/best-provider/
+  -> strongest provider per cell
+GET /api/next-scan/
+  -> next scan target based on confidence
 ```

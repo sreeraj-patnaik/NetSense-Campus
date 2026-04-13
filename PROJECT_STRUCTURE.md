@@ -26,7 +26,9 @@ nsc/
     heatmap/home.html
     heatmap/scan.html
     heatmap/landing.html
+    heatmap/institution_requests.html
     registration/login.html
+    registration/signup.html
   netsense/
     settings.py
     urls.py
@@ -36,6 +38,8 @@ nsc/
     models.py
     views.py
     urls.py
+    forms.py
+    context_processors.py
     utils.py
     aggregation.py
     admin.py
@@ -53,9 +57,11 @@ nsc/
 
 ## Main App (`heatmap/`)
 
-- `models.py`: Block, FloorPlan, Scan, CellAggregate.
-- `views.py`: page views + JSON APIs.
+- `models.py`: Institution, Membership, Block, FloorPlan, Scan, CellAggregate.
+- `views.py`: page views + JSON APIs + access control.
 - `urls.py`: app routes.
+- `forms.py`: signup forms.
+- `context_processors.py`: institution admin flag for templates.
 - `utils.py`: floor registry, blocked cell logic, interpolation.
 - `aggregation.py`: median aggregation and rebuild logic.
 - `admin.py`: admin UI configuration.

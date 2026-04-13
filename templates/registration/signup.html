@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-hero">
+    <div class="container auth-grid">
+        <div class="auth-copy">
+            <span class="pill">Institution access</span>
+            <h1>Create your NetSense account</h1>
+            <p>Select your institution and request access to its heatmap workspace.</p>
+            <div class="auth-highlights">
+                <div>
+                    <strong>Institution routing</strong>
+                    <span>Maps are scoped by organization.</span>
+                </div>
+                <div>
+                    <strong>Admin approval</strong>
+                    <span>Requests are verified before access.</span>
+                </div>
+                <div>
+                    <strong>Secure by default</strong>
+                    <span>Role-based access controls.</span>
+                </div>
+            </div>
+        </div>
+        <div class="auth-card">
+            <h2>Sign Up</h2>
+            <p>Submit your request for institution access.</p>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="btn primary" type="submit">Create Account</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

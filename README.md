@@ -9,7 +9,7 @@
 
 **Document purpose:** Single authoritative, implementation-level reference for the **nsc** repository: architecture, directory layout, Django modules, HTTP APIs, data model, every aggregation/interpolation/rendering formula, client behavior, management commands, and operational notes.
 
-**Last updated:** 2026-04-06
+**Last updated:** 2026-04-13
 **Stack:** Django 5.x, SQLite or PostgreSQL (via `DATABASE_URL`), WhiteNoise, Gunicorn (production), optional Cloudinary media storage, PWA shell.
 
 ---
@@ -48,9 +48,10 @@
 
 - Accepts **Wiâ€‘Fi** and **mobile** signal samples on a **per-floor grid** (`cell_x`, `cell_y`).
 - Persists raw rows as **`Scan`** records.
-- Maintains **`CellAggregate`** rows: **median** signal strength and **scan count** per cell, per mode, for (a) a specific **service provider** and (b) an **â€œall providersâ€** bucket.
-- Serves **`GET /api/heatmap/`** with optional **distance-weighted interpolation** for empty, non-blocked cells.
-- Renders a **browser heatmap** (radial blend or contour bands) with **dynamic min/max scaling**, optional **confidence overlay**, and distinct coloring for **interpolated** vs **measured** cells.
+- Maintains **`CellAggregate`** rows: **median**, **variance**, and **scan count** per cell, per mode, for (a) a specific **service provider** and (b) an **all providers** bucket.
+- Serves **`GET /api/heatmap/`** with **confidence** and optional **distance-weighted interpolation** for empty, non-blocked cells.
+- Adds analysis endpoints for **weak-zone clustering**, **best-provider view**, and **next-scan suggestions**.
+- Renders a **browser heatmap** (radial blend or contour bands) with **confidence overlay**, **weak-zone overlay**, and **best-provider coloring**.
 
 ---
 
@@ -143,18 +144,21 @@ nsc/
 |------|------|------|------|
 | `` | `home` | `home_view` | Public |
 | `sw.js` | `service_worker` | `service_worker` | Public |
-| `heatmap/` | `heatmap_view` | `heatmap_view` | Public |
+| `heatmap/` | `heatmap_view` | `heatmap_view` | **Auth required** |
 | `scan/` | `scan` | `scan_view` | **`@login_required`** |
-| `api/heatmap/` | `heatmap_api` | `heatmap_api` | Public (JSON) |
-| `api/scan/` | `scan_api` | `scan_api` | Public; **`@csrf_exempt`** |
-| `api/config/` | `config_api` | `config_api` | Public (JSON) |
+| `api/heatmap/` | `heatmap_api` | `heatmap_api` | **Auth required** |
+| `api/weak-clusters/` | `weak_clusters_api` | `weak_clusters_api` | **Auth required** |
+| `api/best-provider/` | `best_provider_api` | `best_provider_api` | **Auth required** |
+| `api/next-scan/` | `next_scan_api` | `next_scan_api` | **Auth required** |
+| `api/scan/` | `scan_api` | `scan_api` | **Auth required**; **`@csrf_exempt`** |
+| `api/config/` | `config_api` | `config_api` | **Auth required** |
 
 **Resolved URLs (typical dev):**
 
 - Landing: `http://127.0.0.1:8000/`
-- Heatmap UI: `http://127.0.0.1:8000/heatmap/`
+- Heatmap UI: `http://127.0.0.1:8000/heatmap/` (login required)
 - Scan UI: `http://127.0.0.1:8000/scan/` (login required)
-- APIs: `/api/heatmap/`, `/api/scan/`, `/api/config/`
+- APIs: `/api/heatmap/`, `/api/scan/`, `/api/config/`, `/api/weak-clusters/`, `/api/best-provider/`, `/api/next-scan/`
 
 ---
 
@@ -273,6 +277,7 @@ All in **`heatmap/models.py`**.
 | `service_provider` | string | **Empty string** when `is_all_providers=True` |
 | `is_all_providers` | bool | **True** = bucket over all providers for that cell/mode |
 | `median_signal` | `FloatField` | Python `statistics.median` |
+| `signal_variance` | `FloatField` | Python `statistics.variance` (0 if <2 samples) |
 | `scan_count` | `PositiveIntegerField` | Number of scans in that bucket |
 | `updated_at` | `auto_now` | |
 
@@ -398,6 +403,7 @@ Steps in order:
 ### 9.4 API: `scan_api`
 
 - **405** if not POST.
+- **401** if not authenticated.
 - Uses `_parse_scan_payload` (supports JSON).
 - **400** JSON `{"error": "<message>"}` on validation failure.
 - **200** on success:
@@ -430,7 +436,7 @@ Steps in order:
 Parameters: `floor_plan`, `cell_x`, `cell_y`, `mode`, `service_provider`, `is_all_providers`, `signal_values` (non-empty list).
 
 - `cell_id = cell_to_id(cell_x, cell_y, floor_plan.grid_cols)`.
-- `CellAggregate.objects.update_or_create(...)` with unique fields + `defaults`: `median_signal`, `scan_count=len(signal_values)`, `cell_id`.
+- `CellAggregate.objects.update_or_create(...)` with unique fields + `defaults`: `median_signal`, `signal_variance`, `scan_count=len(signal_values)`, `cell_id`.
 
 ### 10.3 `refresh_cell_aggregates(scan)` â€” **atomic transaction**
 
@@ -506,7 +512,7 @@ Rounded to **2 decimal places** in output.
 
 ## 12. Heatmap API (`heatmap_api`)
 
-**Method:** GET only (implicit).
+**Method:** GET only (implicit). **Auth required.**
 
 ### 12.1 Query parameters
 
@@ -542,6 +548,7 @@ Each element:
   "cell_y": <int>,
   "signal": <float rounded 2dp>,
   "count": <int>,
+  "confidence": <float 0..1>,
   "interpolated": false
 }
 ```
@@ -569,6 +576,8 @@ If `mode` is **not** `wifi` or `mobile`, the queryset **does not** filter by mod
 
 ## 13. Config API
 
+**Auth required.**
+
 **`GET /api/config/`** returns JSON:
 
 ```json
@@ -584,11 +593,32 @@ Same structure as used by server-rendered templates for the heatmap/scan pages.
 
 ---
 
+## 13.1 Analysis APIs
+
+| Endpoint | Purpose | Notes |
+|----------|---------|------|
+| `GET /api/weak-clusters/` | Weak-zone clustering | Returns `clusters` with `size`, `avg_signal`, `cells` |
+| `GET /api/best-provider/` | Best provider per cell | Returns `cells` with `best_provider` and `signal` |
+| `GET /api/next-scan/` | Next scan suggestion | Returns `cell_x`, `cell_y` for highest-priority scan |
+
+All analysis endpoints require authentication and the standard `block`, `floor`, `mode` parameters.
+
+---
+
+## 13.2 Institution Access Control
+
+- Users sign up and select an institution.
+- Institution admins approve membership requests.
+- Approved users only see blocks/floors for their institution.
+- Institution admins can review pending requests at `/institution-requests/`.
+
+---
+
 ## 14. Frontend: heatmap viewer (`static/heatmap/js/home.js`)
 
 ### 14.1 Config (`window.NETSENSE_CONFIG`)
 
-Injected in `heatmap/home.html`: `rows`, `cols`, `defaultFloorImage`, `heatmapApiUrl`, `blockFloors`, `floorConfigs`, `serviceProviders`.
+Injected in `heatmap/home.html`: `rows`, `cols`, `defaultFloorImage`, `heatmapApiUrl`, `weakClustersApiUrl`, `bestProviderApiUrl`, `blockFloors`, `floorConfigs`, `serviceProviders`, `accessStatus`.
 
 ### 14.2 Data fetch
 
@@ -632,9 +662,14 @@ Capped behavior: higher density â†’ lower spread multiplier. Manual spread:
 
 ### 14.7 Confidence overlay
 
-When enabled: `maxCount = max(1, ...realPoints counts)`; per real point, `confidence = clamp01(count / maxCount)`, fill rect for cell with `rgba(17,24,39, 0.35 * confidence)`.
+When enabled: the client uses backend `confidence` (count + variance + recency) to shade low-confidence cells with a gray tint.
 
-### 14.8 Layout
+### 14.8 Weak zones + best provider
+
+- Weak zones draw a red overlay for clustered cells below the threshold.
+- Best-provider view colors each cell by the strongest provider.
+
+### 14.9 Layout
 
 - Canvas sized to `mapWrap` bounding rect; resize listener refetches draw.
 - Grid lines via CSS `repeating-linear-gradient` on `#gridLayer`.
@@ -647,6 +682,7 @@ When enabled: `maxCount = max(1, ...realPoints counts)`; per real point, `confid
 - Hidden inputs `cell_x`, `cell_y` submitted with form; **required** in HTML.
 - Provider input uses a **datalist** sourced from provider registry; free text allowed.
 - **Auto Scan** (mobile-only UI): attempts to infer **Wi-Fi vs Mobile** using `navigator.connection` and updates mode + provider input.
+- **Suggest Next Scan** button calls `/api/next-scan/` and highlights the recommended cell.
 - Resize redraws selection marker.
 
 ---
@@ -697,10 +733,10 @@ Iterates registry blocks/floors, `ensure_floor_plan`, `rebuild_aggregates_for_fl
 | Surface | CSRF | Auth |
 |---------|------|------|
 | `/scan/` POST | **Required** (form token) | Login required |
-| `/api/scan/` | **Exempt** | None (any client can POST) |
-| `/api/heatmap/`, `/api/config/` | GET only | Public |
+| `/api/scan/` | **Exempt** | **Auth required** |
+| `/api/heatmap/`, `/api/config/`, `/api/weak-clusters/`, `/api/best-provider/`, `/api/next-scan/` | GET only | **Auth required** |
 
-**Operational implication:** Protect `/api/scan/` at the network layer (API keys, firewall, reverse proxy) if exposed on the public internet.
+**Operational implication:** Access is scoped by **institution membership**. Users without approval receive `403` on heatmap endpoints and no blocks in the UI.
 
 ---
 

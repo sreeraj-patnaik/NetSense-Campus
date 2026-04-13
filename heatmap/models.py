@@ -1,7 +1,68 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
+
+
+class Institution(models.Model):
+    name = models.CharField(max_length=160, unique=True)
+    code = models.CharField(max_length=40, unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class InstitutionMembership(models.Model):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (PENDING, "Pending"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
+    ]
+
+    MEMBER = "member"
+    ADMIN = "admin"
+
+    ROLE_CHOICES = [
+        (MEMBER, "Member"),
+        (ADMIN, "Admin"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="institution_memberships")
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name="memberships")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=PENDING)
+    role = models.CharField(max_length=12, choices=ROLE_CHOICES, default=MEMBER)
+    can_scan = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "institution"], name="uniq_institution_membership"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} -> {self.institution} ({self.status})"
 
 
 class Block(models.Model):
+    institution = models.ForeignKey(
+        Institution,
+        on_delete=models.SET_NULL,
+        related_name="blocks",
+        null=True,
+        blank=True,
+    )
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=120, blank=True)
     is_active = models.BooleanField(default=True)
@@ -183,21 +244,6 @@ class CellAggregate(models.Model):
         return f"{block_code}-F{floor_number} ({self.cell_x},{self.cell_y}) {self.mode} {provider}"
 
 
-class NotificationSubscription(models.Model):
-    endpoint = models.TextField(unique=True)
-    p256dh = models.CharField(max_length=255)
-    auth = models.CharField(max_length=255)
-    block = models.CharField(max_length=20, blank=True)
-    floor = models.IntegerField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_seen_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-last_seen_at"]
-
-    def __str__(self) -> str:
-        scope = f"{self.block}-F{self.floor}" if self.block and self.floor is not None else "all"
-        return f"{scope} subscription"
 
 
 

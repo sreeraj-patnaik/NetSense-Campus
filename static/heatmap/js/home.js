@@ -20,7 +20,6 @@
     const autoRefreshToggle = document.getElementById("autoRefreshToggle");
     const refreshInterval = document.getElementById("refreshInterval");
     const exportBtn = document.getElementById("exportBtn");
-    const notifyBtn = document.getElementById("notifyBtn");
     const mapWrap = document.getElementById("mapWrap");
     const mapStatus = document.getElementById("mapStatus");
     const floorMap = document.getElementById("floorMap");
@@ -34,7 +33,6 @@
     let refreshTimer = null;
     let weakClusters = [];
     let weakClusterLookup = new Map();
-    let lastWeakClusterDigest = "";
 
     function selectedKey() {
         return `${blockSelect.value}:${floorSelect.value}`;
@@ -160,7 +158,7 @@
 
     function setMapImage() {
         const floorCfg = selectedFloorConfig();
-        floorMap.src = floorCfg.image_url || cfg.defaultFloorImage;
+        floorMap.src = floorCfg.image_url || cfg.defaultFloorImage || "";
     }
 
     function syncMapAspectRatio() {
@@ -196,6 +194,10 @@
     async function loadHeatmap() {
         if (!floorSelect.value) {
             heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+            if (mapStatus && cfg.accessStatus && cfg.accessStatus !== "approved") {
+                mapStatus.textContent = "Access pending approval.";
+                mapWrap.classList.add("is-loading");
+            }
             return;
         }
 
@@ -241,6 +243,13 @@
                 legendMax.textContent = "--";
                 if (mapStatus) {
                     mapStatus.textContent = "Login required for heatmap.";
+                }
+                mapWrap.classList.remove("is-loading");
+                return;
+            }
+            if (response.status === 403) {
+                if (mapStatus) {
+                    mapStatus.textContent = "Access denied for this institution.";
                 }
                 mapWrap.classList.remove("is-loading");
                 return;
@@ -394,7 +403,6 @@
                 weakClusterLookup.set(key, idx);
             });
         });
-        maybeNotifyWeakClusters();
     }
 
     function renderWeakClusters(cellWidth, cellHeight) {
@@ -426,24 +434,6 @@
         weakClusterTooltip.hidden = true;
     }
 
-    function maybeNotifyWeakClusters() {
-        if (!window.NetSenseBridge || typeof window.NetSenseBridge.showNotification !== "function") {
-            return;
-        }
-        const clusterCount = weakClusters.length;
-        if (!clusterCount) {
-            lastWeakClusterDigest = "";
-            return;
-        }
-        const avgSignals = weakClusters.map((cluster) => cluster.avg_signal).join("|");
-        const digest = `${blockSelect.value}:${floorSelect.value}:${modeSelect.value}:${clusterCount}:${avgSignals}`;
-        if (digest === lastWeakClusterDigest) return;
-        lastWeakClusterDigest = digest;
-        window.NetSenseBridge.showNotification(
-            "Weak zones detected",
-            `${blockSelect.value} Floor ${floorSelect.value}: ${clusterCount} weak clusters`
-        );
-    }
 
     function renderProviderOptions() {
         const modeProviders = cfg.serviceProviders?.[modeSelect.value] || [];
@@ -484,56 +474,6 @@
         }
     }
 
-    async function subscribeToNotifications() {
-        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-            if (mapStatus) {
-                mapStatus.textContent = "Notifications not supported in this browser.";
-            }
-            return;
-        }
-        if (!cfg.vapidPublicKey) {
-            if (mapStatus) {
-                mapStatus.textContent = "VAPID key missing. Add VAPID_PUBLIC_KEY in settings.";
-            }
-            return;
-        }
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-            if (mapStatus) {
-                mapStatus.textContent = "Notification permission denied.";
-            }
-            return;
-        }
-        const registration = await navigator.serviceWorker.ready;
-        const sub = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(cfg.vapidPublicKey),
-        });
-        await fetch(cfg.notificationSubscribeUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                subscription: sub.toJSON(),
-                block: blockSelect.value,
-                floor: floorSelect.value,
-            }),
-        });
-        if (notifyBtn) {
-            notifyBtn.textContent = "Notifications Enabled";
-            notifyBtn.disabled = true;
-        }
-    }
-
-    function urlBase64ToUint8Array(base64String) {
-        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-        const rawData = atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-    }
 
     function exportPng() {
         if (!floorMap.complete || heatmapCanvas.width === 0) return;
@@ -591,7 +531,6 @@
     autoRefreshToggle?.addEventListener("change", syncAutoRefresh);
     refreshInterval?.addEventListener("change", syncAutoRefresh);
     exportBtn?.addEventListener("click", exportPng);
-    notifyBtn?.addEventListener("click", subscribeToNotifications);
     window.addEventListener("resize", loadHeatmap);
     mapWrap.addEventListener("mouseleave", hideWeakTooltip);
     mapWrap.addEventListener("mousemove", function (event) {
@@ -623,10 +562,6 @@
         providerSelect.disabled = true;
         interpolateToggle.disabled = true;
         confidenceToggle.disabled = true;
-    }
-    if (notifyBtn && "Notification" in window && Notification.permission === "granted") {
-        notifyBtn.textContent = "Notifications Enabled";
-        notifyBtn.disabled = true;
     }
     refresh();
 })();

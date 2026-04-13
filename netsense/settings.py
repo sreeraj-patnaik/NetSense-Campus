@@ -79,6 +79,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "heatmap.context_processors.institution_access",
             ],
         },
     },
@@ -236,13 +237,6 @@ HEATMAP_SERVICE_PROVIDERS = {
 # Example: HEATMAP_BLOCKED_CELLS = {"A:1": [0, 1, 2]}
 HEATMAP_BLOCKED_CELLS = {}
 
-# --------------------------------------------------
-# Web Push (VAPID)
-# --------------------------------------------------
-
-VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
-VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "mailto:admin@example.com")
 
 # --------------------------------------------------
 # Production security (Render)

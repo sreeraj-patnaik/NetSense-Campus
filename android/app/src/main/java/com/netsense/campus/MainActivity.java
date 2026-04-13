@@ -2,15 +2,11 @@ package com.netsense.campus;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.os.Bundle;
 import android.os.Build;
 import android.telephony.SubscriptionManager;
@@ -21,8 +17,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -33,7 +27,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private static final String START_URL = "https://netsense-campus.onrender.com/";
     private static final int PERMISSION_REQUEST_CODE = 1001;
-    private static final String NOTIFICATION_CHANNEL_ID = "netsense_alerts";
     private WebView webView;
 
     @Override
@@ -41,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        createNotificationChannel();
         requestRuntimePermissions();
 
         webView = findViewById(R.id.webview);
@@ -84,8 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.NEARBY_WIFI_DEVICES,
-                Manifest.permission.READ_PHONE_STATE,
-                Manifest.permission.POST_NOTIFICATIONS
+                Manifest.permission.READ_PHONE_STATE
             };
         } else {
             permissions = new String[] {
@@ -108,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
 
     public static class NetSenseBridge {
         private final Context context;
-        private int localNotificationId = 2000;
 
         NetSenseBridge(Context context) {
             this.context = context.getApplicationContext();
@@ -245,53 +235,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             return "{\"mode\":\"" + mode + "\",\"provider\":\"" + provider + "\",\"ssid\":\"" + wifiSsid + "\",\"dbm\":\"" + dbm + "\"}";
-        }
-
-        @JavascriptInterface
-        public void showNotification(String title, String body) {
-            Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-            PendingIntent pendingIntent = null;
-            if (intent != null) {
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                pendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                );
-            }
-
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, MainActivity.NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setContentTitle(title != null && !title.isEmpty() ? title : "NetSense Update")
-                .setContentText(body != null ? body : "New coverage update available.")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setAutoCancel(true);
-
-            if (pendingIntent != null) {
-                builder.setContentIntent(pendingIntent);
-            }
-
-            NotificationManagerCompat manager = NotificationManagerCompat.from(context);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
-                || ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                    == PackageManager.PERMISSION_GRANTED) {
-                manager.notify(localNotificationId++, builder.build());
-            }
-        }
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "NetSense Alerts";
-            String description = "Weak zone and scan notifications";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
         }
     }
 }

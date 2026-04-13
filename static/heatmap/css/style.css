@@ -1671,6 +1671,30 @@ textarea:focus {
     word-break: break-word;
 }
 
+.requests-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.request-row {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.request-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
 /* FOOTER */
 .site-footer {
     position: relative;

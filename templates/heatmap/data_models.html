@@ -21,8 +21,27 @@
                 <p>Campus partition used for structure and navigation.</p>
                 <div class="detail-list">
                     <span><code>code</code></span>
+                    <span><code>institution</code></span>
                     <span><code>name</code></span>
                     <span><code>is_active</code></span>
+                </div>
+            </article>
+            <article class="model-card">
+                <h3>Institution</h3>
+                <p>Organization boundary for access control.</p>
+                <div class="detail-list">
+                    <span><code>name</code></span>
+                    <span><code>code</code></span>
+                    <span><code>is_active</code></span>
+                </div>
+            </article>
+            <article class="model-card">
+                <h3>InstitutionMembership</h3>
+                <p>User access requests and approval status.</p>
+                <div class="detail-list">
+                    <span><code>user</code></span>
+                    <span><code>institution</code></span>
+                    <span><code>status</code></span>
                 </div>
             </article>
             <article class="model-card">
@@ -54,9 +73,10 @@
             </article>
             <article class="model-card">
                 <h3>CellAggregate</h3>
-                <p>Median per cell, per provider with scan counts.</p>
+                <p>Median, variance, and counts per cell/provider.</p>
                 <div class="detail-list">
                     <span><code>median_signal</code></span>
+                    <span><code>signal_variance</code></span>
                     <span><code>scan_count</code></span>
                     <span><code>is_all_providers</code></span>
                 </div>
@@ -114,10 +134,37 @@
             <div class="api-card">
                 <span class="chip">GET /api/heatmap/</span>
                 <h3>Read heatmap</h3>
-                <p>Returns aggregates and optional interpolation; auto-rebuild if empty.</p>
+                <p>Returns aggregates with confidence and optional interpolation.</p>
                 <div class="detail-list">
                     <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
                     <span><code>service_provider</code>, <code>interpolate</code></span>
+                </div>
+            </div>
+            <div class="api-card">
+                <span class="chip">GET /api/weak-clusters/</span>
+                <h3>Weak zones</h3>
+                <p>Returns clustered weak cells with size and average signal.</p>
+                <div class="detail-list">
+                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
+                    <span><code>service_provider</code></span>
+                </div>
+            </div>
+            <div class="api-card">
+                <span class="chip">GET /api/best-provider/</span>
+                <h3>Best provider</h3>
+                <p>Returns the strongest provider per cell for comparison view.</p>
+                <div class="detail-list">
+                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
+                    <span>Aggregates only</span>
+                </div>
+            </div>
+            <div class="api-card">
+                <span class="chip">GET /api/next-scan/</span>
+                <h3>Next scan</h3>
+                <p>Suggests the next cell to scan based on confidence.</p>
+                <div class="detail-list">
+                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
+                    <span><code>service_provider</code></span>
                 </div>
             </div>
             <div class="api-card">

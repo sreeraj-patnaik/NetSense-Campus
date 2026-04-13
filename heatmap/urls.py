@@ -11,6 +11,8 @@ urlpatterns = [
     path("project-structure/", views.project_structure_view, name="project_structure"),
     path("data-models-apis/", views.data_models_view, name="data_models"),
     path("workflow/", views.workflow_view, name="workflow"),
+    path("signup/", views.signup_view, name="signup"),
+    path("institution-requests/", views.institution_requests_view, name="institution_requests"),
     path("scan/", views.scan_view, name="scan"),
     path("api/heatmap/", views.heatmap_api, name="heatmap_api"),
     path("api/weak-clusters/", views.weak_clusters_api, name="weak_clusters_api"),
@@ -19,6 +21,4 @@ urlpatterns = [
     path("api/scan/", views.scan_api, name="scan_api"),
     path("api/config/", views.config_api, name="config_api"),
     path("api/chatbot/", views.chatbot_api, name="chatbot_api"),
-    path("api/notifications/subscribe/", views.notifications_subscribe_api, name="notifications_subscribe_api"),
-    path("api/notifications/unsubscribe/", views.notifications_unsubscribe_api, name="notifications_unsubscribe_api"),
 ]
