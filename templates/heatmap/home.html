@@ -8,6 +8,9 @@
             <span class="pill">Live signal intelligence</span>
             <h1>Heatmap Dashboard</h1>
             <p>Operational view for confidence, weak zones, and best-provider insights.</p>
+            {% if current_institution_name %}
+                <div class="muted">Institution: <strong>{{ current_institution_name }}</strong></div>
+            {% endif %}
             {% if access_status == "pending" %}
                 <div class="auto-scan-status" data-tone="warning">Access pending approval by institution admin.</div>
             {% elif access_status == "none" %}

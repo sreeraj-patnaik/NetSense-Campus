@@ -8,6 +8,9 @@
             <span class="pill">Authenticated capture</span>
             <h1>Admin Scan Console</h1>
             <p>Capture signals with device-assisted scanning, plus guided next-scan suggestions.</p>
+            {% if current_institution_name %}
+                <div class="muted">Institution: <strong>{{ current_institution_name }}</strong></div>
+            {% endif %}
         </div>
         <div class="dashboard-actions">
             <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>

@@ -75,6 +75,14 @@
     function setMapImage() {
         const floorCfg = selectedFloorConfig();
         floorMap.src = floorCfg.image_url || cfg.defaultFloorImage;
+        if (floorMap.complete && floorMap.naturalWidth > 0) {
+            syncMapAspectRatio();
+        }
+    }
+
+    function syncMapAspectRatio() {
+        if (!floorMap.naturalWidth || !floorMap.naturalHeight) return;
+        mapWrap.style.setProperty("--map-aspect", `${floorMap.naturalWidth} / ${floorMap.naturalHeight}`);
     }
 
     function drawSelectedCell(cellX, cellY) {
@@ -220,6 +228,7 @@
         clearSuggestedCell();
     });
     window.addEventListener("resize", function () {
+        syncMapAspectRatio();
         if (cellXInput.value !== "" && cellYInput.value !== "") {
             drawSelectedCell(Number(cellXInput.value), Number(cellYInput.value));
         }
@@ -374,6 +383,7 @@
 
     syncFloorOptions();
     setMapImage();
+    floorMap.addEventListener("load", syncMapAspectRatio);
     renderProviderOptions();
     updateNetworkLabel();
     applyFloorDimensions();

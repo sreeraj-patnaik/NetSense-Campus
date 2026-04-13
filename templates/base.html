@@ -59,10 +59,22 @@
                 </div>
                 <div class="nav-actions">
                     {% if user.is_authenticated %}
-                        <a class="nav-cta" href="{% url 'scan' %}">Data Entry</a>
+                        {% if current_user_can_scan %}
+                            <a class="nav-cta" href="{% url 'scan' %}">Data Entry</a>
+                        {% endif %}
                         {% if is_institution_admin %}
                             <a href="{% url 'institution_requests' %}">Requests</a>
                         {% endif %}
+                        <div class="nav-meta">
+                            <div class="nav-meta-title">{{ current_user_display }}</div>
+                            <div class="nav-meta-sub">
+                                {% if current_institution_name %}
+                                    {{ current_institution_name }}
+                                {% else %}
+                                    No institution
+                                {% endif %}
+                            </div>
+                        </div>
                         <a href="{% url 'admin:index' %}">Admin</a>
                         <form class="nav-logout" method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
@@ -79,6 +91,37 @@
 
     <!-- Main Content -->
     <main>
+        {% if user.is_authenticated %}
+            <section class="context-strip">
+                <div class="container context-row">
+                    <div class="context-pill">
+                        <span class="context-label">Institution</span>
+                        <strong>{{ current_institution_name|default:"Not assigned" }}</strong>
+                    </div>
+                    <div class="context-pill">
+                        <span class="context-label">User</span>
+                        <strong>{{ current_user_display }}</strong>
+                    </div>
+                    {% if current_user_email %}
+                        <div class="context-pill">
+                            <span class="context-label">Email</span>
+                            <strong>{{ current_user_email }}</strong>
+                        </div>
+                    {% endif %}
+                    {% if current_user_can_scan %}
+                        <div class="context-pill highlight">
+                            <span class="context-label">Scan Access</span>
+                            <strong>Enabled</strong>
+                        </div>
+                    {% else %}
+                        <div class="context-pill muted">
+                            <span class="context-label">Scan Access</span>
+                            <strong>Disabled</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
         {% if messages %}
             <div class="container">
                 <div class="messages">
@@ -120,6 +163,12 @@
                     <a href="{% url 'admin:index' %}">Admin</a>
                     {% if is_institution_admin %}
                         <a href="{% url 'institution_requests' %}">Institution Requests</a>
+                    {% endif %}
+                    {% if current_institution_name %}
+                        <span class="footer-meta">Institution: {{ current_institution_name }}</span>
+                    {% endif %}
+                    {% if current_user_display %}
+                        <span class="footer-meta">User: {{ current_user_display }}</span>
                     {% endif %}
                     <form class="footer-logout" method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
