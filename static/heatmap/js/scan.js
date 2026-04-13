@@ -15,8 +15,10 @@
     const cellYInput = document.getElementById("cellYInput");
     const selectedCellText = document.getElementById("selectedCellText");
     const autoScanBtn = document.getElementById("autoScanBtn");
+    const suggestScanBtn = document.getElementById("suggestScanBtn");
     const autoScanStatus = document.getElementById("autoScanStatus");
     const autoScanDebug = document.getElementById("autoScanDebug");
+    const suggestScanStatus = document.getElementById("suggestScanStatus");
     let rows = cfg.rows;
     let cols = cfg.cols;
 
@@ -76,11 +78,15 @@
     }
 
     function drawSelectedCell(cellX, cellY) {
-        markerLayer.innerHTML = "";
+        const existing = markerLayer.querySelector(".selected-marker");
+        if (existing) {
+            existing.remove();
+        }
         const rect = mapWrap.getBoundingClientRect();
         const cellWidth = rect.width / cols;
         const cellHeight = rect.height / rows;
         const marker = document.createElement("div");
+        marker.className = "selected-marker";
         marker.style.position = "absolute";
         marker.style.left = `${cellX * cellWidth}px`;
         marker.style.top = `${cellY * cellHeight}px`;
@@ -91,11 +97,43 @@
         markerLayer.appendChild(marker);
     }
 
+    function drawSuggestedCell(cellX, cellY) {
+        const existing = markerLayer.querySelector(".suggested-marker");
+        if (existing) {
+            existing.remove();
+        }
+        const rect = mapWrap.getBoundingClientRect();
+        const cellWidth = rect.width / cols;
+        const cellHeight = rect.height / rows;
+        const marker = document.createElement("div");
+        marker.className = "suggested-marker";
+        marker.style.position = "absolute";
+        marker.style.left = `${cellX * cellWidth}px`;
+        marker.style.top = `${cellY * cellHeight}px`;
+        marker.style.width = `${cellWidth}px`;
+        marker.style.height = `${cellHeight}px`;
+        marker.style.border = "2px dashed #f59e0b";
+        marker.style.background = "rgba(245,158,11,0.12)";
+        marker.dataset.cellX = String(cellX);
+        marker.dataset.cellY = String(cellY);
+        markerLayer.appendChild(marker);
+    }
+
     function clearSelectedCell() {
         cellXInput.value = "";
         cellYInput.value = "";
         selectedCellText.textContent = "None";
-        markerLayer.innerHTML = "";
+        const selectedMarker = markerLayer.querySelector(".selected-marker");
+        if (selectedMarker) {
+            selectedMarker.remove();
+        }
+    }
+
+    function clearSuggestedCell() {
+        const suggestedMarker = markerLayer.querySelector(".suggested-marker");
+        if (suggestedMarker) {
+            suggestedMarker.remove();
+        }
     }
 
     function isBlockedCell(cellX, cellY) {
@@ -113,6 +151,7 @@
         mapWrap.dataset.rows = String(rows);
         mapWrap.dataset.cols = String(cols);
         clearSelectedCell();
+        clearSuggestedCell();
         drawGrid();
     }
 
@@ -159,6 +198,7 @@
             return;
         }
 
+        clearSuggestedCell();
         cellXInput.value = cellX;
         cellYInput.value = cellY;
         selectedCellText.textContent = `${cellX}, ${cellY}`;
@@ -177,10 +217,17 @@
     modeSelect.addEventListener("change", function () {
         renderProviderOptions();
         updateNetworkLabel();
+        clearSuggestedCell();
     });
     window.addEventListener("resize", function () {
         if (cellXInput.value !== "" && cellYInput.value !== "") {
             drawSelectedCell(Number(cellXInput.value), Number(cellYInput.value));
+        }
+        const suggestedMarker = markerLayer.querySelector(".suggested-marker");
+        if (suggestedMarker) {
+            const cellX = Number(suggestedMarker.dataset.cellX || 0);
+            const cellY = Number(suggestedMarker.dataset.cellY || 0);
+            drawSuggestedCell(cellX, cellY);
         }
     });
 
@@ -194,6 +241,12 @@
         if (!autoScanDebug) return;
         autoScanDebug.textContent = message;
         autoScanDebug.hidden = !message;
+    }
+
+    function setSuggestStatus(message, tone) {
+        if (!suggestScanStatus) return;
+        suggestScanStatus.textContent = message;
+        suggestScanStatus.dataset.tone = tone || "info";
     }
 
     function inferNetworkMode() {
@@ -265,6 +318,57 @@
                 setAutoScanStatus("Auto detect not supported on this browser. Pick mode manually.", "warning");
                 setAutoScanDebug("Bridge missing. Window.NetSenseBridge not found.");
             }
+        });
+    }
+
+    if (suggestScanBtn) {
+        suggestScanBtn.addEventListener("click", async function () {
+            if (!cfg.nextScanApiUrl) {
+                setSuggestStatus("Next scan API not configured.", "warning");
+                return;
+            }
+            if (!blockSelect.value || !floorSelect.value) {
+                setSuggestStatus("Select a block and floor first.", "warning");
+                return;
+            }
+
+            setSuggestStatus("Finding next best cell...", "info");
+            const params = new URLSearchParams({
+                block: blockSelect.value,
+                floor: floorSelect.value,
+                mode: modeSelect.value,
+            });
+            if (providerInput.value) {
+                params.set("service_provider", providerInput.value);
+            }
+
+            let response = null;
+            try {
+                response = await fetch(`${cfg.nextScanApiUrl}?${params.toString()}`);
+            } catch (error) {
+                response = null;
+            }
+
+            if (!response || !response.ok) {
+                setSuggestStatus("Unable to fetch suggestion.", "warning");
+                return;
+            }
+
+            const data = await response.json();
+            if (data.cell_x === undefined || data.cell_y === undefined) {
+                setSuggestStatus("No suggestion available.", "warning");
+                return;
+            }
+
+            const cellX = Number(data.cell_x);
+            const cellY = Number(data.cell_y);
+            clearSuggestedCell();
+            drawSuggestedCell(cellX, cellY);
+            cellXInput.value = cellX;
+            cellYInput.value = cellY;
+            selectedCellText.textContent = `${cellX}, ${cellY}`;
+            drawSelectedCell(cellX, cellY);
+            setSuggestStatus(`Suggested cell: ${cellX}, ${cellY}`, "success");
         });
     }
 

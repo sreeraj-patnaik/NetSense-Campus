@@ -1385,6 +1385,18 @@ textarea:focus {
     pointer-events: none;
 }
 
+.map-tooltip {
+    position: absolute;
+    z-index: 6;
+    padding: 8px 10px;
+    background: rgba(17, 24, 39, 0.92);
+    color: #f8fafc;
+    border-radius: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.35);
+}
+
 .map-wrap.is-loading .map-status {
     opacity: 1;
     transform: translateY(0);

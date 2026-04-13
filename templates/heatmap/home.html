@@ -41,6 +41,7 @@
                 >
                 <div id="gridLayer" class="grid-layer"></div>
                 <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
+                <div id="weakClusterTooltip" class="map-tooltip" hidden></div>
                 <div class="map-status" id="mapStatus" aria-live="polite"></div>
             </div>
             <div class="legend modern-legend">
@@ -78,6 +79,7 @@
                     <div><span class="swatch green" style="opacity: 0.45;"></span> Interpolated (low confidence)</div>
                     <div><span class="swatch none"></span> No data</div>
                     <div><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay</div>
+                    <div><span class="swatch none" style="background:#ef4444;"></span> Weak zone clusters</div>
                 </div>
             </div>
         </div>
@@ -138,6 +140,14 @@
                     Confidence Overlay
                 </label>
                 <label class="toggle">
+                    <input type="checkbox" id="weakClustersToggle">
+                    Weak Zone Overlay
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="bestProviderToggle">
+                    Best Provider View
+                </label>
+                <label class="toggle">
                     <input type="checkbox" id="interpolateToggle" checked>
                     Show Interpolated
                 </label>
@@ -153,6 +163,7 @@
                         <option value="60000">60s</option>
                     </select>
                 </label>
+                <button id="notifyBtn" type="button" class="btn ghost">Enable Notifications</button>
                 <button id="exportBtn" type="button" class="btn ghost">Export PNG</button>
             </div>
         </div>
@@ -169,10 +180,15 @@
         cols: {{ grid_cols }},
         defaultFloorImage: "{% static 'heatmap/images/Floor 1.jpeg' %}",
         heatmapApiUrl: "{% url 'heatmap_api' %}",
+        weakClustersApiUrl: "{% url 'weak_clusters_api' %}",
+        bestProviderApiUrl: "{% url 'best_provider_api' %}",
+        notificationSubscribeUrl: "{% url 'notifications_subscribe_api' %}",
+        notificationUnsubscribeUrl: "{% url 'notifications_unsubscribe_api' %}",
+        vapidPublicKey: "{{ vapid_public_key }}",
         blockFloors: JSON.parse(document.getElementById("block-floors-data").textContent),
         floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/home.js' %}?v=20260402-2"></script>
+<script src="{% static 'heatmap/js/home.js' %}?v=20260413-2"></script>
 {% endblock %}

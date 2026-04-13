@@ -1,4 +1,4 @@
-from statistics import median
+from statistics import median, variance
 
 from django.db import transaction
 
@@ -10,6 +10,15 @@ def _median(values):
     if not values:
         return None
     return float(median(values))
+
+
+def _variance(values):
+    if not values or len(values) < 2:
+        return 0.0
+    try:
+        return float(variance(values))
+    except Exception:
+        return 0.0
 
 
 def _upsert_aggregate(
@@ -35,6 +44,7 @@ def _upsert_aggregate(
         defaults={
             "cell_id": cell_id,
             "median_signal": _median(signal_values),
+            "signal_variance": _variance(signal_values),
             "scan_count": len(signal_values),
         },
     )

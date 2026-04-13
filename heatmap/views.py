@@ -19,15 +19,19 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 from .aggregation import rebuild_aggregates_for_floor, refresh_cell_aggregates
-from .models import CellAggregate, Scan
+from .models import CellAggregate, NotificationSubscription, Scan
 from .utils import (
+    compute_confidence,
     ensure_service_provider,
+    cell_from_id,
+    find_weak_clusters,
     get_floor_dimensions,
     get_floor_plan,
     get_floor_registry,
     get_service_providers,
     interpolate_missing_cells,
     is_blocked_cell,
+    score_cell,
 )
 
 MAX_DOC_CONTEXT_CHARS = 12000
@@ -140,6 +144,7 @@ def _viewer_context():
         "floor_configs": floor_configs,
         "service_providers": get_service_providers(),
         "modes": Scan.MODE_CHOICES,
+        "vapid_public_key": getattr(settings, "VAPID_PUBLIC_KEY", ""),
     }
 
 
@@ -255,6 +260,7 @@ def scan_view(request):
         scan = Scan.objects.create(**payload)
         ensure_service_provider(scan.mode, scan.service_provider)
         refresh_cell_aggregates(scan)
+        _notify_weak_clusters(scan.floor_plan, scan.mode, scan.service_provider)
         messages.success(request, "Scan saved.")
         return redirect("scan")
 
@@ -433,6 +439,11 @@ def heatmap_api(request):
             "cell_y": row.cell_y,
             "signal": round(float(row.median_signal), 2),
             "count": int(row.scan_count),
+            "confidence": compute_confidence(
+                row.scan_count,
+                getattr(row, "signal_variance", 0),
+                row.updated_at,
+            ),
             "interpolated": False,
         }
         for row in queryset.order_by("cell_y", "cell_x")
@@ -456,6 +467,230 @@ def heatmap_api(request):
         )
 
     return JsonResponse(payload, safe=False)
+
+
+def weak_clusters_api(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "GET required"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
+    block = (request.GET.get("block") or "").strip()
+    floor = _coerce_int(request.GET.get("floor"))
+    mode = (request.GET.get("mode") or Scan.WIFI).strip()
+    service_provider = (request.GET.get("service_provider") or "").strip()
+    threshold = _coerce_int(request.GET.get("threshold"), -80)
+
+    if not block or floor is None:
+        return JsonResponse({"error": "block and floor are required query params"}, status=400)
+
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return JsonResponse({"error": "floor not configured"}, status=404)
+
+    queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
+    if not queryset.exists():
+        rebuild_aggregates_for_floor(floor_plan, mode=mode if mode in SUPPORTED_MODES else None)
+        queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
+
+    points = {}
+    for row in queryset:
+        points[(row.cell_x, row.cell_y)] = (float(row.median_signal), int(row.scan_count))
+
+    clusters = []
+    for cluster in find_weak_clusters(points, threshold=threshold):
+        signals = [points[(x, y)][0] for x, y in cluster if (x, y) in points]
+        avg_signal = sum(signals) / len(signals) if signals else 0
+        clusters.append(
+            {
+                "size": len(cluster),
+                "avg_signal": round(float(avg_signal), 2),
+                "cells": [[x, y] for x, y in cluster],
+            }
+        )
+
+    return JsonResponse({"clusters": clusters})
+
+
+def best_provider_api(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "GET required"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
+    block = (request.GET.get("block") or "").strip()
+    floor = _coerce_int(request.GET.get("floor"))
+    mode = (request.GET.get("mode") or Scan.WIFI).strip()
+
+    if not block or floor is None:
+        return JsonResponse({"error": "block and floor are required query params"}, status=400)
+
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return JsonResponse({"error": "floor not configured"}, status=404)
+
+    queryset = CellAggregate.objects.filter(
+        floor_plan=floor_plan,
+        mode=mode if mode in SUPPORTED_MODES else Scan.WIFI,
+        is_all_providers=False,
+    )
+
+    if not queryset.exists():
+        rebuild_aggregates_for_floor(floor_plan, mode=mode if mode in SUPPORTED_MODES else None)
+        queryset = CellAggregate.objects.filter(
+            floor_plan=floor_plan,
+            mode=mode if mode in SUPPORTED_MODES else Scan.WIFI,
+            is_all_providers=False,
+        )
+
+    best_by_cell = {}
+    for row in queryset:
+        key = (row.cell_x, row.cell_y)
+        existing = best_by_cell.get(key)
+        if not existing or row.median_signal > existing["signal"]:
+            best_by_cell[key] = {
+                "cell_x": row.cell_x,
+                "cell_y": row.cell_y,
+                "best_provider": row.service_provider or "Unknown",
+                "signal": round(float(row.median_signal), 2),
+            }
+
+    return JsonResponse({"cells": list(best_by_cell.values())})
+
+
+@csrf_exempt
+def notifications_subscribe_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    subscription = payload.get("subscription") or {}
+    endpoint = subscription.get("endpoint") or ""
+    keys = subscription.get("keys") or {}
+    p256dh = keys.get("p256dh") or ""
+    auth = keys.get("auth") or ""
+
+    if not endpoint or not p256dh or not auth:
+        return JsonResponse({"error": "invalid subscription"}, status=400)
+
+    block = (payload.get("block") or "").strip()
+    floor = _coerce_int(payload.get("floor"))
+
+    NotificationSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            "p256dh": p256dh,
+            "auth": auth,
+            "block": block,
+            "floor": floor,
+        },
+    )
+    return JsonResponse({"status": "ok"})
+
+
+@csrf_exempt
+def notifications_unsubscribe_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    endpoint = (payload.get("endpoint") or "").strip()
+    if not endpoint:
+        return JsonResponse({"error": "endpoint required"}, status=400)
+
+    NotificationSubscription.objects.filter(endpoint=endpoint).delete()
+    return JsonResponse({"status": "ok"})
+
+
+def next_scan_api(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "GET required"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
+    block = (request.GET.get("block") or "").strip()
+    floor = _coerce_int(request.GET.get("floor"))
+    mode = (request.GET.get("mode") or Scan.WIFI).strip()
+    service_provider = (request.GET.get("service_provider") or "").strip()
+
+    if not block or floor is None:
+        return JsonResponse({"error": "block and floor are required query params"}, status=400)
+
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return JsonResponse({"error": "floor not configured"}, status=404)
+
+    registry = get_floor_registry()
+    floor_cfg = registry["floor_configs"].get(f"{block}:{floor}", {})
+    rows = max(1, _coerce_int(floor_cfg.get("rows"), floor_plan.grid_rows) or floor_plan.grid_rows)
+    cols = max(1, _coerce_int(floor_cfg.get("cols"), floor_plan.grid_cols) or floor_plan.grid_cols)
+    blocked_cells = floor_cfg.get("blocked_cells") or []
+    blocked = set()
+    for item in blocked_cells:
+        if isinstance(item, (int, str)):
+            try:
+                blocked.add(cell_from_id(int(item), cols))
+            except (TypeError, ValueError):
+                continue
+            continue
+        if isinstance(item, (list, tuple)) and len(item) == 2:
+            try:
+                blocked.add((int(item[0]), int(item[1])))
+            except (TypeError, ValueError):
+                continue
+            continue
+        if isinstance(item, dict):
+            if "cell_x" in item and "cell_y" in item:
+                try:
+                    blocked.add((int(item["cell_x"]), int(item["cell_y"])))
+                except (TypeError, ValueError):
+                    continue
+            elif "cell_id" in item:
+                try:
+                    blocked.add(cell_from_id(int(item["cell_id"]), cols))
+                except (TypeError, ValueError):
+                    continue
+
+    queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
+    if not queryset.exists():
+        rebuild_aggregates_for_floor(floor_plan, mode=mode if mode in SUPPORTED_MODES else None)
+        queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
+
+    points = {}
+    confidence_map = {}
+    for row in queryset:
+        key = (row.cell_x, row.cell_y)
+        points[key] = (row.median_signal, row.scan_count)
+        confidence_map[key] = compute_confidence(
+            row.scan_count,
+            getattr(row, "signal_variance", 0),
+            row.updated_at,
+        )
+
+    best_score = -2.0
+    best_cell = None
+    for cell_y in range(rows):
+        for cell_x in range(cols):
+            score = score_cell(cell_x, cell_y, points, confidence_map, blocked)
+            if score > best_score:
+                best_score = score
+                best_cell = (cell_x, cell_y)
+
+    if not best_cell:
+        return JsonResponse({"error": "no available cells"}, status=404)
+
+    return JsonResponse({"cell_x": best_cell[0], "cell_y": best_cell[1]})
 
 
 # -----------------------------------------------------------------------------
@@ -499,6 +734,7 @@ def scan_api(request):
     scan = Scan.objects.create(**payload)
     ensure_service_provider(scan.mode, scan.service_provider)
     refresh_cell_aggregates(scan)
+    _notify_weak_clusters(scan.floor_plan, scan.mode, scan.service_provider)
 
     return JsonResponse(
         {
@@ -529,10 +765,104 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", () => {
   // Online-only app: allow the request to hit the network.
 });
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (err) {
+    payload = { title: "NetSense Update", body: event.data ? event.data.text() : "" };
+  }
+  const title = payload.title || "NetSense Update";
+  const options = {
+    body: payload.body || "New signal intelligence available.",
+    icon: payload.icon || "/static/logo.jpeg",
+    badge: payload.badge || "/static/logo.jpeg",
+    data: payload.data || { url: "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(target) && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(target);
+      }
+      return undefined;
+    })
+  );
+});
 """
     response = HttpResponse(content, content_type="application/javascript; charset=utf-8")
     response["Cache-Control"] = "no-cache"
     return response
+
+
+def _send_web_push(subscription: NotificationSubscription, payload: dict[str, Any]) -> bool:
+    vapid_public = getattr(settings, "VAPID_PUBLIC_KEY", "")
+    vapid_private = getattr(settings, "VAPID_PRIVATE_KEY", "")
+    vapid_email = getattr(settings, "VAPID_CLAIMS_EMAIL", "mailto:admin@example.com")
+    if not vapid_public or not vapid_private:
+        return False
+
+    try:
+        from pywebpush import webpush, WebPushException
+    except Exception:
+        return False
+
+    try:
+        webpush(
+            subscription_info={
+                "endpoint": subscription.endpoint,
+                "keys": {
+                    "p256dh": subscription.p256dh,
+                    "auth": subscription.auth,
+                },
+            },
+            data=json.dumps(payload),
+            vapid_private_key=vapid_private,
+            vapid_claims={"sub": vapid_email},
+        )
+        return True
+    except Exception as exc:
+        if isinstance(exc, WebPushException):
+            NotificationSubscription.objects.filter(endpoint=subscription.endpoint).delete()
+        return False
+
+
+def _notify_weak_clusters(floor_plan, mode: str, service_provider: str):
+    queryset = _aggregate_queryset(floor_plan, mode=mode, service_provider=service_provider)
+    points = {}
+    for row in queryset:
+        points[(row.cell_x, row.cell_y)] = (float(row.median_signal), int(row.scan_count))
+    clusters = find_weak_clusters(points, threshold=-80)
+    if not clusters:
+        return
+
+    block_code = floor_plan.block.code if floor_plan.block_id else ""
+    floor_number = floor_plan.number if floor_plan else None
+    cluster_count = len(clusters)
+    payload = {
+        "title": "Weak zones detected",
+        "body": f"{block_code} Floor {floor_number}: {cluster_count} weak clusters found.",
+        "data": {"url": "/heatmap/"},
+    }
+
+    subscriptions = NotificationSubscription.objects.all()
+    for sub in subscriptions:
+        if sub.block and sub.block != block_code:
+            continue
+        if sub.floor is not None and sub.floor != floor_number:
+            continue
+        _send_web_push(sub, payload)
 
 
 def manifest_view(_request):

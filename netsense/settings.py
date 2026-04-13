@@ -237,6 +237,14 @@ HEATMAP_SERVICE_PROVIDERS = {
 HEATMAP_BLOCKED_CELLS = {}
 
 # --------------------------------------------------
+# Web Push (VAPID)
+# --------------------------------------------------
+
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "mailto:admin@example.com")
+
+# --------------------------------------------------
 # Production security (Render)
 # --------------------------------------------------
 

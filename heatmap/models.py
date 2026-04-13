@@ -151,6 +151,7 @@ class CellAggregate(models.Model):
     service_provider = models.CharField(max_length=60, blank=True)
     is_all_providers = models.BooleanField(default=False)
     median_signal = models.FloatField()
+    signal_variance = models.FloatField(default=0)
     scan_count = models.PositiveIntegerField()
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -180,6 +181,23 @@ class CellAggregate(models.Model):
         block_code = self.floor_plan.block.code if self.floor_plan_id else ""
         floor_number = self.floor_plan.number if self.floor_plan_id else ""
         return f"{block_code}-F{floor_number} ({self.cell_x},{self.cell_y}) {self.mode} {provider}"
+
+
+class NotificationSubscription(models.Model):
+    endpoint = models.TextField(unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    block = models.CharField(max_length=20, blank=True)
+    floor = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-last_seen_at"]
+
+    def __str__(self) -> str:
+        scope = f"{self.block}-F{self.floor}" if self.block and self.floor is not None else "all"
+        return f"{scope} subscription"
 
 
 

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import time
 
 from django.conf import settings
 
@@ -180,6 +181,34 @@ def ensure_service_provider(mode, name):
     return cleaned
 
 
+def compute_confidence(scan_count, variance, last_updated):
+    count_score = min(1.0, (scan_count or 0) / 10)
+    variance_score = 1.0 - min(1.0, (variance or 0) / 100)
+    if last_updated:
+        age = time.time() - last_updated.timestamp()
+        recency_score = max(0.0, 1 - (age / 86400))
+    else:
+        recency_score = 0.0
+
+    return round(
+        0.5 * count_score +
+        0.3 * variance_score +
+        0.2 * recency_score,
+        3,
+    )
+
+
+def score_cell(cell_x, cell_y, points, confidence_map, blocked):
+    if (cell_x, cell_y) in blocked:
+        return -1
+
+    if (cell_x, cell_y) not in points:
+        return 1.0
+
+    confidence = confidence_map.get((cell_x, cell_y), 0)
+    return 1 - confidence
+
+
 def interpolate_missing_cells(*, points, rows, cols, blocked_cells, max_distance=2):
     if not points:
         return []
@@ -227,8 +256,43 @@ def interpolate_missing_cells(*, points, rows, cols, blocked_cells, max_distance
                     "cell_y": cell_y,
                     "signal": round(float(interpolated_signal), 2),
                     "count": 0,
+                    "confidence": 0.0,
                     "interpolated": True,
                 }
             )
 
     return interpolated
+
+
+def find_weak_clusters(points, threshold=-80):
+    visited = set()
+    clusters = []
+
+    for (x, y), (signal, _) in points.items():
+        if signal >= threshold or (x, y) in visited:
+            continue
+
+        stack = [(x, y)]
+        cluster = []
+
+        while stack:
+            cx, cy = stack.pop()
+            if (cx, cy) in visited:
+                continue
+            visited.add((cx, cy))
+
+            s, _ = points.get((cx, cy), (None, None))
+            if s is None:
+                continue
+            if s < threshold:
+                cluster.append((cx, cy))
+
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nx, ny = cx + dx, cy + dy
+                    if (nx, ny) in points:
+                        stack.append((nx, ny))
+
+        if len(cluster) >= 3:
+            clusters.append(cluster)
+
+    return clusters

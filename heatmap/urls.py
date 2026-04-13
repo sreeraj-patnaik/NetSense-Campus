@@ -13,7 +13,12 @@ urlpatterns = [
     path("workflow/", views.workflow_view, name="workflow"),
     path("scan/", views.scan_view, name="scan"),
     path("api/heatmap/", views.heatmap_api, name="heatmap_api"),
+    path("api/weak-clusters/", views.weak_clusters_api, name="weak_clusters_api"),
+    path("api/best-provider/", views.best_provider_api, name="best_provider_api"),
+    path("api/next-scan/", views.next_scan_api, name="next_scan_api"),
     path("api/scan/", views.scan_api, name="scan_api"),
     path("api/config/", views.config_api, name="config_api"),
     path("api/chatbot/", views.chatbot_api, name="chatbot_api"),
+    path("api/notifications/subscribe/", views.notifications_subscribe_api, name="notifications_subscribe_api"),
+    path("api/notifications/unsubscribe/", views.notifications_unsubscribe_api, name="notifications_unsubscribe_api"),
 ]

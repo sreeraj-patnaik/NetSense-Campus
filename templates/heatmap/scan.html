@@ -11,6 +11,7 @@
         </div>
         <div class="dashboard-actions">
             <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
+            <button class="btn ghost" id="suggestScanBtn" type="button">Suggest Next Scan</button>
         </div>
     </div>
 </section>
@@ -75,6 +76,7 @@
                 <div class="cell-readout">
                     Selected Cell: <strong id="selectedCellText">None</strong>
                 </div>
+                <div class="auto-scan-status" id="suggestScanStatus">Suggest next scan to cover weak areas.</div>
                 <input type="hidden" name="cell_x" id="cellXInput" required>
                 <input type="hidden" name="cell_y" id="cellYInput" required>
                 <button class="btn primary" type="submit">Save Scan</button>
@@ -116,6 +118,7 @@
         rows: {{ grid_rows }},
         cols: {{ grid_cols }},
         defaultFloorImage: "{% static 'heatmap/images/floor-placeholder.svg' %}",
+        nextScanApiUrl: "{% url 'next_scan_api' %}",
         blockFloors: JSON.parse(document.getElementById("scan-block-floors-data").textContent),
         floorConfigs: JSON.parse(document.getElementById("scan-floor-configs-data").textContent),
         serviceProviders: JSON.parse(document.getElementById("scan-service-providers-data").textContent)

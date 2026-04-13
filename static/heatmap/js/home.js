@@ -9,6 +9,8 @@
     const interpolateToggle = document.getElementById("interpolateToggle");
     const autoSmoothToggle = document.getElementById("autoSmoothToggle");
     const confidenceToggle = document.getElementById("confidenceToggle");
+    const weakClustersToggle = document.getElementById("weakClustersToggle");
+    const bestProviderToggle = document.getElementById("bestProviderToggle");
     const spreadRange = document.getElementById("spreadRange");
     const legendMin = document.getElementById("legendMin");
     const legendMax = document.getElementById("legendMax");
@@ -18,16 +20,21 @@
     const autoRefreshToggle = document.getElementById("autoRefreshToggle");
     const refreshInterval = document.getElementById("refreshInterval");
     const exportBtn = document.getElementById("exportBtn");
+    const notifyBtn = document.getElementById("notifyBtn");
     const mapWrap = document.getElementById("mapWrap");
     const mapStatus = document.getElementById("mapStatus");
     const floorMap = document.getElementById("floorMap");
     const gridLayer = document.getElementById("gridLayer");
     const heatmapCanvas = document.getElementById("heatmapCanvas");
     const heatmapCtx = heatmapCanvas.getContext("2d");
+    const weakClusterTooltip = document.getElementById("weakClusterTooltip");
     let rows = cfg.rows;
     let cols = cfg.cols;
     let lastPoints = [];
     let refreshTimer = null;
+    let weakClusters = [];
+    let weakClusterLookup = new Map();
+    let lastWeakClusterDigest = "";
 
     function selectedKey() {
         return `${blockSelect.value}:${floorSelect.value}`;
@@ -118,6 +125,30 @@
         return stops[stops.length - 1].c;
     }
 
+    function hashString(value) {
+        let hash = 0;
+        const str = String(value || "");
+        for (let i = 0; i < str.length; i += 1) {
+            hash = (hash << 5) - hash + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+
+    function providerColor(provider) {
+        const colors = [
+            [37, 99, 235],
+            [16, 185, 129],
+            [244, 63, 94],
+            [245, 158, 11],
+            [139, 92, 246],
+            [20, 184, 166],
+            [236, 72, 153],
+        ];
+        const idx = hashString(provider) % colors.length;
+        return colors[idx];
+    }
+
     function drawGrid() {
         const colStep = 100 / cols;
         const rowStep = 100 / rows;
@@ -178,11 +209,16 @@
             floor: floorSelect.value,
             mode: modeSelect.value,
         });
-        params.set("interpolate", interpolateToggle.checked ? "1" : "0");
-        if (providerSelect.value) {
-            params.set("service_provider", providerSelect.value);
+        let url = "";
+        if (bestProviderToggle?.checked) {
+            url = `${cfg.bestProviderApiUrl}?${params.toString()}`;
+        } else {
+            params.set("interpolate", interpolateToggle.checked ? "1" : "0");
+            if (providerSelect.value) {
+                params.set("service_provider", providerSelect.value);
+            }
+            url = `${cfg.heatmapApiUrl}?${params.toString()}`;
         }
-        const url = `${cfg.heatmapApiUrl}?${params.toString()}`;
 
         let response = null;
         try {
@@ -215,7 +251,8 @@
             mapWrap.classList.remove("is-loading");
             return;
         }
-        const points = await response.json();
+        const raw = await response.json();
+        const points = bestProviderToggle?.checked ? (raw?.cells || []) : raw;
         if (!Array.isArray(points)) {
             mapWrap.classList.remove("is-loading");
             return;
@@ -237,6 +274,10 @@
 
         const realPoints = points.filter((point) => !point.interpolated);
         const scalePoints = realPoints.length ? realPoints : points;
+        if (!scalePoints.length) {
+            mapWrap.classList.remove("is-loading");
+            return;
+        }
         const signals = scalePoints.map((point) => point.signal);
         const minSignal = Math.min(...signals);
         const maxSignal = Math.max(...signals);
@@ -253,7 +294,9 @@
         }
 
         const renderMode = renderModeSelect.value;
-        const renderPoints = interpolateToggle.checked ? points : points.filter((point) => !point.interpolated);
+        const renderPoints = bestProviderToggle?.checked
+            ? points
+            : (interpolateToggle.checked ? points : points.filter((point) => !point.interpolated));
         const density = realPoints.length / Math.max(1, rows * cols);
         const autoSpread = 2.2 - Math.min(1, density * 2.2) * 1.1;
         const manualSpread = Math.max(0.6, Number(spreadRange.value || 1.6));
@@ -266,10 +309,18 @@
         renderPoints.forEach((point) => {
             const normalized = clamp01((point.signal - minSignal) / range);
             const banded = renderMode === "contour" ? Math.round(normalized * 6) / 6 : normalized;
-            const [r, g, b] = point.interpolated ? colorRampInterpolated(banded) : colorRamp(banded);
+            let r = 0;
+            let g = 0;
+            let b = 0;
+            if (bestProviderToggle?.checked) {
+                [r, g, b] = providerColor(point.best_provider || "Unknown");
+            } else {
+                [r, g, b] = point.interpolated ? colorRampInterpolated(banded) : colorRamp(banded);
+            }
             const alphaBase = point.interpolated ? 0.2 : 0.6;
             const countBoost = Math.min(1, Math.sqrt(point.count || 1) / 6);
-            const alpha = clamp01(alphaBase + countBoost * 0.2);
+            const confidence = clamp01(point.confidence ?? (bestProviderToggle?.checked ? 0.9 : 0.5));
+            const alpha = clamp01((alphaBase + countBoost * 0.2) * (0.5 + 0.5 * confidence));
             const radius = Math.max(cellWidth, cellHeight) * (renderMode === "contour" ? 0.9 : spreadMultiplier);
 
             const x = point.cell_x * cellWidth + cellWidth / 2;
@@ -289,19 +340,109 @@
             }
         });
 
-        if (confidenceToggle.checked) {
-            const maxCount = Math.max(1, ...realPoints.map((point) => point.count || 1));
+        if (confidenceToggle.checked && !bestProviderToggle?.checked) {
             realPoints.forEach((point) => {
-                const confidence = clamp01((point.count || 1) / maxCount);
-                const alpha = 0.35 * confidence;
+                const confidence = clamp01(point.confidence ?? 0.5);
+                const alpha = 0.45 * (1 - confidence);
+                if (alpha <= 0) return;
                 const x = point.cell_x * cellWidth;
                 const y = point.cell_y * cellHeight;
-                heatmapCtx.fillStyle = `rgba(17, 24, 39, ${alpha})`;
+                heatmapCtx.fillStyle = `rgba(120, 130, 140, ${alpha})`;
                 heatmapCtx.fillRect(x, y, cellWidth, cellHeight);
             });
         }
 
+        if (weakClustersToggle?.checked) {
+            await loadWeakClusters();
+            renderWeakClusters(cellWidth, cellHeight);
+        } else {
+            weakClusters = [];
+            weakClusterLookup = new Map();
+            hideWeakTooltip();
+        }
+
         mapWrap.classList.remove("is-loading");
+    }
+
+    async function loadWeakClusters() {
+        const params = new URLSearchParams({
+            block: blockSelect.value,
+            floor: floorSelect.value,
+            mode: modeSelect.value,
+        });
+        if (providerSelect.value) {
+            params.set("service_provider", providerSelect.value);
+        }
+        const url = `${cfg.weakClustersApiUrl}?${params.toString()}`;
+        let response = null;
+        try {
+            response = await fetch(url);
+        } catch (error) {
+            response = null;
+        }
+        if (!response || !response.ok) {
+            weakClusters = [];
+            weakClusterLookup = new Map();
+            return;
+        }
+        const payload = await response.json();
+        weakClusters = Array.isArray(payload?.clusters) ? payload.clusters : [];
+        weakClusterLookup = new Map();
+        weakClusters.forEach((cluster, idx) => {
+            (cluster.cells || []).forEach((cell) => {
+                const key = `${cell[0]}:${cell[1]}`;
+                weakClusterLookup.set(key, idx);
+            });
+        });
+        maybeNotifyWeakClusters();
+    }
+
+    function renderWeakClusters(cellWidth, cellHeight) {
+        weakClusters.forEach((cluster) => {
+            (cluster.cells || []).forEach((cell) => {
+                const cellX = Number(cell[0]);
+                const cellY = Number(cell[1]);
+                const x = cellX * cellWidth;
+                const y = cellY * cellHeight;
+                heatmapCtx.fillStyle = "rgba(239, 68, 68, 0.18)";
+                heatmapCtx.fillRect(x, y, cellWidth, cellHeight);
+                heatmapCtx.strokeStyle = "rgba(239, 68, 68, 0.85)";
+                heatmapCtx.lineWidth = Math.max(1, Math.min(cellWidth, cellHeight) * 0.1);
+                heatmapCtx.strokeRect(x + 1, y + 1, cellWidth - 2, cellHeight - 2);
+            });
+        });
+    }
+
+    function showWeakTooltip(text, left, top) {
+        if (!weakClusterTooltip) return;
+        weakClusterTooltip.textContent = text;
+        weakClusterTooltip.style.left = `${left}px`;
+        weakClusterTooltip.style.top = `${top}px`;
+        weakClusterTooltip.hidden = false;
+    }
+
+    function hideWeakTooltip() {
+        if (!weakClusterTooltip) return;
+        weakClusterTooltip.hidden = true;
+    }
+
+    function maybeNotifyWeakClusters() {
+        if (!window.NetSenseBridge || typeof window.NetSenseBridge.showNotification !== "function") {
+            return;
+        }
+        const clusterCount = weakClusters.length;
+        if (!clusterCount) {
+            lastWeakClusterDigest = "";
+            return;
+        }
+        const avgSignals = weakClusters.map((cluster) => cluster.avg_signal).join("|");
+        const digest = `${blockSelect.value}:${floorSelect.value}:${modeSelect.value}:${clusterCount}:${avgSignals}`;
+        if (digest === lastWeakClusterDigest) return;
+        lastWeakClusterDigest = digest;
+        window.NetSenseBridge.showNotification(
+            "Weak zones detected",
+            `${blockSelect.value} Floor ${floorSelect.value}: ${clusterCount} weak clusters`
+        );
     }
 
     function renderProviderOptions() {
@@ -341,6 +482,57 @@
             const interval = Math.max(5000, Number(refreshInterval.value || 30000));
             refreshTimer = setInterval(loadHeatmap, interval);
         }
+    }
+
+    async function subscribeToNotifications() {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+            if (mapStatus) {
+                mapStatus.textContent = "Notifications not supported in this browser.";
+            }
+            return;
+        }
+        if (!cfg.vapidPublicKey) {
+            if (mapStatus) {
+                mapStatus.textContent = "VAPID key missing. Add VAPID_PUBLIC_KEY in settings.";
+            }
+            return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+            if (mapStatus) {
+                mapStatus.textContent = "Notification permission denied.";
+            }
+            return;
+        }
+        const registration = await navigator.serviceWorker.ready;
+        const sub = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(cfg.vapidPublicKey),
+        });
+        await fetch(cfg.notificationSubscribeUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                subscription: sub.toJSON(),
+                block: blockSelect.value,
+                floor: floorSelect.value,
+            }),
+        });
+        if (notifyBtn) {
+            notifyBtn.textContent = "Notifications Enabled";
+            notifyBtn.disabled = true;
+        }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
     }
 
     function exportPng() {
@@ -388,14 +580,53 @@
     interpolateToggle.addEventListener("change", refresh);
     autoSmoothToggle.addEventListener("change", refresh);
     confidenceToggle.addEventListener("change", refresh);
+    weakClustersToggle?.addEventListener("change", refresh);
+    bestProviderToggle?.addEventListener("change", function () {
+        providerSelect.disabled = bestProviderToggle.checked;
+        interpolateToggle.disabled = bestProviderToggle.checked;
+        confidenceToggle.disabled = bestProviderToggle.checked;
+        refresh();
+    });
     spreadRange.addEventListener("input", refresh);
     autoRefreshToggle?.addEventListener("change", syncAutoRefresh);
     refreshInterval?.addEventListener("change", syncAutoRefresh);
     exportBtn?.addEventListener("click", exportPng);
+    notifyBtn?.addEventListener("click", subscribeToNotifications);
     window.addEventListener("resize", loadHeatmap);
+    mapWrap.addEventListener("mouseleave", hideWeakTooltip);
+    mapWrap.addEventListener("mousemove", function (event) {
+        if (!weakClustersToggle?.checked || !weakClusterLookup.size) {
+            hideWeakTooltip();
+            return;
+        }
+        const rect = mapWrap.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const cellWidth = rect.width / cols;
+        const cellHeight = rect.height / rows;
+        const cellX = Math.max(0, Math.min(cols - 1, Math.floor(x / cellWidth)));
+        const cellY = Math.max(0, Math.min(rows - 1, Math.floor(y / cellHeight)));
+        const key = `${cellX}:${cellY}`;
+        if (!weakClusterLookup.has(key)) {
+            hideWeakTooltip();
+            return;
+        }
+        const cluster = weakClusters[weakClusterLookup.get(key)];
+        const text = `Weak zone: ${cluster.size} cells, avg ${cluster.avg_signal} dBm`;
+        showWeakTooltip(text, x + 12, y + 12);
+    });
 
     syncFloorOptions();
     renderProviderOptions();
     syncAutoRefresh();
+    if (bestProviderToggle?.checked) {
+        providerSelect.disabled = true;
+        interpolateToggle.disabled = true;
+        confidenceToggle.disabled = true;
+    }
+    if (notifyBtn && "Notification" in window && Notification.permission === "granted") {
+        notifyBtn.textContent = "Notifications Enabled";
+        notifyBtn.disabled = true;
+    }
     refresh();
 })();
