@@ -15,4 +15,5 @@ urlpatterns = [
     path("api/heatmap/", views.heatmap_api, name="heatmap_api"),
     path("api/scan/", views.scan_api, name="scan_api"),
     path("api/config/", views.config_api, name="config_api"),
+    path("api/chatbot/", views.chatbot_api, name="chatbot_api"),
 ]

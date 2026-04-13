@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpResponseForbidden
 import json
 
 from django.http import JsonResponse
@@ -19,6 +21,10 @@ from .utils import (
     is_blocked_cell,
     ensure_service_provider,
 )
+from functools import lru_cache
+from pathlib import Path
+import urllib.request
+import urllib.error
 
 
 def _viewer_context():
@@ -120,6 +126,7 @@ def home_view(request):
     return render(request, "heatmap/landing.html", _viewer_context())
 
 
+@login_required
 def heatmap_view(request):
     return render(request, "heatmap/home.html", _viewer_context())
 
@@ -142,6 +149,9 @@ def workflow_view(request):
 
 @login_required
 def scan_view(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Admin access required.")
+
     context = _viewer_context()
     if request.method == "POST":
         payload, error = _validate_scan_payload(request.POST)
@@ -159,6 +169,9 @@ def scan_view(request):
 
 
 def heatmap_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
     block = request.GET.get("block")
     floor = request.GET.get("floor")
     mode = request.GET.get("mode", Scan.WIFI)
@@ -230,6 +243,11 @@ def scan_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=405)
 
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+    if not request.user.is_staff:
+        return JsonResponse({"error": "admin access required"}, status=403)
+
     data = _parse_scan_payload(request)
     payload, error = _validate_scan_payload(data)
     if error:
@@ -251,6 +269,9 @@ def scan_api(request):
 
 
 def config_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
     registry = get_floor_registry()
     return JsonResponse(
         {
@@ -307,3 +328,182 @@ def manifest_view(_request):
     response = HttpResponse(content, content_type="application/manifest+json")
     response["Cache-Control"] = "no-cache"
     return response
+
+
+@lru_cache(maxsize=1)
+def _chatbot_context():
+    root = Path(settings.BASE_DIR)
+    files = [
+        root / "README.md",
+        root / "PROJECT_MANUAL.md",
+        root / "PROJECT_DOCUMENTATION.md",
+        root / "PROJECT_STRUCTURE.md",
+    ]
+    chunks = []
+    for path in files:
+        if not path.exists():
+            continue
+        try:
+            chunks.append(path.read_text(encoding="utf-8"))
+        except OSError:
+            continue
+    context = "\n\n".join(chunks).strip()
+    if not context:
+        return "No internal documentation context was found."
+    return context[:12000]
+
+
+def _require_openai_key():
+    key = getattr(settings, "OPENAI_API_KEY", "") or ""
+    if not key:
+        raise ImproperlyConfigured("OPENAI_API_KEY is not configured.")
+    return key
+
+
+def _build_chat_prompt(message, history):
+    context = _chatbot_context()
+    history_text = ""
+    if history:
+        lines = []
+        for item in history[-6:]:
+            role = item.get("role", "user")
+            text = (item.get("text") or "").strip()
+            if not text:
+                continue
+            label = "User" if role == "user" else "Assistant"
+            lines.append(f"{label}: {text}")
+        history_text = "\n".join(lines)
+    prompt_parts = [
+        "You are NetSense Campus AI.",
+        "Use ONLY the context and heatmap trends below.",
+        "If the answer is not explicitly in the context or trends, reply: \"I don't have that information in the current context.\"",
+        "",
+        "Context:",
+        context,
+        "",
+        "Conversation:",
+        history_text,
+        f"User: {message}",
+        "Assistant:",
+    ]
+    return "\n".join([part for part in prompt_parts if part is not None])
+
+
+def _heatmap_trends(params):
+    if not params:
+        return ""
+    try:
+        block = params.get("block")
+        floor = int(params.get("floor"))
+    except (TypeError, ValueError):
+        return ""
+
+    mode = params.get("mode", Scan.WIFI)
+    service_provider = (params.get("service_provider") or "").strip()
+
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return ""
+
+    queryset = CellAggregate.objects.filter(floor_plan=floor_plan)
+    if mode in [Scan.WIFI, Scan.MOBILE]:
+        queryset = queryset.filter(mode=mode)
+
+    if not service_provider or service_provider.lower() == "all":
+        queryset = queryset.filter(is_all_providers=True)
+    else:
+        queryset = queryset.filter(is_all_providers=False, service_provider=service_provider)
+
+    rows = list(queryset)
+    if not rows:
+        return "No heatmap data is available for the current selection."
+
+    signals = [row.median_signal for row in rows]
+    counts = [row.scan_count for row in rows]
+    total_cells = len(signals)
+    avg_signal = sum(signals) / total_cells
+    min_signal = min(signals)
+    max_signal = max(signals)
+    strong = sum(1 for value in signals if value >= -65)
+    medium = sum(1 for value in signals if -80 <= value < -65)
+    weak = sum(1 for value in signals if value < -80)
+    total_scans = sum(counts)
+
+    return (
+        "Heatmap Trends:\n"
+        f"- Cells: {total_cells}\n"
+        f"- Avg signal: {avg_signal:.2f} dBm (min {min_signal:.2f}, max {max_signal:.2f})\n"
+        f"- Strength mix: strong {strong}, medium {medium}, weak {weak}\n"
+        f"- Total scans contributing: {total_scans}\n"
+    )
+
+
+def chatbot_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    message = (payload.get("message") or "").strip()
+    history = payload.get("history") or []
+    heatmap_params = payload.get("heatmap") or {}
+    if not message:
+        return JsonResponse({"error": "message required"}, status=400)
+
+    try:
+        api_key = _require_openai_key()
+    except ImproperlyConfigured as exc:
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    model = getattr(settings, "OPENAI_MODEL", "gpt-4.1")
+    trends = ""
+    if request.user.is_authenticated:
+        trends = _heatmap_trends(heatmap_params)
+    prompt = _build_chat_prompt(message, history)
+    if trends:
+        prompt = prompt.replace("Context:\n", f"{trends}\n\nContext:\n", 1)
+    body = json.dumps({"model": model, "instructions": "Answer strictly from provided context.", "input": prompt}).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=25) as response:
+            raw = response.read()
+    except urllib.error.HTTPError as exc:
+        try:
+            error_body = exc.read().decode("utf-8")
+        except Exception:
+            error_body = "OpenAI API error."
+        return JsonResponse({"error": error_body}, status=502)
+    except urllib.error.URLError:
+        return JsonResponse({"error": "Unable to reach OpenAI API."}, status=502)
+
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid OpenAI response."}, status=502)
+
+    answer = ""
+    for item in data.get("output", []):
+        content = item.get("content") or []
+        for part in content:
+            if part.get("type") == "output_text":
+                answer = part.get("text", "")
+                break
+        if answer:
+            break
+
+    if not answer:
+        answer = "I don't have that information in the current context."
+
+    return JsonResponse({"answer": answer})
