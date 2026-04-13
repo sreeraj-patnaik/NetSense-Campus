@@ -1287,6 +1287,11 @@ small {
     box-shadow: var(--shadow-md);
 }
 
+.controls-grid .btn {
+    width: 100%;
+    justify-content: center;
+}
+
 label {
     display: flex;
     flex-direction: column;
@@ -1338,6 +1343,15 @@ textarea:focus {
     align-items: start;
 }
 
+.controls-panel .panel-header {
+    margin-bottom: 0.85rem;
+}
+
+.controls-panel .controls-grid {
+    margin-top: 0;
+    padding: 1rem;
+}
+
 .map-wrap {
     position: relative;
     width: auto;
@@ -1353,6 +1367,27 @@ textarea:focus {
         radial-gradient(circle at 82% 20%, rgba(244, 131, 4, 0.14), transparent 20%),
         linear-gradient(180deg, #0d1324 0%, #0a0f1d 100%);
     box-shadow: var(--shadow-xl);
+}
+
+.map-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+    pointer-events: none;
+}
+
+.map-wrap.is-loading .map-status {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .map-wrap::before {
@@ -1436,6 +1471,20 @@ textarea:focus {
     margin-bottom: 0.8rem;
     font-size: 0.85rem;
     color: var(--muted);
+}
+
+.legend-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.85rem;
+}
+
+.legend-stats strong {
+    display: block;
+    color: var(--ink);
+    font-size: 0.95rem;
 }
 
 .legend-bar {

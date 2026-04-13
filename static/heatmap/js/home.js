@@ -12,13 +12,22 @@
     const spreadRange = document.getElementById("spreadRange");
     const legendMin = document.getElementById("legendMin");
     const legendMax = document.getElementById("legendMax");
+    const legendAvg = document.getElementById("legendAvg");
+    const legendStrong = document.getElementById("legendStrong");
+    const legendWeak = document.getElementById("legendWeak");
+    const autoRefreshToggle = document.getElementById("autoRefreshToggle");
+    const refreshInterval = document.getElementById("refreshInterval");
+    const exportBtn = document.getElementById("exportBtn");
     const mapWrap = document.getElementById("mapWrap");
+    const mapStatus = document.getElementById("mapStatus");
     const floorMap = document.getElementById("floorMap");
     const gridLayer = document.getElementById("gridLayer");
     const heatmapCanvas = document.getElementById("heatmapCanvas");
     const heatmapCtx = heatmapCanvas.getContext("2d");
     let rows = cfg.rows;
     let cols = cfg.cols;
+    let lastPoints = [];
+    let refreshTimer = null;
 
     function selectedKey() {
         return `${blockSelect.value}:${floorSelect.value}`;
@@ -159,6 +168,11 @@
             return;
         }
 
+        if (mapStatus) {
+            mapStatus.textContent = "Loading heatmap...";
+        }
+        mapWrap.classList.add("is-loading");
+
         const params = new URLSearchParams({
             block: blockSelect.value,
             floor: floorSelect.value,
@@ -170,9 +184,43 @@
         }
         const url = `${cfg.heatmapApiUrl}?${params.toString()}`;
 
-        const response = await fetch(url);
+        let response = null;
+        try {
+            response = await fetch(url);
+        } catch (error) {
+            response = null;
+        }
+
+        if (!response) {
+            if (mapStatus) {
+                mapStatus.textContent = "Network error. Retrying...";
+            }
+            setTimeout(loadHeatmap, 2000);
+            return;
+        }
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                legendMin.textContent = "Login required";
+                legendMax.textContent = "--";
+                if (mapStatus) {
+                    mapStatus.textContent = "Login required for heatmap.";
+                }
+                mapWrap.classList.remove("is-loading");
+                return;
+            }
+            if (mapStatus) {
+                mapStatus.textContent = "Unable to load heatmap.";
+            }
+            mapWrap.classList.remove("is-loading");
+            return;
+        }
         const points = await response.json();
-        if (!Array.isArray(points)) return;
+        if (!Array.isArray(points)) {
+            mapWrap.classList.remove("is-loading");
+            return;
+        }
+        lastPoints = points;
 
         const mapRect = mapWrap.getBoundingClientRect();
         if (!mapRect.width || !mapRect.height) {
@@ -195,6 +243,14 @@
         const range = Math.max(1, maxSignal - minSignal);
         legendMin.textContent = `${minSignal.toFixed(1)} dBm`;
         legendMax.textContent = `${maxSignal.toFixed(1)} dBm`;
+        if (legendAvg && legendStrong && legendWeak) {
+            const avg = signals.reduce((acc, value) => acc + value, 0) / signals.length;
+            const strong = signals.filter((value) => value >= -65).length;
+            const weak = signals.filter((value) => value < -80).length;
+            legendAvg.textContent = `${avg.toFixed(1)} dBm`;
+            legendStrong.textContent = `${strong}`;
+            legendWeak.textContent = `${weak}`;
+        }
 
         const renderMode = renderModeSelect.value;
         const renderPoints = interpolateToggle.checked ? points : points.filter((point) => !point.interpolated);
@@ -244,6 +300,8 @@
                 heatmapCtx.fillRect(x, y, cellWidth, cellHeight);
             });
         }
+
+        mapWrap.classList.remove("is-loading");
     }
 
     function renderProviderOptions() {
@@ -273,6 +331,48 @@
         await loadHeatmap();
     }
 
+    function syncAutoRefresh() {
+        if (!autoRefreshToggle || !refreshInterval) return;
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+        if (autoRefreshToggle.checked) {
+            const interval = Math.max(5000, Number(refreshInterval.value || 30000));
+            refreshTimer = setInterval(loadHeatmap, interval);
+        }
+    }
+
+    function exportPng() {
+        if (!floorMap.complete || heatmapCanvas.width === 0) return;
+        const exportCanvas = document.createElement("canvas");
+        exportCanvas.width = heatmapCanvas.width;
+        exportCanvas.height = heatmapCanvas.height;
+        const ctx = exportCanvas.getContext("2d");
+        ctx.drawImage(floorMap, 0, 0, exportCanvas.width, exportCanvas.height);
+        ctx.drawImage(heatmapCanvas, 0, 0);
+        ctx.strokeStyle = "rgba(16, 32, 64, 0.22)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i < cols; i += 1) {
+            const x = (exportCanvas.width / cols) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, exportCanvas.height);
+            ctx.stroke();
+        }
+        for (let j = 1; j < rows; j += 1) {
+            const y = (exportCanvas.height / rows) * j;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(exportCanvas.width, y);
+            ctx.stroke();
+        }
+        const link = document.createElement("a");
+        link.download = `heatmap-${blockSelect.value}-floor-${floorSelect.value}.png`;
+        link.href = exportCanvas.toDataURL("image/png");
+        link.click();
+    }
+
     reloadBtn.addEventListener("click", refresh);
     blockSelect.addEventListener("change", function () {
         syncFloorOptions();
@@ -289,9 +389,13 @@
     autoSmoothToggle.addEventListener("change", refresh);
     confidenceToggle.addEventListener("change", refresh);
     spreadRange.addEventListener("input", refresh);
+    autoRefreshToggle?.addEventListener("change", syncAutoRefresh);
+    refreshInterval?.addEventListener("change", syncAutoRefresh);
+    exportBtn?.addEventListener("click", exportPng);
     window.addEventListener("resize", loadHeatmap);
 
     syncFloorOptions();
     renderProviderOptions();
+    syncAutoRefresh();
     refresh();
 })();

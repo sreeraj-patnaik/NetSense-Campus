@@ -90,8 +90,13 @@
                 }),
             });
 
-            const data = await response.json();
-            const answer = data.answer || data.error || "I don't have that information in the current context.";
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = null;
+            }
+            const answer = data?.answer || data?.error || (response.ok ? "I don't have that information in the current context." : "Assistant unavailable.");
             appendMessage("assistant", answer);
             history.push({ role: "assistant", text: answer });
             setStatus("");
