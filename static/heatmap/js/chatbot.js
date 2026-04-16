@@ -34,6 +34,16 @@
         status.textContent = text;
     }
 
+    function setLoading(isLoading) {
+        if (!form || !input) return;
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = isLoading;
+        }
+        input.disabled = isLoading;
+        setStatus(isLoading ? "Thinking..." : "");
+    }
+
     function getCsrfToken() {
         const name = "csrftoken=";
         const cookies = document.cookie.split(";").map((c) => c.trim());
@@ -61,7 +71,7 @@
         appendMessage("user", text);
         history.push({ role: "user", text });
         input.value = "";
-        setStatus("Thinking...");
+        setLoading(true);
 
         try {
             const blockSelect = document.getElementById("blockSelect");
@@ -99,10 +109,12 @@
             const answer = data?.answer || data?.error || (response.ok ? "I don't have that information in the current context." : "Assistant unavailable.");
             appendMessage("assistant", answer);
             history.push({ role: "assistant", text: answer });
-            setStatus("");
         } catch (error) {
             appendMessage("assistant", "Unable to reach the assistant right now.");
             setStatus("Connection error.");
+        } finally {
+            setLoading(false);
+            input.focus();
         }
     });
 })();

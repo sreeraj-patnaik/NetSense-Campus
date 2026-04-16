@@ -1061,15 +1061,16 @@ def _post_json(url, headers, body):
 
 def _build_chat_prompt(message: str, docs_context: str, floor_context: str, history: list[dict[str, Any]] | None):
     instructions = [
-        "You are NetSense Campus AI.",
-        "Answer only from the provided internal documentation and the current floor context.",
-        "Do not invent schema, fields, endpoints, or data structures.",
-        "If a floor context is present, use only that floor's matrix and summary data for operational interpretation.",
-        "If the answer is not present in the provided material, say that it is not available in the current context.",
-        "Keep the output neat, concise, and structured.",
-        "Use short headings and bullet points when helpful.",
-        "Do not emit mojibake, stray symbols, or random unicode artifacts.",
-    ]
+    "You are a helpful personal assistant.",
+    "Reply naturally, like a smart human assistant.",
+    "Answer the user's question directly.",
+    "Be concise unless the user asks for detail.",
+    "Use the provided documentation or floor context only when it is relevant to the user's question.",
+    "Do not explain the project unless the user asks about it.",
+    "Do not invent facts. If something is missing, say you do not have enough information.",
+    "Keep the tone calm, helpful, and conversational.",
+    "Always respond in English.",
+]
 
     history_lines = []
     for item in (history or [])[-6:]:
@@ -1133,10 +1134,13 @@ def _call_groq(prompt: str, history: list[dict[str, Any]] | None):
     messages_payload = [
         {
             "role": "system",
-            "content": (
-                "You are NetSense Campus AI. Use only the provided documentation and floor context. "
-                "Do not invent data structures. Keep the answer neat and grounded in the actual system."
-            ),
+          "content": (
+    "Always respond in English. "
+    "You are a helpful personal assistant. "
+    "Answer the user's question directly and naturally. "
+    "Use the provided context only when relevant. "
+    "Do not explain the project unless the user asks about it."
+),
         }
     ]
 
@@ -1184,10 +1188,13 @@ def _call_groq(prompt: str, history: list[dict[str, Any]] | None):
 # -----------------------------------------------------------------------------
 
 
-@csrf_exempt
 def chatbot_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=405)
+
+    content_type = request.headers.get("Content-Type", "")
+    if "application/json" not in content_type:
+        return JsonResponse({"error": "Content-Type must be application/json"}, status=415)
 
     try:
         payload = json.loads(request.body.decode("utf-8") or "{}")
@@ -1195,7 +1202,7 @@ def chatbot_api(request):
         return JsonResponse({"error": "invalid JSON"}, status=400)
 
     message = _normalize_text(str(payload.get("message") or "")).strip()
-    history = payload.get("history") or []
+    history = payload.get("history") if isinstance(payload.get("history"), list) else []
 
     if not message:
         return JsonResponse({"error": "message required"}, status=400)
@@ -1208,12 +1215,18 @@ def chatbot_api(request):
     # Otherwise, the AI stays on documentation-only context.
     prompt = _build_chat_prompt(message, docs_context, floor_context, history)
 
-    answer, error = _call_ollama(prompt)
+    try:
+        answer, error = _call_ollama(prompt)
+    except Exception as exc:
+        answer, error = None, str(exc)
+
     if not answer:
         try:
             answer, error = _call_groq(prompt, history)
         except ImproperlyConfigured as exc:
             return JsonResponse({"error": str(exc)}, status=500)
+        except Exception as exc:
+            return JsonResponse({"error": str(exc)}, status=502)
 
     if not answer:
         return JsonResponse({"error": error or "Unable to generate response."}, status=502)

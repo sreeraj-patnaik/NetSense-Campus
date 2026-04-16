@@ -7,6 +7,7 @@ urlpatterns = [
     path("manifest.webmanifest", views.manifest_view, name="manifest"),
     path("sw.js", views.service_worker, name="service_worker"),
     path("heatmap/", views.heatmap_view, name="heatmap_view"),
+    path("dashboard/", views.heatmap_view, name="dashboard"),
     path("architecture/", views.dti_view, name="dti"),
     path("project-structure/", views.project_structure_view, name="project_structure"),
     path("data-models-apis/", views.data_models_view, name="data_models"),
