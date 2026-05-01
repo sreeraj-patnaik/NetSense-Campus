@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Block, CellAggregate, FloorPlan, Scan, ServiceProvider, Institution, InstitutionMembership
+from .models import Block, CellAggregate, FloorPlan, Scan, ServiceProvider, Institution, InstitutionMembership, UserDashboardPreference
 
 
 class FloorPlanInline(admin.TabularInline):
@@ -112,4 +112,11 @@ class InstitutionMembershipAdmin(admin.ModelAdmin):
     list_display = ("user", "institution", "status", "role", "can_scan", "created_at", "approved_at")
     list_filter = ("status", "role", "can_scan", "institution")
     search_fields = ("user__username", "user__email", "institution__name")
+
+
+@admin.register(UserDashboardPreference)
+class UserDashboardPreferenceAdmin(admin.ModelAdmin):
+    list_display = ("user", "selected_institution", "dashboard_preset", "compare_block", "compare_floor", "weak_threshold", "updated_at")
+    list_filter = ("dashboard_preset", "selected_institution")
+    search_fields = ("user__username", "user__email", "selected_institution__name", "selected_institution__code")
     ordering = ("-created_at",)

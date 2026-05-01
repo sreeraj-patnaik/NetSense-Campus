@@ -20,6 +20,24 @@
     const autoRefreshToggle = document.getElementById("autoRefreshToggle");
     const refreshInterval = document.getElementById("refreshInterval");
     const exportBtn = document.getElementById("exportBtn");
+    const trendChart = document.getElementById("trendChart");
+    const trendCtx = trendChart ? trendChart.getContext("2d") : null;
+    const alertsList = document.getElementById("alertsList");
+    const compareBlock = document.getElementById("compareBlock");
+    const compareFloor = document.getElementById("compareFloor");
+    const compareRefreshBtn = document.getElementById("compareRefreshBtn");
+    const compareCurrentLabel = document.getElementById("compareCurrentLabel");
+    const compareCurrentSignal = document.getElementById("compareCurrentSignal");
+    const compareCurrentWeak = document.getElementById("compareCurrentWeak");
+    const compareCurrentConfidence = document.getElementById("compareCurrentConfidence");
+    const compareTargetLabel = document.getElementById("compareTargetLabel");
+    const compareTargetSignal = document.getElementById("compareTargetSignal");
+    const compareTargetWeak = document.getElementById("compareTargetWeak");
+    const compareTargetConfidence = document.getElementById("compareTargetConfidence");
+    const trendAvg = document.getElementById("trendAvg");
+    const trendMin = document.getElementById("trendMin");
+    const trendMax = document.getElementById("trendMax");
+    const trendCount = document.getElementById("trendCount");
     const mapWrap = document.getElementById("mapWrap");
     const mapStatus = document.getElementById("mapStatus");
     const floorMap = document.getElementById("floorMap");
@@ -33,6 +51,7 @@
     let refreshTimer = null;
     let weakClusters = [];
     let weakClusterLookup = new Map();
+    let dashboardInsights = null;
 
     function selectedKey() {
         return `${blockSelect.value}:${floorSelect.value}`;
@@ -44,6 +63,208 @@
 
     function floorsForBlock(block) {
         return cfg.blockFloors?.[block] || [];
+    }
+
+    function selectedPreset() {
+        return String(cfg.selectedPreset || "my_institution");
+    }
+
+    function syncCompareFloors() {
+        if (!compareBlock || !compareFloor) return;
+        const floors = floorsForBlock(compareBlock.value);
+        const currentValue = compareFloor.value || String(cfg.compareFloor || "");
+        compareFloor.innerHTML = "";
+
+        floors.forEach((floor) => {
+            const option = document.createElement("option");
+            option.value = String(floor);
+            option.textContent = String(floor);
+            compareFloor.appendChild(option);
+        });
+
+        if (!floors.length) {
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = "No floors";
+            compareFloor.appendChild(option);
+            compareFloor.disabled = true;
+            return;
+        }
+
+        compareFloor.disabled = false;
+        compareFloor.value = floors.map(String).includes(currentValue) ? currentValue : String(floors[0]);
+    }
+
+    function setPresetDefaults() {
+        const preset = selectedPreset();
+        if (preset === "best_provider" && bestProviderToggle) {
+            bestProviderToggle.checked = true;
+            providerSelect.disabled = true;
+            interpolateToggle.disabled = true;
+            confidenceToggle.disabled = true;
+        }
+        if (preset === "weak_zones" && weakClustersToggle) {
+            weakClustersToggle.checked = true;
+        }
+    }
+
+    function fmtNumber(value, digits = 1) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return "--";
+        }
+        return Number(value).toFixed(digits);
+    }
+
+    function setText(idNode, value) {
+        if (idNode) idNode.textContent = value;
+    }
+
+    function renderAlerts(alerts) {
+        if (!alertsList) return;
+        alertsList.innerHTML = "";
+        if (!alerts || !alerts.length) {
+            const empty = document.createElement("div");
+            empty.className = "muted";
+            empty.textContent = "No active alerts for this selection.";
+            alertsList.appendChild(empty);
+            return;
+        }
+
+        alerts.forEach((alert) => {
+            const card = document.createElement("div");
+            card.className = `alert-card tone-${alert.tone || "info"}`;
+            const title = document.createElement("strong");
+            title.textContent = alert.title || "Alert";
+            const message = document.createElement("p");
+            message.textContent = alert.message || "";
+            card.appendChild(title);
+            card.appendChild(message);
+            alertsList.appendChild(card);
+        });
+    }
+
+    function renderTrendChart(points) {
+        if (!trendChart || !trendCtx) return;
+        const rect = trendChart.getBoundingClientRect();
+        const width = Math.max(1, Math.floor(rect.width));
+        const height = Math.max(1, Math.floor(Math.max(220, rect.height || 240)));
+        trendChart.width = width;
+        trendChart.height = height;
+        trendCtx.clearRect(0, 0, width, height);
+
+        if (!points || !points.length) {
+            trendCtx.fillStyle = "rgba(16,32,64,0.45)";
+            trendCtx.font = "600 14px Inter, sans-serif";
+            trendCtx.fillText("No trend data yet.", 20, 30);
+            return;
+        }
+
+        const validSignals = points.filter((point) => point.avg_signal !== null && point.avg_signal !== undefined);
+        if (!validSignals.length) {
+            trendCtx.fillStyle = "rgba(16,32,64,0.45)";
+            trendCtx.font = "600 14px Inter, sans-serif";
+            trendCtx.fillText("No trend data yet.", 20, 30);
+            return;
+        }
+
+        const values = validSignals.map((point) => Number(point.avg_signal));
+        const minSignal = Math.min(...values);
+        const maxSignal = Math.max(...values);
+        const range = Math.max(1, maxSignal - minSignal);
+        const padX = 22;
+        const padY = 28;
+        const plotWidth = width - padX * 2;
+        const plotHeight = height - padY * 2;
+
+        trendCtx.strokeStyle = "rgba(109, 127, 167, 0.18)";
+        trendCtx.lineWidth = 1;
+        for (let i = 0; i < 4; i += 1) {
+            const y = padY + (plotHeight / 3) * i;
+            trendCtx.beginPath();
+            trendCtx.moveTo(padX, y);
+            trendCtx.lineTo(width - padX, y);
+            trendCtx.stroke();
+        }
+
+        trendCtx.strokeStyle = "rgba(111, 73, 217, 0.92)";
+        trendCtx.lineWidth = 3;
+        trendCtx.beginPath();
+        points.forEach((point, index) => {
+            const x = padX + (plotWidth * index) / Math.max(1, points.length - 1);
+            const signal = point.avg_signal !== null && point.avg_signal !== undefined ? Number(point.avg_signal) : minSignal;
+            const normalized = (signal - minSignal) / range;
+            const y = padY + plotHeight - normalized * plotHeight;
+            if (index === 0) {
+                trendCtx.moveTo(x, y);
+            } else {
+                trendCtx.lineTo(x, y);
+            }
+        });
+        trendCtx.stroke();
+
+        points.forEach((point, index) => {
+            const x = padX + (plotWidth * index) / Math.max(1, points.length - 1);
+            const signal = point.avg_signal !== null && point.avg_signal !== undefined ? Number(point.avg_signal) : minSignal;
+            const normalized = (signal - minSignal) / range;
+            const y = padY + plotHeight - normalized * plotHeight;
+            trendCtx.fillStyle = "rgba(244,131,4,0.95)";
+            trendCtx.beginPath();
+            trendCtx.arc(x, y, 4, 0, Math.PI * 2);
+            trendCtx.fill();
+        });
+    }
+
+    function renderComparison(comparison) {
+        if (!comparison) return;
+        const current = comparison.current || {};
+        const target = comparison.comparison || {};
+        if (compareCurrentLabel) compareCurrentLabel.textContent = `${current.block || "--"} - F${current.floor ?? "--"}`;
+        if (compareCurrentSignal) compareCurrentSignal.textContent = current.avg_signal === null || current.avg_signal === undefined ? "--" : `${fmtNumber(current.avg_signal)} dBm`;
+        if (compareCurrentWeak) compareCurrentWeak.textContent = current.weak_cells ?? "--";
+        if (compareCurrentConfidence) compareCurrentConfidence.textContent = current.avg_confidence === null || current.avg_confidence === undefined ? "--" : fmtNumber(current.avg_confidence, 3);
+        if (compareTargetLabel) compareTargetLabel.textContent = `${target.block || "--"} - F${target.floor ?? "--"}`;
+        if (compareTargetSignal) compareTargetSignal.textContent = target.avg_signal === null || target.avg_signal === undefined ? "--" : `${fmtNumber(target.avg_signal)} dBm`;
+        if (compareTargetWeak) compareTargetWeak.textContent = target.weak_cells ?? "--";
+        if (compareTargetConfidence) compareTargetConfidence.textContent = target.avg_confidence === null || target.avg_confidence === undefined ? "--" : fmtNumber(target.avg_confidence, 3);
+    }
+
+    async function loadDashboardInsights() {
+        if (!cfg.dashboardInsightsApiUrl || !blockSelect.value || !floorSelect.value) return;
+        const params = new URLSearchParams({
+            block: blockSelect.value,
+            floor: floorSelect.value,
+            mode: modeSelect.value,
+            weak_threshold: String(cfg.weakThreshold || -80),
+        });
+        if (providerSelect.value) {
+            params.set("service_provider", providerSelect.value);
+        }
+        if (compareBlock?.value) {
+            params.set("compare_block", compareBlock.value);
+        }
+        if (compareFloor?.value) {
+            params.set("compare_floor", compareFloor.value);
+        }
+        let response = null;
+        try {
+            response = await fetch(`${cfg.dashboardInsightsApiUrl}?${params.toString()}`);
+        } catch (error) {
+            response = null;
+        }
+        if (!response || !response.ok) {
+            return;
+        }
+        dashboardInsights = await response.json();
+        const trend = dashboardInsights?.trend || {};
+        const summary = trend.summary || {};
+        const points = trend.points || [];
+        renderTrendChart(points);
+        renderAlerts(dashboardInsights?.alerts?.alerts || []);
+        renderComparison(dashboardInsights?.comparison || {});
+        if (trendAvg) trendAvg.textContent = summary.avg_signal === null || summary.avg_signal === undefined ? "--" : `${fmtNumber(summary.avg_signal)} dBm`;
+        if (trendMin) trendMin.textContent = summary.min_signal === null || summary.min_signal === undefined ? "--" : `${fmtNumber(summary.min_signal)} dBm`;
+        if (trendMax) trendMax.textContent = summary.max_signal === null || summary.max_signal === undefined ? "--" : `${fmtNumber(summary.max_signal)} dBm`;
+        if (trendCount) trendCount.textContent = summary.total_scans ?? "--";
     }
 
     function syncFloorOptions() {
@@ -166,6 +387,42 @@
         mapWrap.style.setProperty("--map-aspect", `${floorMap.naturalWidth} / ${floorMap.naturalHeight}`);
     }
 
+    function getRenderedImageFrame() {
+        const wrapRect = mapWrap.getBoundingClientRect();
+        if (!floorMap.naturalWidth || !floorMap.naturalHeight || !wrapRect.width || !wrapRect.height) {
+            return {
+                left: 0,
+                top: 0,
+                width: wrapRect.width,
+                height: wrapRect.height,
+            };
+        }
+
+        const scale = Math.min(
+            wrapRect.width / floorMap.naturalWidth,
+            wrapRect.height / floorMap.naturalHeight
+        );
+        const width = Math.max(1, floorMap.naturalWidth * scale);
+        const height = Math.max(1, floorMap.naturalHeight * scale);
+
+        return {
+            left: (wrapRect.width - width) / 2,
+            top: (wrapRect.height - height) / 2,
+            width,
+            height,
+        };
+    }
+
+    function applyOverlayFrame() {
+        const frame = getRenderedImageFrame();
+        [gridLayer, heatmapCanvas].forEach((layer) => {
+            layer.style.left = `${frame.left}px`;
+            layer.style.top = `${frame.top}px`;
+            layer.style.width = `${frame.width}px`;
+            layer.style.height = `${frame.height}px`;
+        });
+    }
+
     function applyFloorDimensions() {
         const floorCfg = selectedFloorConfig();
         rows = Math.max(1, Number(floorCfg.rows || cfg.rows));
@@ -173,6 +430,7 @@
         mapWrap.dataset.rows = String(rows);
         mapWrap.dataset.cols = String(cols);
         drawGrid();
+        applyOverlayFrame();
     }
 
     function waitForImageLoad() {
@@ -268,15 +526,15 @@
         }
         lastPoints = points;
 
-        const mapRect = mapWrap.getBoundingClientRect();
-        if (!mapRect.width || !mapRect.height) {
+        const frame = getRenderedImageFrame();
+        if (!frame.width || !frame.height) {
             requestAnimationFrame(loadHeatmap);
             return;
         }
-        const cellWidth = mapRect.width / cols;
-        const cellHeight = mapRect.height / rows;
-        const canvasWidth = Math.max(1, Math.floor(mapRect.width));
-        const canvasHeight = Math.max(1, Math.floor(mapRect.height));
+        const cellWidth = frame.width / cols;
+        const cellHeight = frame.height / rows;
+        const canvasWidth = Math.max(1, Math.floor(frame.width));
+        const canvasHeight = Math.max(1, Math.floor(frame.height));
         heatmapCanvas.width = canvasWidth;
         heatmapCanvas.height = canvasHeight;
         heatmapCtx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -460,6 +718,7 @@
         applyFloorDimensions();
         await waitForImageLoad();
         await loadHeatmap();
+        await loadDashboardInsights();
     }
 
     function syncAutoRefresh() {
@@ -531,6 +790,12 @@
     autoRefreshToggle?.addEventListener("change", syncAutoRefresh);
     refreshInterval?.addEventListener("change", syncAutoRefresh);
     exportBtn?.addEventListener("click", exportPng);
+    compareBlock?.addEventListener("change", function () {
+        syncCompareFloors();
+        loadDashboardInsights();
+    });
+    compareFloor?.addEventListener("change", loadDashboardInsights);
+    compareRefreshBtn?.addEventListener("click", loadDashboardInsights);
     window.addEventListener("resize", loadHeatmap);
     mapWrap.addEventListener("mouseleave", hideWeakTooltip);
     mapWrap.addEventListener("mousemove", function (event) {
@@ -538,11 +803,16 @@
             hideWeakTooltip();
             return;
         }
-        const rect = mapWrap.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const cellWidth = rect.width / cols;
-        const cellHeight = rect.height / rows;
+        const wrapRect = mapWrap.getBoundingClientRect();
+        const frame = getRenderedImageFrame();
+        const x = event.clientX - wrapRect.left - frame.left;
+        const y = event.clientY - wrapRect.top - frame.top;
+        if (x < 0 || y < 0 || x > frame.width || y > frame.height) {
+            hideWeakTooltip();
+            return;
+        }
+        const cellWidth = frame.width / cols;
+        const cellHeight = frame.height / rows;
         const cellX = Math.max(0, Math.min(cols - 1, Math.floor(x / cellWidth)));
         const cellY = Math.max(0, Math.min(rows - 1, Math.floor(y / cellHeight)));
         const key = `${cellX}:${cellY}`;
@@ -552,16 +822,19 @@
         }
         const cluster = weakClusters[weakClusterLookup.get(key)];
         const text = `Weak zone: ${cluster.size} cells, avg ${cluster.avg_signal} dBm`;
-        showWeakTooltip(text, x + 12, y + 12);
+        showWeakTooltip(text, frame.left + x + 12, frame.top + y + 12);
     });
 
     syncFloorOptions();
     renderProviderOptions();
+    syncCompareFloors();
+    setPresetDefaults();
     syncAutoRefresh();
     if (bestProviderToggle?.checked) {
         providerSelect.disabled = true;
         interpolateToggle.disabled = true;
         confidenceToggle.disabled = true;
     }
+    applyOverlayFrame();
     refresh();
 })();

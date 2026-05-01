@@ -1,100 +1,126 @@
 ﻿{% extends "base.html" %}
 
+{% block title %}Workflow | NetSense Campus{% endblock %}
+{% block meta_description %}Understand the full operational workflow of NetSense Campus from onboarding to signal intelligence decisioning.{% endblock %}
+
 {% block content %}
-<section class="page-hero hero-split">
-    <div class="container landing-hero-copy">
-        <span class="pill">Operational workflow</span>
-        <h1>Workflow Steps</h1>
-        <p>Executive pipeline view from setup to decision-ready visualization.</p>
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Operational flow</span>
+            <h1>A deterministic workflow from onboarding to signal decisioning.</h1>
+            <p class="lead">
+                From configuration to remediation, every step is structured, traceable, and designed for repeatable outcomes.
+            </p>
+
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <strong>6</strong>
+                    <span>Core stages</span>
+                </div>
+                <div class="metric-card">
+                    <strong>3</strong>
+                    <span>Validation layers</span>
+                </div>
+                <div class="metric-card">
+                    <strong>1</strong>
+                    <span>Closed loop system</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">System behavior</span>
+                <h2>Predictable and repeatable</h2>
+                <p>
+                    Every stage feeds the next with validated data, ensuring reliable insights and controlled iteration cycles.
+                </p>
+            </div>
+        </aside>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="section-header">
-            <h2>System pipeline</h2>
-            <p>Each stage is deterministic and traceable for audit-ready outputs.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">Pipeline</span>
+            <h2>End-to-end workflow</h2>
+            <p>Each step is isolated, testable, and contributes to a continuous improvement loop.</p>
         </div>
-        <div class="workflow-track">
-            <div class="workflow-step">
-                <span class="workflow-index">01</span>
-                <div>
-                    <h3>Configure</h3>
-                    <p>Define blocks, floors, and grid dimensions for each floor plan.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">02</span>
-                <div>
-                    <h3>Request Access</h3>
-                    <p>Users sign up and select their institution for approval.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">03</span>
-                <div>
-                    <h3>Approve</h3>
-                    <p>Institution admins review and approve access requests.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">04</span>
-                <div>
-                    <h3>Capture</h3>
-                    <p>POST scans via <code>/api/scan/</code> or use the authenticated UI.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">05</span>
-                <div>
-                    <h3>Aggregate</h3>
-                    <p>Refresh median aggregates for provider + all-providers buckets.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">06</span>
-                <div>
-                    <h3>Visualize</h3>
-                    <p>GET <code>/api/heatmap/</code> and render confidence-aware heatmaps.</p>
-                </div>
-            </div>
-            <div class="workflow-step">
-                <span class="workflow-index">07</span>
-                <div>
-                    <h3>Analyze</h3>
-                    <p>Detect weak zones and best-provider cells for targeted action.</p>
-                </div>
-            </div>
+
+        <div class="timeline-grid timeline-grid-3">
+            <article class="timeline-card reveal">
+                <strong>01</strong>
+                <h3>Configure floor plans</h3>
+                <p>Define blocks, floors, dimensions, and blocked cells.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>02</strong>
+                <h3>Access governance</h3>
+                <p>Users request and receive institution-scoped approval.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>03</strong>
+                <h3>Capture scans</h3>
+                <p>Collect validated Wi-Fi/mobile measurements by grid cell.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>04</strong>
+                <h3>Aggregate metrics</h3>
+                <p>Compute median, variance, and confidence per provider bucket.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>05</strong>
+                <h3>Generate insights</h3>
+                <p>Render weak zones, best-provider maps, and trend analytics.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>06</strong>
+                <h3>Act and recheck</h3>
+                <p>Guide remediation and targeted resampling cycles.</p>
+            </article>
         </div>
     </div>
 </section>
 
-<section class="section revamp-slab">
-    <div class="container revamp-grid-3">
-        <div class="revamp-card">
-            <h3>Scan validation</h3>
-            <div class="detail-list">
-                <span>Block and floor must exist</span>
-                <span>Mode must be <code>wifi</code> or <code>mobile</code></span>
-                <span>Cell bounds and blocked cells enforced</span>
-            </div>
+<section class="section section-soft">
+    <div class="container">
+        <div class="section-head reveal">
+            <span class="eyebrow">System guarantees</span>
+            <h2>Built-in safeguards</h2>
+            <p>Controls ensure data integrity, consistency, and transparency.</p>
         </div>
-        <div class="revamp-card">
-            <h3>Aggregation guarantees</h3>
-            <div class="detail-list">
-                <span>Median computed from all scans in bucket</span>
-                <span>Variance + confidence tracked per cell</span>
-                <span>Provider + all-providers stored separately</span>
-                <span>Atomic refresh per scan</span>
-            </div>
-        </div>
-        <div class="revamp-card">
-            <h3>Interpolation rules</h3>
-            <div class="detail-list">
-                <span>Single-pass only</span>
-                <span>Max distance window of 2</span>
-                <span>Interpolated cells are labeled</span>
-            </div>
+
+        <div class="feature-grid feature-grid-3">
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">01</span>
+                    <h3>Validation guardrails</h3>
+                </div>
+                <p>Mode checks, bounds checks, and blocked-cell rejection ensure integrity.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">02</span>
+                    <h3>Compute guarantees</h3>
+                </div>
+                <p>Aggregation is deterministic and safely refreshed transactionally.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">03</span>
+                    <h3>Inference limits</h3>
+                </div>
+                <p>Interpolation remains transparent and explicitly labeled.</p>
+            </article>
         </div>
     </div>
 </section>

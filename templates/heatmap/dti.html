@@ -1,158 +1,146 @@
 ﻿{% extends "base.html" %}
 
+{% block title %}Project structure | NetSense Campus{% endblock %}
+{% block meta_description %}A clear view of the architecture, product logic, and implementation path behind NetSense Campus.{% endblock %}
+
 {% block content %}
-<section class="page-hero hero-split">
-    <div class="container hero-grid landing-hero-copy" >
-        <div>
-            <span class="pill">Design Thinking & Innovation</span>
-            <h1>Human-centered logic backed by system-level rigor.</h1>
-            <p>
-                This page maps design thinking decisions directly to architectural choices,
-                ensuring every feature is explainable, testable, and operationally sound.
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Design thinking + innovation</span>
+            <h1>Architecture decisions linked directly to user pain and operational outcomes.</h1>
+            <p class="lead">
+                This page explains the rationale behind model design, aggregation, interpolation, and interface behavior.
             </p>
-            <div class="hero-tags">
-                <span>Spatial precision</span>
-                <span>Deterministic aggregation</span>
-                <span>Audit-ready outputs</span>
-            </div>
-        </div>
-        <div class="hero-card">
-            <h3>Problem framing</h3>
-            <p>Indoor signal issues need location-aligned evidence and reliable statistics.</p>
-            <div class="hero-card-grid">
-                <div>
-                    <span>Coverage noise</span>
-                    <strong>Median baseline</strong>
+
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <strong>4</strong>
+                    <span>Core design stages</span>
                 </div>
-                <div>
-                    <span>Provider variance</span>
-                    <strong>Carrier buckets</strong>
+                <div class="metric-card">
+                    <strong>3</strong>
+                    <span>System principles</span>
                 </div>
-                <div>
-                    <span>Decision trust</span>
-                    <strong>Explainable outputs</strong>
+                <div class="metric-card">
+                    <strong>1</strong>
+                    <span>Operational workflow</span>
                 </div>
             </div>
         </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">Product logic</span>
+                <h2>Built for explainability</h2>
+                <p>
+                    Every decision in the architecture should help operators understand what happened, where it happened,
+                    and what to do next.
+                </p>
+            </div>
+        </aside>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="section-title">
-            <h2>DTI core principles</h2>
-            <p>Design thinking translated into concrete technical guarantees.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">Discovery</span>
+            <h2>How the problem is framed</h2>
+            <p>These blocks show how the system moves from user pain to a practical solution.</p>
         </div>
-        <div class="info-grid">
-            <article class="info-card">
-                <h3>Problem definition</h3>
-                <p>Signal intelligence requires spatial precision, statistical reliability, and operational clarity.</p>
-                <div class="detail-list">
-                    <span>Location-aligned evidence</span>
-                    <span>Provider comparisons</span>
-                    <span>Decision-ready aggregates</span>
-                </div>
-            </article>
-            <article class="info-card">
-                <h3>Technical innovation</h3>
-                <p>Median aggregation and controlled interpolation keep inference transparent.</p>
-                <div class="detail-list">
-                    <span>Deterministic processing</span>
-                    <span>Transparent algorithms</span>
-                    <span>Audit-ready outputs</span>
-                </div>
-            </article>
-            <article class="info-card">
-                <h3>Operational excellence</h3>
-                <p>Minimal API surface, strong validation, and cloud-ready deployment.</p>
-                <div class="detail-list">
-                    <span>RESTful design</span>
-                    <span>Progressive enhancement</span>
-                    <span>Deployment automation</span>
-                </div>
-            </article>
-        </div>
-    </div>
-</section>
 
-<section class="section light-slab">
-    <div class="container">
-        <div class="section-title">
-            <h2>Design thinking framework</h2>
-            <p>Each phase mapped to a specific implementation decision.</p>
-        </div>
-        <div class="timeline">
-            <div class="timeline-item">
-                <span class="timeline-step">01</span>
-                <div>
+        <div class="feature-grid feature-grid-3">
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">01</span>
                     <h3>Empathize</h3>
-                    <p>Operational teams need location-aligned evidence, not isolated readings.</p>
                 </div>
-            </div>
-            <div class="timeline-item">
-                <span class="timeline-step">02</span>
-                <div>
+                <p>Teams need location-aware evidence to troubleshoot signal complaints quickly.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">02</span>
                     <h3>Define</h3>
-                    <p>Every measurement maps to a grid cell, enabling stable comparison.</p>
                 </div>
-            </div>
-            <div class="timeline-item">
-                <span class="timeline-step">03</span>
-                <div>
+                <p>The problem is formalized as cell-indexed signal quality per block and floor.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">03</span>
                     <h3>Ideate</h3>
-                    <p>Median aggregation with provider buckets ensures explainable insights.</p>
                 </div>
-            </div>
-            <div class="timeline-item">
-                <span class="timeline-step">04</span>
-                <div>
-                    <h3>Prototype</h3>
-                    <p>Django APIs, spatial indexing, and a PWA-first interface.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <span class="timeline-step">05</span>
-                <div>
-                    <h3>Test + Deploy</h3>
-                    <p>Validation checks, automated rebuilds, and cloud deployment on Render.</p>
-                </div>
-            </div>
+                <p>Median aggregation plus confidence inference balances quality and explainability.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container">
+        <div class="section-head reveal">
+            <span class="eyebrow">Execution path</span>
+            <h2>Development sequence</h2>
+            <p>Each stage builds toward a stable, production-ready system.</p>
+        </div>
+
+        <div class="timeline-grid">
+            <article class="timeline-card reveal">
+                <strong>01</strong>
+                <h3>Prototype</h3>
+                <p>Django APIs, scan UI, and heatmap renderer.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>02</strong>
+                <h3>Validate</h3>
+                <p>Strict bounds checks and blocked-cell protection.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>03</strong>
+                <h3>Optimize</h3>
+                <p>Provider buckets, weak-zone clusters, and best-provider layers.</p>
+            </article>
+
+            <article class="timeline-card reveal">
+                <strong>04</strong>
+                <h3>Deploy</h3>
+                <p>Render-ready architecture with operational commands.</p>
+            </article>
         </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container split-section">
-        <div class="split-panel">
-            <h3>System map</h3>
-            <div class="terminal-tree">
-                <div>Scan Input → Validation → Aggregation → Heatmap API</div>
-                <div>Confidence + Clustering → Weak Zones → Best Provider View</div>
+    <div class="container split-layout">
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Architecture principles</span>
+                <h2>Innovation blocks</h2>
             </div>
-        </div>
-        <div class="split-copy">
-            <div class="section-title">
-                <h2>Innovation signals</h2>
-                <p>Design decisions exposed through models, algorithms, and contracts.</p>
+
+            <ul class="check-list">
+                <li>Cell index model for deterministic spatial mapping</li>
+                <li>Median + variance + confidence for robust summaries</li>
+                <li>Single-pass interpolation to avoid compounding synthetic errors</li>
+            </ul>
+        </article>
+
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Math layer</span>
+                <h2>Core formulas</h2>
             </div>
-            <div class="pill-row">
-                <span class="chip">Median per cell</span>
-                <span class="chip">Dual buckets</span>
-                <span class="chip">IDW interpolation</span>
-                <span class="chip">Spatial indexing</span>
-                <span class="chip">Confidence overlay</span>
-                <span class="chip">Weak-zone clusters</span>
-                <span class="chip">Best provider</span>
-            </div>
-            <div class="code-card">
-                <span class="eyebrow">Interpolation</span>
-                <pre><code>weight = (1 / distance^2) * sqrt(count)</code></pre>
-            </div>
-            <div class="code-card">
-                <span class="eyebrow">Cell identity</span>
-                <pre><code>cell_id = cell_y * cols + cell_x</code></pre>
-            </div>
-        </div>
+
+            <pre class="code-block"><code>cell_id = cell_y * cols + cell_x
+
+weight = (1 / distance^2) * sqrt(count)
+
+alpha = base + 0.2 * sqrt(count)/6</code></pre>
+        </article>
     </div>
 </section>
 {% endblock %}

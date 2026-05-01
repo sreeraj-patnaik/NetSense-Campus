@@ -1,91 +1,69 @@
 ﻿{% extends "base.html" %}
 {% load static %}
 
+{% block title %}NetSense Campus | Indoor Signal Intelligence{% endblock %}
+{% block meta_description %}NetSense Campus is a premium indoor signal intelligence platform for campus connectivity, scan analysis, and confidence-aware heatmaps.{% endblock %}
+
 {% block content %}
-<section class="landing-hero hero-split">
-    <div class="container landing-hero-grid ">
-        <div class="landing-hero-copy">
-            <span class="pill">NetSense Campus</span>
-            <h1>Turn campus signal data into clear, trusted coverage intelligence.</h1>
-            <p>
-                Capture Wi-Fi and mobile scans, lock them into grid coordinates, and render
-                a decision-grade heatmap with explainable, deterministic logic.
+<section class="hero hero-home">
+    <div class="container hero-grid hero-grid-wide">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Enterprise indoor signal intelligence</span>
+            <h1>A premium operational cockpit for campus connectivity decisions.</h1>
+            <p class="lead">
+                Capture Wi-Fi and mobile scans, compute trustworthy cell-level metrics, and communicate coverage quality
+                through modern, confidence-aware visualizations.
             </p>
-            <div class="landing-hero-actions">
-                <a class="btn primary" href="{% url 'heatmap_view' %}">Open Live Heatmap</a>
-                <a class="btn ghost" href="{% url 'scan' %}">Open Scan Console</a>
-                <button class="btn ghost" id="installAppBtn" type="button" hidden>Download App</button>
-                <span class="install-status" id="installAppStatus" hidden></span>
+
+            <div class="hero-actions">
+                <a class="btn primary" href="{% url 'dashboard' %}">Open heatmap</a>
+                <a class="btn ghost" href="{% url 'scan' %}">Open scan console</a>
+                <button class="btn ghost" id="installAppBtn" type="button" hidden>Download app</button>
             </div>
-            <div class="landing-kpis">
-                <div class="landing-kpi">
+
+            <span class="install-status" id="installAppStatus" hidden></span>
+
+            <div class="hero-stats">
+                <article class="stat-card">
                     <span>Aggregation</span>
                     <strong>Median per cell</strong>
-                </div>
-                <div class="landing-kpi">
-                    <span>Survey</span>
-                    <strong>Next-scan guidance</strong>
-                </div>
-                <div class="landing-kpi">
-                    <span>Interpolation</span>
-                    <strong>IDW, max distance 2</strong>
-                </div>
-                <div class="landing-kpi">
+                </article>
+                <article class="stat-card">
+                    <span>Inference</span>
+                    <strong>IDW interpolation</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Detection</span>
+                    <strong>Weak zone clusters</strong>
+                </article>
+                <article class="stat-card">
                     <span>Delivery</span>
-                    <strong>Scan, Heatmap, Config APIs</strong>
-                </div>
+                    <strong>API + dashboard</strong>
+                </article>
             </div>
         </div>
-        <div class="landing-hero-panel">
-            <div class="landing-hero-visual">
-                <div class="signal-orbit">
-                    <span class="orbit-dot"></span>
-                    <span class="orbit-dot"></span>
-                    <span class="orbit-dot"></span>
+
+        <div class="hero-showcase reveal">
+            <div class="showcase-card">
+                <div class="showcase-head">
+                    <span class="chip">Live coverage snapshot</span>
+                    <span class="muted">Campus floor preview</span>
                 </div>
-                <div class="signal-card">
-                    <span class="eyebrow">Live telemetry</span>
-                    <h3>Coverage snapshot</h3>
-                    <div class="signal-metrics">
-                        <div>
-                            <span>Cell coverage</span>
-                            <strong>94%</strong>
-                        </div>
-                        <div>
-                            <span>Weak zones</span>
-                            <strong>12</strong>
-                        </div>
-                        <div>
-                            <span>Active scans</span>
-                            <strong>326</strong>
-                        </div>
+
+                <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor plan preview" class="showcase-image">
+
+                <div class="showcase-metrics">
+                    <div>
+                        <span>Coverage</span>
+                        <strong>94%</strong>
                     </div>
-                </div>
-                <div class="signal-map">
-                    <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor preview">
-                </div>
-            </div>
-            <div class="landing-hero-list">
-                <div>
-                    <span class="eyebrow">Signal snapshot</span>
-                    <h3>Production-ready coverage intelligence.</h3>
-                </div>
-                <div class="landing-hero-items">
-                    <div class="landing-hero-item">
-                        <strong>Grid indexed capture</strong>
-                        <p>Block, floor, and cell metadata with strict validation.</p>
+                    <div>
+                        <span>Weak cells</span>
+                        <strong>12</strong>
                     </div>
-                    <div class="landing-hero-item">
-                        <strong>Provider-aware buckets</strong>
-                        <p>Separate mobile carriers and Wi-Fi profiles for clarity.</p>
-                    </div>
-                    <div class="landing-hero-item">
-                        <strong>Institution access control</strong>
-                        <p>Approval-based access to each building heatmap.</p>
-                    </div>
-                    <div class="landing-hero-item">
-                        <strong>Audit-ready outputs</strong>
-                        <p>Deterministic JSON payloads for judges and reviewers.</p>
+                    <div>
+                        <span>Trend</span>
+                        <strong>Stable</strong>
                     </div>
                 </div>
             </div>
@@ -95,112 +73,80 @@
 
 <section class="section">
     <div class="container">
-        <div class="section-title">
-            <h2>Core capabilities</h2>
-            <p>Everything needed to collect, compute, and communicate signal health.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">Core capabilities</span>
+            <h2>Everything needed for end-to-end indoor signal governance.</h2>
         </div>
-        <div class="feature-grid">
-            <article class="feature-card">
-                <h3>Deterministic aggregation</h3>
-                <p>Per-cell medians reduce outliers and create stable baselines.</p>
-                <div class="detail-list">
-                    <span><code>CellAggregate</code> per provider</span>
-                    <span>All-providers bucket for comparison</span>
+
+        <div class="feature-grid feature-grid-3">
+            <article class="surface-card reveal feature-card">
+                <div class="feature-card-top">
+                    <span class="card-index">01</span>
+                    <h3>Deterministic aggregation</h3>
                 </div>
+                <p>Median-based computation resists outliers and stabilizes decision baselines.</p>
+                <ul class="check-list compact">
+                    <li>Provider and all-provider buckets</li>
+                    <li>Cell-level confidence metrics</li>
+                </ul>
             </article>
-            <article class="feature-card">
-                <h3>Controlled interpolation</h3>
-                <p>Single-pass weighting keeps inference safe and explainable.</p>
-                <div class="detail-list">
-                    <span><code>weight = 1/d^2 * sqrt(count)</code></span>
-                    <span>Max distance window of 2</span>
+
+            <article class="surface-card reveal feature-card">
+                <div class="feature-card-top">
+                    <span class="card-index">02</span>
+                    <h3>Explainable interpolation</h3>
                 </div>
+                <p>Single-pass weighted inference fills sparse zones while preserving traceability.</p>
+                <ul class="check-list compact">
+                    <li><code>weight = (1 / d^2) * sqrt(count)</code></li>
+                    <li>No chained synthetic propagation</li>
+                </ul>
             </article>
-            <article class="feature-card">
-                <h3>Operational insights</h3>
-                <p>Surface weak zones, confidence shading, and best-provider views.</p>
-                <div class="detail-list">
-                    <span>Weak-zone cluster detection</span>
-                    <span>Best provider per cell</span>
+
+            <article class="surface-card reveal feature-card">
+                <div class="feature-card-top">
+                    <span class="card-index">03</span>
+                    <h3>Operational overlays</h3>
                 </div>
+                <p>Weak cluster detection and best-provider maps accelerate remediation.</p>
+                <ul class="check-list compact">
+                    <li>Confidence visualization</li>
+                    <li>Cross-provider comparisons</li>
+                </ul>
             </article>
         </div>
     </div>
 </section>
 
-<section class="section landing-slab">
+<section class="section section-soft">
     <div class="container">
-        <div class="section-title">
-            <h2>Operational workflow</h2>
-            <p>A simple, repeatable path from scan to decision-ready visuals.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">Operational flow</span>
+            <h2>From field sampling to actionable insights.</h2>
         </div>
-        <div class="step-grid">
-            <div class="step-card">
-                <span class="step-index">01</span>
-                <h3>Capture</h3>
-                <p>Collect Wi-Fi and mobile scans with block, floor, and cell metadata.</p>
-            </div>
-            <div class="step-card">
-                <span class="step-index">02</span>
-                <h3>Validate</h3>
-                <p>Normalize provider names and verify signal ranges before storage.</p>
-            </div>
-            <div class="step-card">
-                <span class="step-index">03</span>
-                <h3>Aggregate</h3>
-                <p>Compute medians per grid cell and provider for stable baselines.</p>
-            </div>
-            <div class="step-card">
-                <span class="step-index">04</span>
-                <h3>Visualize</h3>
-                <p>Render heatmaps with confidence, weak-zone, and provider overlays.</p>
-            </div>
+
+        <div class="step-track">
+            <article class="step-pill reveal"><strong>1</strong><span>Capture</span></article>
+            <article class="step-pill reveal"><strong>2</strong><span>Validate</span></article>
+            <article class="step-pill reveal"><strong>3</strong><span>Aggregate</span></article>
+            <article class="step-pill reveal"><strong>4</strong><span>Analyze</span></article>
+            <article class="step-pill reveal"><strong>5</strong><span>Decide</span></article>
         </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container split-section">
-        <div class="split-copy">
-            <div class="section-title">
-                <h2>Architecture in one view</h2>
-                <p>Transparent data flow built for reviewers, judges, and operators.</p>
+    <div class="container">
+        <div class="cta-panel reveal">
+            <div>
+                <span class="eyebrow">Unified design system</span>
+                <h2>Start with architecture or jump straight into live dashboards.</h2>
+                <p>All pages use one consistent system for layout, hierarchy, and controls.</p>
             </div>
-            <div class="detail-list">
-                <span><strong>Input:</strong> mobile and Wi-Fi scans with cell coordinates</span>
-                <span><strong>Compute:</strong> deterministic aggregation with confidence + clustering</span>
-                <span><strong>Output:</strong> heatmap, weak zones, best provider, next-scan targets</span>
+            <div class="hero-actions">
+                <a class="btn primary" href="{% url 'project_structure' %}">Project structure</a>
+                <a class="btn ghost" href="{% url 'data_models' %}">Data models + APIs</a>
             </div>
-        </div>
-        <div class="split-panel">
-            <h3>System outputs</h3>
-            <div class="split-metrics">
-                <div>
-                    <span>Coverage confidence</span>
-                    <strong>Density weighted</strong>
-                </div>
-                <div>
-                    <span>Provider comparison</span>
-                    <strong>Carrier buckets</strong>
-                </div>
-                <div>
-                    <span>Audit trail</span>
-                    <strong>Structured logs</strong>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section cta-band">
-    <div class="container cta-inner">
-        <div>
-            <h2>Ready to explore?</h2>
-            <p>Review architecture details or jump straight into live analysis.</p>
-        </div>
-        <div class="cta-actions">
-            <a class="btn primary" href="{% url 'project_structure' %}">Project Structure</a>
-            <a class="btn ghost" href="{% url 'data_models' %}">Data Models + APIs</a>
         </div>
     </div>
 </section>

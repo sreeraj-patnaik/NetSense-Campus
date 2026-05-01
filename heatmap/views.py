@@ -22,8 +22,17 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 from .aggregation import rebuild_aggregates_for_floor, refresh_cell_aggregates
-from .models import CellAggregate, Scan, Block, Institution, InstitutionMembership
+from .models import CellAggregate, Scan, Block, Institution, InstitutionMembership, UserDashboardPreference
 from .forms import SignupForm
+from .services import (
+    build_alerts_payload,
+    build_comparison_payload,
+    build_trend_payload,
+    current_institution as service_current_institution,
+    resolve_dashboard_selection,
+    save_dashboard_preference,
+    viewer_context as service_viewer_context,
+)
 from .utils import (
     compute_confidence,
     ensure_service_provider,
@@ -127,44 +136,7 @@ def _format_ai_answer(text: str) -> str:
 
 
 def _viewer_context(user=None):
-    registry = get_floor_registry()
-    registry = _filter_registry_for_user(user, registry)
-    access_status = "public"
-    if user and user.is_authenticated:
-        approved = _approved_institutions(user)
-        if approved.exists():
-            access_status = "approved"
-        elif InstitutionMembership.objects.filter(user=user, status=InstitutionMembership.PENDING).exists():
-            access_status = "pending"
-        else:
-            access_status = "none"
-    blocks = registry["blocks"]
-    block_floors = registry["block_floors"]
-    floor_configs = registry["floor_configs"]
-
-    initial_block = blocks[0] if blocks else ""
-    floors = block_floors.get(initial_block, [])
-    initial_floor = floors[0] if floors else ""
-    initial_cfg = floor_configs.get(f"{initial_block}:{initial_floor}", {})
-    initial_floor_image = initial_cfg.get("image_url", "")
-
-    if access_status == "approved" and not blocks:
-        access_status = "no_blocks"
-
-    return {
-        "blocks": blocks,
-        "floors": floors,
-        "initial_block": initial_block,
-        "initial_floor": initial_floor,
-        "initial_floor_image": initial_floor_image if access_status == "approved" else "",
-        "grid_rows": max(1, _coerce_int(initial_cfg.get("rows"), settings.HEATMAP_GRID_ROWS) or settings.HEATMAP_GRID_ROWS),
-        "grid_cols": max(1, _coerce_int(initial_cfg.get("cols"), settings.HEATMAP_GRID_COLS) or settings.HEATMAP_GRID_COLS),
-        "block_floors": block_floors,
-        "floor_configs": floor_configs,
-        "service_providers": get_service_providers(),
-        "modes": Scan.MODE_CHOICES,
-        "access_status": access_status,
-    }
+    return service_viewer_context(user)
 
 
 def _approved_institutions(user):
@@ -175,6 +147,27 @@ def _approved_institutions(user):
         memberships__user=user,
         memberships__status=InstitutionMembership.APPROVED,
     ).distinct()
+
+
+def _current_membership(user):
+    if not user or not user.is_authenticated:
+        return None
+    memberships = InstitutionMembership.objects.select_related("institution").filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+    )
+    admin_membership = memberships.filter(role=InstitutionMembership.ADMIN).order_by(
+        "-approved_at",
+        "-created_at",
+    ).first()
+    if admin_membership:
+        return admin_membership
+    return memberships.order_by("-approved_at", "-created_at").first()
+
+
+def _current_institution(user):
+    membership = _current_membership(user)
+    return membership.institution if membership else None
 
 
 def _is_institution_admin(user):
@@ -197,6 +190,17 @@ def _user_can_scan(user):
         status=InstitutionMembership.APPROVED,
     ).filter(
         models.Q(role=InstitutionMembership.ADMIN) | models.Q(can_scan=True)
+    ).exists()
+
+
+def _user_can_view_heatmap(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
     ).exists()
 
 
@@ -322,6 +326,8 @@ def home_view(request):
 
 @login_required
 def heatmap_view(request):
+    if not _user_can_view_heatmap(request.user):
+        return HttpResponseForbidden("Approved institution access required.")
     return render(request, "heatmap/home.html", _viewer_context(request.user))
 
 
@@ -360,6 +366,100 @@ def scan_view(request):
         return redirect("scan")
 
     return render(request, "heatmap/scan.html", context)
+
+
+@login_required
+def dashboard_preferences_view(request):
+    if request.method != "POST":
+        return HttpResponseForbidden("POST required.")
+
+    selection = resolve_dashboard_selection(request.user)
+    preset = (request.POST.get("dashboard_preset") or selection.preset or UserDashboardPreference.PRESET_MY_INSTITUTION).strip()
+    selected_institution_id = request.POST.get("selected_institution")
+    compare_block = (request.POST.get("compare_block") or "").strip()
+    compare_floor = _coerce_int(request.POST.get("compare_floor"))
+    weak_threshold = _coerce_int(request.POST.get("weak_threshold"), selection.weak_threshold)
+
+    if preset == UserDashboardPreference.PRESET_MY_INSTITUTION and not selected_institution_id:
+        current = service_current_institution(request.user)
+        selected_institution_id = current.id if current else None
+
+    save_dashboard_preference(
+        request.user,
+        selected_institution_id=selected_institution_id,
+        dashboard_preset=preset,
+        compare_block=compare_block,
+        compare_floor=compare_floor,
+        weak_threshold=weak_threshold,
+    )
+
+    if hasattr(request, "_messages"):
+        messages.success(request, "Dashboard preferences updated.")
+    return redirect("heatmap_view")
+
+
+@login_required
+def dashboard_insights_api(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "GET required"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "authentication required"}, status=401)
+
+    block = (request.GET.get("block") or "").strip()
+    floor = _coerce_int(request.GET.get("floor"))
+    mode = (request.GET.get("mode") or Scan.WIFI).strip()
+    service_provider = (request.GET.get("service_provider") or "").strip()
+    compare_block = (request.GET.get("compare_block") or "").strip()
+    compare_floor = _coerce_int(request.GET.get("compare_floor"))
+    weak_threshold = _coerce_int(request.GET.get("weak_threshold"), -80)
+
+    if not block or floor is None:
+        return JsonResponse({"error": "block and floor are required query params"}, status=400)
+
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return JsonResponse({"error": "floor not configured"}, status=404)
+    if not _user_can_access_floor(request.user, floor_plan):
+        return JsonResponse({"error": "access denied"}, status=403)
+
+    trend = build_trend_payload(
+        block=block,
+        floor=floor,
+        mode=mode,
+        service_provider=service_provider,
+    )
+    alerts = build_alerts_payload(
+        block=block,
+        floor=floor,
+        mode=mode,
+        service_provider=service_provider,
+        weak_threshold=weak_threshold if weak_threshold is not None else -80,
+    )
+    comparison = build_comparison_payload(
+        block=block,
+        floor=floor,
+        mode=mode,
+        service_provider=service_provider,
+        compare_block=compare_block or None,
+        compare_floor=compare_floor,
+        weak_threshold=weak_threshold if weak_threshold is not None else -80,
+    )
+
+    selection = resolve_dashboard_selection(request.user)
+    return JsonResponse(
+        {
+            "trend": trend,
+            "alerts": alerts,
+            "comparison": comparison,
+            "preset": selection.preset,
+            "selected_institution": {
+                "id": selection.institution.id if selection.institution else None,
+                "name": selection.institution.name if selection.institution else "",
+                "code": selection.institution.code if selection.institution else "",
+            },
+        }
+    )
 
 
 def signup_view(request):

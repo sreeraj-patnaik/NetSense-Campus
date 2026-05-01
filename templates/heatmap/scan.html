@@ -1,114 +1,162 @@
 ﻿{% extends "base.html" %}
 {% load static %}
 
-{% block content %} 
-<section class="dashboard-hero hero-split">
-    <div class="container dashboard-head">
-        <div>
-            <span class="pill">Authenticated capture</span>
-            <h1>Admin Scan Console</h1>
-            <p>Capture signals with device-assisted scanning, plus guided next-scan suggestions.</p>
+{% block title %}Scan Console | NetSense Campus{% endblock %}
+{% block meta_description %}Capture high-quality signal data using guided scan workflows and mobile-assisted detection.{% endblock %}
+
+{% block content %}
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Authenticated capture</span>
+            <h1>Scan console for high-quality signal sampling.</h1>
+            <p class="lead">
+                Use guided workflows, mobile-assisted detection, and next-scan recommendations
+                to improve map coverage with fewer scans.
+            </p>
+
+            <div class="hero-actions">
+                <button class="btn ghost" id="autoScanBtn" type="button">Auto scan</button>
+                <button class="btn ghost" id="suggestScanBtn" type="button">Suggest next scan</button>
+            </div>
+
             {% if current_institution_name %}
-                <div class="muted">Institution: <strong>{{ current_institution_name }}</strong></div>
+                <div class="status-chip">
+                    <span>Institution</span>
+                    <strong>{{ current_institution_name }}</strong>
+                </div>
             {% endif %}
         </div>
-        <div class="dashboard-actions">
-            <button class="btn ghost" id="autoScanBtn" type="button">Auto Scan</button>
-            <button class="btn ghost" id="suggestScanBtn" type="button">Suggest Next Scan</button>
-        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">Workflow</span>
+                <div class="summary-stack">
+                    <div class="summary-row"><span>Step 1</span><strong>Select location</strong></div>
+                    <div class="summary-row"><span>Step 2</span><strong>Capture signal</strong></div>
+                    <div class="summary-row"><span>Step 3</span><strong>Submit scan</strong></div>
+                </div>
+            </div>
+        </aside>
     </div>
 </section>
 
-<section class="scan-shell">
-    <div class="container scan-grid">
-        <div class="scan-card">
-            <div class="panel-header">
-                <div>
-                    <h3>Scan Input</h3>
-                    <span class="muted">Secure, validated submissions.</span>
-                </div>
-                <span class="chip">Live device capture</span>
-            </div>
-            <form id="scanForm" method="post" class="scan-form">
-                {% csrf_token %}
-                <label>
-                    Block
-                    <select name="block" id="scanBlock">
-                        {% for block in blocks %}
-                            <option value="{{ block }}">{{ block }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Floor
-                    <select name="floor" id="scanFloor">
-                        {% for floor in floors %}
-                            <option value="{{ floor }}">{{ floor }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Mode
-                    <select name="mode" id="scanMode">
-                        {% for value, label in modes %}
-                            <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Service Provider
-                    <input
-                        name="service_provider"
-                        id="serviceProviderInput"
-                        list="serviceProviderList"
-                        required
-                        placeholder="Start typing..."
-                    >
-                    <datalist id="serviceProviderList"></datalist>
-                </label>
-                <div class="auto-scan-status" id="autoScanStatus">Detects network mode on mobile.</div>
-                <div class="auto-scan-debug" id="autoScanDebug" hidden></div>
-                <label>
-                    Network Name / SSID
-                    <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
-                </label>
-                <label>
-                    Signal (dBm)
-                    <input name="signal_strength" id="signalStrengthInput" type="number" required placeholder="-72">
-                </label>
-                <div class="cell-readout">
-                    Selected Cell: <strong id="selectedCellText">None</strong>
-                </div>
-                <div class="auto-scan-status" id="suggestScanStatus">Suggest next scan to cover weak areas.</div>
-                <input type="hidden" name="cell_x" id="cellXInput" required>
-                <input type="hidden" name="cell_y" id="cellYInput" required>
-                <button class="btn primary" type="submit">Save Scan</button>
-            </form>
-        </div>
+<section class="section scan-shell">
+    <div class="container dashboard-layout">
 
-        <div class="scan-card scan-map">
-            <div class="panel-header">
-                <div>
-                    <h3>Floor Grid</h3>
-                    <span class="muted">Tap to select the target cell.</span>
+        <!-- LEFT: MAP FIRST (important UX change) -->
+        <main class="dashboard-main">
+            <section class="surface-card scan-map reveal">
+                <div class="panel-header">
+                    <div>
+                        <h2>Floor grid</h2>
+                        <p class="muted">Tap or click to select the target cell.</p>
+                    </div>
+                    <span class="chip">Interactive grid</span>
                 </div>
-                <span class="chip">Interactive grid</span>
-            </div>
-            <div
-                class="map-wrap"
-                id="scanMapWrap"
-                data-rows="{{ grid_rows }}"
-                data-cols="{{ grid_cols }}"
-            >
-                <img
-                    id="scanFloorMap"
-                    src="{% static 'heatmap/images/floor-placeholder.svg' %}"
-                    alt="Floor map for scanning"
+
+                <div
+                    class="map-wrap"
+                    id="scanMapWrap"
+                    data-rows="{{ grid_rows }}"
+                    data-cols="{{ grid_cols }}"
                 >
-                <div id="scanGridLayer" class="grid-layer"></div>
-                <div id="scanMarkerLayer" class="heatmap-layer"></div>
-            </div>
-        </div>
+                    <img
+                        id="scanFloorMap"
+                        src="{% static 'heatmap/images/floor-placeholder.svg' %}"
+                        alt="Floor map for scanning"
+                    >
+                    <div id="scanGridLayer" class="grid-layer"></div>
+                    <div id="scanMarkerLayer" class="heatmap-layer"></div>
+                </div>
+
+                <div class="map-footer">
+                    <span class="muted">Selected cell</span>
+                    <strong id="selectedCellText">None</strong>
+                </div>
+            </section>
+        </main>
+
+        <!-- RIGHT: FORM -->
+        <aside class="dashboard-side">
+            <section class="surface-card reveal">
+                <div class="panel-header">
+                    <div>
+                        <h2>Scan input</h2>
+                        <p class="muted">Validated and structured submission.</p>
+                    </div>
+                    <span class="chip">Live capture</span>
+                </div>
+
+                <form id="scanForm" method="post" class="form-grid">
+                    {% csrf_token %}
+
+                    <label class="field">
+                        <span>Block</span>
+                        <select name="block" id="scanBlock">
+                            {% for block in blocks %}
+                                <option value="{{ block }}">{{ block }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Floor</span>
+                        <select name="floor" id="scanFloor">
+                            {% for floor in floors %}
+                                <option value="{{ floor }}">{{ floor }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Mode</span>
+                        <select name="mode" id="scanMode">
+                            {% for value, label in modes %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Service provider</span>
+                        <input
+                            name="service_provider"
+                            id="serviceProviderInput"
+                            list="serviceProviderList"
+                            required
+                            placeholder="Start typing..."
+                        >
+                        <datalist id="serviceProviderList"></datalist>
+                    </label>
+
+                    <div class="form-hint" id="autoScanStatus">
+                        Detects network mode on mobile.
+                    </div>
+
+                    <label class="field">
+                        <span>Network name / SSID</span>
+                        <input name="network_name" id="networkNameInput" type="text" placeholder="CampusNet-2F-AP01">
+                    </label>
+
+                    <label class="field">
+                        <span>Signal (dBm)</span>
+                        <input name="signal_strength" id="signalStrengthInput" type="number" required placeholder="-72">
+                    </label>
+
+                    <div class="form-hint" id="suggestScanStatus">
+                        Suggest next scan to cover weak areas.
+                    </div>
+
+                    <input type="hidden" name="cell_x" id="cellXInput" required>
+                    <input type="hidden" name="cell_y" id="cellYInput" required>
+
+                    <button class="btn primary" type="submit">
+                        Save scan
+                    </button>
+                </form>
+            </section>
+        </aside>
     </div>
 </section>
 
@@ -127,5 +175,6 @@
         serviceProviders: JSON.parse(document.getElementById("scan-service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/scan.js' %}"></script>
+
+<script src="{% static 'heatmap/js/scan.js' %}?v=20260501-imagebox-1"></script>
 {% endblock %}

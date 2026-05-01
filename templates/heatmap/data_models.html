@@ -1,181 +1,168 @@
 ﻿{% extends "base.html" %}
 
+{% block title %}Data models + APIs | NetSense Campus{% endblock %}
+{% block meta_description %}Explore the data models, formulas, constraints, and API contracts behind NetSense Campus.{% endblock %}
+
 {% block content %}
-<section class="page-hero hero-split">
-    <div class="container landing-hero-copy">
-        <span class="pill">Models and endpoints</span>
-        <h1>Data Models and APIs</h1>
-        <p>Executive reference for entities, constraints, and service surface.</p>
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Data contract</span>
+            <h1>Data models and API contracts powering the signal intelligence layer.</h1>
+            <p class="lead">
+                A structured view of the entities, constraints, and endpoints that keep the platform predictable,
+                scalable, and safe to extend.
+            </p>
+
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <strong>6</strong>
+                    <span>Core API endpoints</span>
+                </div>
+                <div class="metric-card">
+                    <strong>4</strong>
+                    <span>Primary domain entities</span>
+                </div>
+                <div class="metric-card">
+                    <strong>1</strong>
+                    <span>Institution-scoped data model</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">Design principle</span>
+                <h2>Clean contracts, fewer surprises</h2>
+                <p>
+                    Every scan, aggregate, and visualization should be traceable back to a predictable model and a
+                    well-defined endpoint.
+                </p>
+            </div>
+        </aside>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="section-header">
-            <h2>Core data models</h2>
-            <p>Optimized for spatial indexing, provider bucketing, and fast heatmap reads.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">Core entities</span>
+            <h2>Domain objects</h2>
+            <p>These models describe how space, identity, and scan telemetry connect.</p>
         </div>
-        <div class="model-grid">
-            <article class="model-card">
-                <h3>Block</h3>
-                <p>Campus partition used for structure and navigation.</p>
-                <div class="detail-list">
-                    <span><code>code</code></span>
-                    <span><code>institution</code></span>
-                    <span><code>name</code></span>
-                    <span><code>is_active</code></span>
+
+        <div class="feature-grid feature-grid-3">
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">01</span>
+                    <h3>Institution + Membership</h3>
                 </div>
+                <p>Access-scoped tenancy with approval workflows and role boundaries.</p>
             </article>
-            <article class="model-card">
-                <h3>Institution</h3>
-                <p>Organization boundary for access control.</p>
-                <div class="detail-list">
-                    <span><code>name</code></span>
-                    <span><code>code</code></span>
-                    <span><code>is_active</code></span>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">02</span>
+                    <h3>Block + FloorPlan</h3>
                 </div>
+                <p>Spatial context and grid definitions for every floor in a workspace.</p>
             </article>
-            <article class="model-card">
-                <h3>InstitutionMembership</h3>
-                <p>User access requests and approval status.</p>
-                <div class="detail-list">
-                    <span><code>user</code></span>
-                    <span><code>institution</code></span>
-                    <span><code>status</code></span>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">03</span>
+                    <h3>Scan + CellAggregate</h3>
                 </div>
-            </article>
-            <article class="model-card">
-                <h3>ServiceProvider</h3>
-                <p>Provider preferences for mobile and Wi-Fi bucketing.</p>
-                <div class="detail-list">
-                    <span><code>name</code></span>
-                    <span><code>mode</code></span>
-                    <span><code>is_active</code></span>
-                </div>
-            </article>
-            <article class="model-card">
-                <h3>FloorPlan</h3>
-                <p>Grid configuration and floor metadata.</p>
-                <div class="detail-list">
-                    <span><code>grid_rows</code></span>
-                    <span><code>grid_cols</code></span>
-                    <span><code>blocked_cells</code></span>
-                </div>
-            </article>
-            <article class="model-card">
-                <h3>Scan</h3>
-                <p>Raw signal sample tied to a grid cell.</p>
-                <div class="detail-list">
-                    <span><code>cell_x</code></span>
-                    <span><code>cell_y</code></span>
-                    <span><code>signal_strength</code></span>
-                </div>
-            </article>
-            <article class="model-card">
-                <h3>CellAggregate</h3>
-                <p>Median, variance, and counts per cell/provider.</p>
-                <div class="detail-list">
-                    <span><code>median_signal</code></span>
-                    <span><code>signal_variance</code></span>
-                    <span><code>scan_count</code></span>
-                    <span><code>is_all_providers</code></span>
-                </div>
+                <p>Raw telemetry and derived metrics with provider-aware buckets.</p>
             </article>
         </div>
     </div>
 </section>
 
-<section class="section revamp-slab">
-    <div class="container revamp-grid-3">
-        <div class="revamp-card">
-            <h3>Indexes</h3>
-            <p>Optimized for spatial and mode filtering.</p>
-            <div class="detail-list">
-                <span><code>(floor_plan, mode)</code></span>
-                <span><code>(cell_x, cell_y)</code></span>
-                <span><code>(cell_id)</code></span>
+<section class="section section-soft">
+    <div class="container split-layout">
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Formulas</span>
+                <h2>Key calculations</h2>
             </div>
-        </div>
-        <div class="revamp-card">
-            <h3>Cell identity</h3>
-            <p>Stable cell indexing across backend and UI.</p>
-            <div class="detail-list">
-                <span><code>cell_id = cell_y * cols + cell_x</code></span>
-                <span>Computed at save time</span>
+
+            <pre class="code-block"><code>cell_id = cell_y * cols + cell_x
+median_signal = median(signals)
+confidence = f(scan_count, variance)</code></pre>
+        </article>
+
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Constraints</span>
+                <h2>Indexes and rules</h2>
             </div>
-        </div>
-        <div class="revamp-card">
-            <h3>Aggregation</h3>
-            <p>Two buckets per cell per mode.</p>
-            <div class="detail-list">
-                <span>Provider-specific</span>
-                <span>All-providers</span>
-            </div>
-        </div>
+
+            <ul class="check-list">
+                <li>Spatial indexes on cell coordinates and id</li>
+                <li>Unique aggregate key per cell + mode + provider bucket</li>
+                <li>Institution-bound block uniqueness</li>
+            </ul>
+        </article>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="section-header">
-            <h2>API surface</h2>
-            <p>Small, stable endpoints for ingestion, visualization, and configuration.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">API surface</span>
+            <h2>Endpoints</h2>
+            <p>Frontend initialization, ingestion, and analysis all flow through these contracts.</p>
         </div>
-        <div class="api-grid">
-            <div class="api-card">
-                <span class="chip">POST /api/scan/</span>
-                <h3>Ingest scans</h3>
-                <p>Validates block, floor, mode, bounds, and blocked cells before insert.</p>
-                <div class="detail-list">
-                    <span><code>block</code>, <code>floor</code>, <code>cell_x</code></span>
-                    <span><code>cell_y</code>, <code>mode</code>, <code>signal_strength</code></span>
+
+        <div class="endpoint-grid">
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-post">POST</span>
+                    <code>/api/scan/</code>
                 </div>
-            </div>
-            <div class="api-card">
-                <span class="chip">GET /api/heatmap/</span>
-                <h3>Read heatmap</h3>
-                <p>Returns aggregates with confidence and optional interpolation.</p>
-                <div class="detail-list">
-                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
-                    <span><code>service_provider</code>, <code>interpolate</code></span>
+                <p>Validated scan ingestion with provider-aware normalization.</p>
+            </article>
+
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-get">GET</span>
+                    <code>/api/heatmap/</code>
                 </div>
-            </div>
-            <div class="api-card">
-                <span class="chip">GET /api/weak-clusters/</span>
-                <h3>Weak zones</h3>
-                <p>Returns clustered weak cells with size and average signal.</p>
-                <div class="detail-list">
-                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
-                    <span><code>service_provider</code></span>
+                <p>Primary visualization payload with optional interpolation.</p>
+            </article>
+
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-get">GET</span>
+                    <code>/api/weak-clusters/</code>
                 </div>
-            </div>
-            <div class="api-card">
-                <span class="chip">GET /api/best-provider/</span>
-                <h3>Best provider</h3>
-                <p>Returns the strongest provider per cell for comparison view.</p>
-                <div class="detail-list">
-                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
-                    <span>Aggregates only</span>
+                <p>Weak zone grouping for alert overlays.</p>
+            </article>
+
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-get">GET</span>
+                    <code>/api/best-provider/</code>
                 </div>
-            </div>
-            <div class="api-card">
-                <span class="chip">GET /api/next-scan/</span>
-                <h3>Next scan</h3>
-                <p>Suggests the next cell to scan based on confidence.</p>
-                <div class="detail-list">
-                    <span><code>block</code>, <code>floor</code>, <code>mode</code></span>
-                    <span><code>service_provider</code></span>
+                <p>Cell-level strongest-provider recommendation map.</p>
+            </article>
+
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-get">GET</span>
+                    <code>/api/next-scan/</code>
                 </div>
-            </div>
-            <div class="api-card">
-                <span class="chip">GET /api/config/</span>
-                <h3>Fetch config</h3>
-                <p>Delivers blocks, floor configs, and provider lists for the UI.</p>
-                <div class="detail-list">
-                    <span>Blocks + floors</span>
-                    <span>Provider lists</span>
+                <p>Guided sampling recommendation for data completeness.</p>
+            </article>
+
+            <article class="endpoint-card reveal">
+                <div class="endpoint-meta">
+                    <span class="method method-get">GET</span>
+                    <code>/api/config/</code>
                 </div>
-            </div>
+                <p>Block, floor, and provider config for frontend initialization.</p>
+            </article>
         </div>
     </div>
 </section>

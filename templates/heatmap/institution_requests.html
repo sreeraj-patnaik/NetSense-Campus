@@ -1,36 +1,73 @@
 {% extends "base.html" %}
 
+{% block title %}Access requests | NetSense Campus{% endblock %}
+{% block meta_description %}Review pending institution access requests for NetSense Campus and approve or reject users safely.{% endblock %}
+
 {% block content %}
-<section class="page-hero hero-split">
-    <div class="container landing-hero-copy">
-        <span class="pill">Institution approvals</span>
-        <h1>Access Requests</h1>
-        <p>Approve or reject pending users for your institution heatmaps.</p>
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Institution approvals</span>
+            <h1>Access requests</h1>
+            <p class="lead">
+                Review pending users for your institution and approve access with one clean workflow.
+            </p>
+
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <strong>{{ pending|length }}</strong>
+                    <span>Pending requests</span>
+                </div>
+                <div class="metric-card">
+                    <strong>3</strong>
+                    <span>Actions per request</span>
+                </div>
+                <div class="metric-card">
+                    <strong>1</strong>
+                    <span>Decision queue</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">Admin workflow</span>
+                <h2>Fast review, clear control</h2>
+                <p>
+                    Approve, approve with scan access, or reject each request from a single list.
+                </p>
+            </div>
+        </aside>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
         {% if pending %}
-            <div class="scan-card">
+            <div class="surface-card reveal">
                 <div class="panel-header">
                     <div>
-                        <h3>Pending Requests</h3>
-                        <span class="muted">Approve to grant access.</span>
+                        <h2>Pending requests</h2>
+                        <p class="muted">Approve to grant access.</p>
                     </div>
                     <span class="chip">{{ pending|length }} pending</span>
                 </div>
-                <div class="requests-table">
+
+                <div class="request-list">
                     {% for membership in pending %}
-                        <div class="request-row">
-                            <div>
-                                <strong>{{ membership.user.username }}</strong>
-                                <div class="muted">{{ membership.user.email }}</div>
+                        <article class="request-card">
+                            <div class="request-main">
+                                <div class="request-user">
+                                    <strong>{{ membership.user.username }}</strong>
+                                    <span class="muted">{{ membership.user.email }}</span>
+                                </div>
+
+                                <div class="request-meta">
+                                    <span class="muted">Institution</span>
+                                    <strong>{{ membership.institution.name }}</strong>
+                                </div>
                             </div>
-                            <div>
-                                <div class="muted">Institution</div>
-                                <strong>{{ membership.institution.name }}</strong>
-                            </div>
+
                             <div class="request-actions">
                                 <form method="post">
                                     {% csrf_token %}
@@ -38,12 +75,14 @@
                                     <input type="hidden" name="action" value="approve">
                                     <button class="btn primary" type="submit">Approve</button>
                                 </form>
+
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="membership_id" value="{{ membership.id }}">
                                     <input type="hidden" name="action" value="approve_scan">
                                     <button class="btn primary" type="submit">Approve + Scan</button>
                                 </form>
+
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="membership_id" value="{{ membership.id }}">
@@ -51,16 +90,16 @@
                                     <button class="btn ghost" type="submit">Reject</button>
                                 </form>
                             </div>
-                        </div>
+                        </article>
                     {% endfor %}
                 </div>
             </div>
         {% else %}
-            <div class="scan-card">
+            <div class="surface-card reveal empty-state">
                 <div class="panel-header">
                     <div>
-                        <h3>No pending requests</h3>
-                        <span class="muted">New access requests will show up here.</span>
+                        <h2>No pending requests</h2>
+                        <p class="muted">New access requests will appear here.</p>
                     </div>
                 </div>
             </div>

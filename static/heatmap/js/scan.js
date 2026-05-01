@@ -85,14 +85,50 @@
         mapWrap.style.setProperty("--map-aspect", `${floorMap.naturalWidth} / ${floorMap.naturalHeight}`);
     }
 
+    function getRenderedImageFrame() {
+        const wrapRect = mapWrap.getBoundingClientRect();
+        if (!floorMap.naturalWidth || !floorMap.naturalHeight || !wrapRect.width || !wrapRect.height) {
+            return {
+                left: 0,
+                top: 0,
+                width: wrapRect.width,
+                height: wrapRect.height,
+            };
+        }
+
+        const scale = Math.min(
+            wrapRect.width / floorMap.naturalWidth,
+            wrapRect.height / floorMap.naturalHeight
+        );
+        const width = Math.max(1, floorMap.naturalWidth * scale);
+        const height = Math.max(1, floorMap.naturalHeight * scale);
+
+        return {
+            left: (wrapRect.width - width) / 2,
+            top: (wrapRect.height - height) / 2,
+            width,
+            height,
+        };
+    }
+
+    function applyOverlayFrame() {
+        const frame = getRenderedImageFrame();
+        [gridLayer, markerLayer].forEach((layer) => {
+            layer.style.left = `${frame.left}px`;
+            layer.style.top = `${frame.top}px`;
+            layer.style.width = `${frame.width}px`;
+            layer.style.height = `${frame.height}px`;
+        });
+    }
+
     function drawSelectedCell(cellX, cellY) {
         const existing = markerLayer.querySelector(".selected-marker");
         if (existing) {
             existing.remove();
         }
-        const rect = mapWrap.getBoundingClientRect();
-        const cellWidth = rect.width / cols;
-        const cellHeight = rect.height / rows;
+        const frame = getRenderedImageFrame();
+        const cellWidth = frame.width / cols;
+        const cellHeight = frame.height / rows;
         const marker = document.createElement("div");
         marker.className = "selected-marker";
         marker.style.position = "absolute";
@@ -110,9 +146,9 @@
         if (existing) {
             existing.remove();
         }
-        const rect = mapWrap.getBoundingClientRect();
-        const cellWidth = rect.width / cols;
-        const cellHeight = rect.height / rows;
+        const frame = getRenderedImageFrame();
+        const cellWidth = frame.width / cols;
+        const cellHeight = frame.height / rows;
         const marker = document.createElement("div");
         marker.className = "suggested-marker";
         marker.style.position = "absolute";
@@ -161,6 +197,7 @@
         clearSelectedCell();
         clearSuggestedCell();
         drawGrid();
+        applyOverlayFrame();
     }
 
     function updateNetworkLabel() {
@@ -192,11 +229,15 @@
 
     mapWrap.addEventListener("click", function (event) {
         if (!floorSelect.value) return;
-        const rect = mapWrap.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const cellWidth = rect.width / cols;
-        const cellHeight = rect.height / rows;
+        const wrapRect = mapWrap.getBoundingClientRect();
+        const frame = getRenderedImageFrame();
+        const x = event.clientX - wrapRect.left - frame.left;
+        const y = event.clientY - wrapRect.top - frame.top;
+        if (x < 0 || y < 0 || x > frame.width || y > frame.height) {
+            return;
+        }
+        const cellWidth = frame.width / cols;
+        const cellHeight = frame.height / rows;
         const cellX = Math.max(0, Math.min(cols - 1, Math.floor(x / cellWidth)));
         const cellY = Math.max(0, Math.min(rows - 1, Math.floor(y / cellHeight)));
 
@@ -229,6 +270,7 @@
     });
     window.addEventListener("resize", function () {
         syncMapAspectRatio();
+        applyOverlayFrame();
         if (cellXInput.value !== "" && cellYInput.value !== "") {
             drawSelectedCell(Number(cellXInput.value), Number(cellYInput.value));
         }
@@ -383,10 +425,14 @@
 
     syncFloorOptions();
     setMapImage();
-    floorMap.addEventListener("load", syncMapAspectRatio);
+    floorMap.addEventListener("load", function () {
+        syncMapAspectRatio();
+        applyOverlayFrame();
+    });
     renderProviderOptions();
     updateNetworkLabel();
     applyFloorDimensions();
+    applyOverlayFrame();
 
     if (autoScanStatus && window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
         setAutoScanStatus("Native auto scan ready. Tap Auto Scan.", "info");

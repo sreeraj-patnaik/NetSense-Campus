@@ -55,6 +55,42 @@ class InstitutionMembership(models.Model):
         return f"{self.user} -> {self.institution} ({self.status})"
 
 
+class UserDashboardPreference(models.Model):
+    PRESET_MY_INSTITUTION = "my_institution"
+    PRESET_BEST_PROVIDER = "best_provider"
+    PRESET_WEAK_ZONES = "weak_zones"
+    PRESET_CUSTOM = "custom"
+
+    PRESET_CHOICES = [
+        (PRESET_MY_INSTITUTION, "My Institution"),
+        (PRESET_BEST_PROVIDER, "Best Provider"),
+        (PRESET_WEAK_ZONES, "Weak Zones"),
+        (PRESET_CUSTOM, "Custom"),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="dashboard_preference")
+    selected_institution = models.ForeignKey(
+        Institution,
+        on_delete=models.SET_NULL,
+        related_name="dashboard_preferences",
+        null=True,
+        blank=True,
+    )
+    dashboard_preset = models.CharField(max_length=24, choices=PRESET_CHOICES, default=PRESET_MY_INSTITUTION)
+    compare_block = models.CharField(max_length=20, blank=True)
+    compare_floor = models.PositiveIntegerField(null=True, blank=True)
+    weak_threshold = models.IntegerField(default=-80)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        selected = self.selected_institution.name if self.selected_institution else "auto"
+        return f"{self.user} dashboard preference ({selected}, {self.dashboard_preset})"
+
+
 class Block(models.Model):
     institution = models.ForeignKey(
         Institution,

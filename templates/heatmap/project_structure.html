@@ -1,89 +1,110 @@
 ﻿{% extends "base.html" %}
 
+{% block title %}Project structure | NetSense Campus{% endblock %}
+{% block meta_description %}Understand the repository architecture, layers, and system organization behind NetSense Campus.{% endblock %}
+
 {% block content %}
-<section class="page-hero  hero-split">
-    <div class="container landing-hero-copy" >
-        <span class="pill">Repository layout</span>
-        <h1>Project Structure</h1>
-        <p>Executive overview of code, configuration, and delivery surfaces.</p>
+<section class="page-hero page-hero-tight">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Repository architecture</span>
+            <h1>Project structure designed for maintainability and fast iteration.</h1>
+            <p class="lead">
+                A clean separation of domain logic, presentation, and operations ensures predictable scaling
+                and faster development cycles.
+            </p>
+
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <strong>3</strong>
+                    <span>Core layers</span>
+                </div>
+                <div class="metric-card">
+                    <strong>5</strong>
+                    <span>Top-level modules</span>
+                </div>
+                <div class="metric-card">
+                    <strong>1</strong>
+                    <span>Unified system</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">System philosophy</span>
+                <h2>Separation without friction</h2>
+                <p>
+                    Each layer is independent enough to evolve, yet tightly integrated for performance and clarity.
+                </p>
+            </div>
+        </aside>
     </div>
 </section>
 
 <section class="section">
-    <div class="container split-section">
-        <div class="split-panel terminal-panel">
-            <div class="terminal-head">
-                <span>repo@nsc</span>
-                <span class="terminal-status">main</span>
+    <div class="container split-layout">
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Structure</span>
+                <h2>Repository tree</h2>
             </div>
-            <pre class="terminal-tree">
-.
-├── manage.py
-├── requirements.txt
-├── render.yaml
-├── README.md
-├── media/
-│   └── floor_maps/
-├── static/
-│   ├── logo.jpeg
-│   ├── manifest.webmanifest
-│   └── heatmap/
-│       ├── css/style.css
-│       ├── js/home.js
-│       ├── js/scan.js
-│       └── images/
-├── templates/
-│   ├── base.html
-│   ├── heatmap/home.html
-│   ├── heatmap/scan.html
-│   └── registration/login.html
-├── netsense/
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-└── heatmap/
-    ├── models.py
-    ├── views.py
-    ├── urls.py
-    ├── utils.py
-    ├── aggregation.py
-    └── management/commands/
-        ├── seed_demo_data.py
-        └── rebuild_aggregates.py
-            </pre>
+
+            <pre class="code-block"><code>nsc/
+  netsense/      # project settings and root urls
+  heatmap/       # domain logic and APIs
+  templates/     # rendered frontend templates
+  static/        # global UI assets
+  scripts/       # tooling and docs builders</code></pre>
+        </article>
+
+        <article class="surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Responsibilities</span>
+                <h2>Layer definition</h2>
+            </div>
+
+            <ul class="check-list">
+                <li><strong>Domain:</strong> models, services, aggregation, interpolation</li>
+                <li><strong>Presentation:</strong> templates and JS renderer</li>
+                <li><strong>Operations:</strong> management commands and deployment config</li>
+            </ul>
+        </article>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container">
+        <div class="section-head reveal">
+            <span class="eyebrow">Modules</span>
+            <h2>Key directories</h2>
+            <p>Each directory exists with a single clear responsibility.</p>
         </div>
-        <div class="split-copy">
-            <div class="section-title">
-                <h2>Key modules</h2>
-                <p>Where the most important system responsibilities live.</p>
-            </div>
-            <div class="info-grid">
-                <div class="info-card">
-                    <h3>Core app</h3>
-                    <p>Scan ingestion, aggregation engine, interpolation utilities, and API views.</p>
-                    <div class="detail-list">
-                        <span><code>heatmap/models.py</code></span>
-                        <span><code>heatmap/aggregation.py</code></span>
-                        <span><code>heatmap/views.py</code></span>
-                    </div>
+
+        <div class="feature-grid feature-grid-3">
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">01</span>
+                    <h3>netsense/</h3>
                 </div>
-                <div class="info-card">
-                    <h3>Frontend delivery</h3>
-                    <p>Templates, JS renderer, and styling for the dashboard and scanning UI.</p>
-                    <div class="detail-list">
-                        <span><code>templates/</code></span>
-                        <span><code>static/heatmap/</code></span>
-                    </div>
+                <p>Global Django configuration, middleware, routing, and deployment posture.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">02</span>
+                    <h3>heatmap/</h3>
                 </div>
-                <div class="info-card">
-                    <h3>Operations</h3>
-                    <p>Deployment blueprint and management commands for data refresh.</p>
-                    <div class="detail-list">
-                        <span><code>render.yaml</code></span>
-                        <span><code>management/commands</code></span>
-                    </div>
+                <p>Core signal intelligence domain, aggregation logic, and API orchestration.</p>
+            </article>
+
+            <article class="info-card reveal">
+                <div class="info-card-top">
+                    <span class="card-index">03</span>
+                    <h3>templates + static/</h3>
                 </div>
-            </div>
+                <p>Production UI shell, visualization layers, and reusable design system.</p>
+            </article>
         </div>
     </div>
 </section>

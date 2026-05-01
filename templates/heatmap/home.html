@@ -1,181 +1,366 @@
 ﻿{% extends "base.html" %}
 {% load static %}
 
+{% block title %}Dashboard | NetSense Campus{% endblock %}
+{% block meta_description %}Monitor coverage, weak zones, provider performance, and floor comparisons in the NetSense Campus dashboard.{% endblock %}
+
 {% block content %}
-<section class="dashboard-hero hero-split">
-    <div class="container  landing-hero-copy">
-        <div class="landing-hero-copy">
-            <span class="pill">Live signal intelligence</span>
-            <h1>Heatmap Dashboard</h1>
-            <p>Operational view for confidence, weak zones, and best-provider insights.</p>
-            {% if current_institution_name %}
-                <div class="muted">Institution: <strong>{{ current_institution_name }}</strong></div>
-            {% endif %}
+<section class="page-hero dashboard-hero">
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <span class="eyebrow">Live signal dashboard</span>
+            <h1>Heatmap intelligence for operational coverage decisions.</h1>
+            <p class="lead">
+                Filter by block, floor, mode, and provider to inspect confidence, weak zones, and trend behavior.
+            </p>
+
+            <div class="hero-actions">
+                <a class="btn primary" href="#heatmapWorkspace">Open workspace</a>
+                <button id="reloadBtn" type="button" class="btn ghost">Refresh view</button>
+            </div>
+
+            <div class="hero-badges">
+                {% if current_institution_name %}
+                    <div class="status-chip">
+                        <span>Institution</span>
+                        <strong>{{ current_institution_name }}</strong>
+                    </div>
+                {% endif %}
+                <div class="status-chip">
+                    <span>Status</span>
+                    <strong>
+                        {% if access_status == "pending" %}
+                            Pending approval
+                        {% elif access_status == "none" %}
+                            No access
+                        {% elif access_status == "no_blocks" %}
+                            No blocks configured
+                        {% else %}
+                            Active
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+
             {% if access_status == "pending" %}
-                <div class="auto-scan-status" data-tone="warning">Access pending approval by institution admin.</div>
+                <div class="message warning">Access pending approval by institution admin.</div>
             {% elif access_status == "none" %}
-                <div class="auto-scan-status" data-tone="warning">No approved institution access yet. Contact your admin.</div>
+                <div class="message warning">No approved institution access yet.</div>
             {% elif access_status == "no_blocks" %}
-                <div class="auto-scan-status" data-tone="warning">No blocks are configured for your institution yet.</div>
+                <div class="message warning">No blocks are configured for your institution.</div>
             {% endif %}
         </div>
-        <div class="dashboard-actions">
-            <button id="reloadBtn" type="button" class="btn ghost">Refresh View</button>
-        </div>
+
+        <aside class="hero-panel reveal">
+            <div class="panel-card">
+                <span class="chip">Quick summary</span>
+                <div class="summary-stack">
+                    <div class="summary-row">
+                        <span>Grid size</span>
+                        <strong>{{ grid_rows }} × {{ grid_cols }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Selected preset</span>
+                        <strong>{{ selected_preset|default:"my_institution" }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Weak threshold</span>
+                        <strong>{{ weak_threshold|default:"-80" }} dBm</strong>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
 </section>
 
-<section class="dashboard-body">
-    <div class="container heatmap-layout">
-        <div class="dashboard-map scan-card">
-            <div class="map-header">
-                <div>
-                    <h3>Floor Plan Coverage</h3>
-                    <span class="muted">Dynamic grid overlay with real-time signal rendering.</span>
-                </div>
-                <div class="map-chips">
-                    <span class="chip">Live grid</span>
-                    <span class="chip">Provider buckets</span>
+<section class="section">
+    <div class="container dashboard-toolbar reveal">
+        <form method="post" action="{% url 'dashboard_preferences' %}" class="dashboard-switcher">
+            {% csrf_token %}
+            <input type="hidden" name="compare_block" value="{{ compare_block }}">
+            <input type="hidden" name="compare_floor" value="{{ compare_floor|default:'' }}">
+            <input type="hidden" name="weak_threshold" value="{{ weak_threshold|default:'-80' }}">
+
+            <div class="toolbar-grid">
+                <label class="field">
+                    <span>Institution</span>
+                    <select name="selected_institution">
+                        <option value="">Auto / current</option>
+                        {% for institution in approved_institutions %}
+                            <option value="{{ institution.id }}"{% if selected_institution and institution.id == selected_institution.id %} selected{% endif %}>
+                                {{ institution.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <div class="toolbar-actions">
+                    <button class="btn ghost" type="submit" name="dashboard_preset" value="my_institution">My Institution</button>
+                    <button class="btn ghost" type="submit" name="dashboard_preset" value="best_provider">Best Provider</button>
+                    <button class="btn ghost" type="submit" name="dashboard_preset" value="weak_zones">Weak Zones</button>
                 </div>
             </div>
-            <div
-                class="map-wrap"
-                id="mapWrap"
-                data-rows="{{ grid_rows }}"
-                data-cols="{{ grid_cols }}"
-            >
-                <img
-                    id="floorMap"
-                    src="{{ initial_floor_image }}"
-                    alt="Floor map"
+        </form>
+    </div>
+</section>
+
+<section class="section" id="heatmapWorkspace">
+    <div class="container dashboard-layout">
+        <main class="dashboard-main">
+            <section class="surface-card reveal dashboard-map">
+                <div class="panel-header">
+                    <div>
+                        <h2>Floor coverage map</h2>
+                        <p class="muted">Grid-based rendering with confidence-aware overlays.</p>
+                    </div>
+                </div>
+
+                <div
+                    class="map-wrap"
+                    id="mapWrap"
+                    data-rows="{{ grid_rows }}"
+                    data-cols="{{ grid_cols }}"
                 >
-                <div id="gridLayer" class="grid-layer"></div>
-                <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
-                <div id="weakClusterTooltip" class="map-tooltip" hidden></div>
-                <div class="map-status" id="mapStatus" aria-live="polite"></div>
-            </div>
-            <div class="legend modern-legend">
-                <div class="legend-head">
-                    <h4>Legend</h4>
-                    <span class="muted">Signal strength scale</span>
+                    <img id="floorMap" src="{{ initial_floor_image }}" alt="Floor map">
+                    <div id="gridLayer" class="grid-layer"></div>
+                    <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
+                    <div id="weakClusterTooltip" class="map-tooltip" hidden></div>
+                    <div class="map-status" id="mapStatus" aria-live="polite"></div>
                 </div>
-                <div class="legend-scale">
-                    <span id="legendMin">Min</span>
-                    <div class="legend-bar"></div>
-                    <span id="legendMax">Max</span>
-                </div>
-                <div class="legend-scale">
-                    <span>Interpolated Ramp</span>
-                    <div class="legend-bar interp-bar"></div>
-                </div>
-                <div class="legend-stats" id="legendStats">
-                    <div>
-                        <span class="muted">Average</span>
-                        <strong id="legendAvg">--</strong>
+
+                <div class="legend modern-legend">
+                    <div class="legend-head">
+                        <h3>Legend</h3>
+                        <span class="muted">Signal strength scale</span>
                     </div>
-                    <div>
-                        <span class="muted">Strong</span>
-                        <strong id="legendStrong">--</strong>
+
+                    <div class="legend-scale">
+                        <span id="legendMin">Min</span>
+                        <div class="legend-bar"></div>
+                        <span id="legendMax">Max</span>
                     </div>
-                    <div>
-                        <span class="muted">Weak</span>
-                        <strong id="legendWeak">--</strong>
+
+                    <div class="legend-scale">
+                        <span>Interpolated ramp</span>
+                        <div class="legend-bar interp-bar"></div>
+                    </div>
+
+                    <div class="legend-stats" id="legendStats">
+                        <div><span class="muted">Average</span><strong id="legendAvg">--</strong></div>
+                        <div><span class="muted">Strong</span><strong id="legendStrong">--</strong></div>
+                        <div><span class="muted">Weak</span><strong id="legendWeak">--</strong></div>
+                    </div>
+
+                    <div class="legend-grid">
+                        <div><span class="swatch green"></span> Strong (-65 dBm and above)</div>
+                        <div><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</div>
+                        <div><span class="swatch red"></span> Weak (below -80 dBm)</div>
+                        <div><span class="swatch green" style="opacity: 0.45;"></span> Interpolated</div>
+                        <div><span class="swatch none"></span> No data</div>
+                        <div><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay</div>
+                        <div><span class="swatch none" style="background:#ef4444;"></span> Weak clusters</div>
                     </div>
                 </div>
-                <div class="legend-grid">
-                    <div><span class="swatch green"></span> Strong (-65 dBm and above)</div>
-                    <div><span class="swatch yellow"></span> Medium (-66 to -80 dBm)</div>
-                    <div><span class="swatch red"></span> Weak (below -80 dBm)</div>
-                    <div><span class="swatch green" style="opacity: 0.45;"></span> Interpolated (low confidence)</div>
-                    <div><span class="swatch none"></span> No data</div>
-                    <div><span class="swatch none" style="background:#111; opacity:0.15;"></span> Confidence overlay</div>
-                    <div><span class="swatch none" style="background:#ef4444;"></span> Weak zone clusters</div>
+            </section>
+        </main>
+
+        <aside class="dashboard-side">
+            <section class="surface-card reveal controls-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Controls</h2>
+                        <p class="muted">Filtering and export</p>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="scan-card controls-panel">
+
+                <div class="controls-grid">
+                    <label class="field">
+                        <span>Block</span>
+                        <select id="blockSelect">
+                            {% for block in blocks %}
+                                <option value="{{ block }}">{{ block }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Floor</span>
+                        <select id="floorSelect">
+                            {% for floor in floors %}
+                                <option value="{{ floor }}">{{ floor }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Mode</span>
+                        <select id="modeSelect">
+                            {% for value, label in modes %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Service provider</span>
+                        <select id="providerSelect"></select>
+                    </label>
+
+                    <label class="field">
+                        <span>View</span>
+                        <select id="renderModeSelect">
+                            <option value="smooth" selected>Blended</option>
+                            <option value="contour">Contour bands</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Spread</span>
+                        <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="autoSmoothToggle" checked>
+                        <span>Auto smooth</span>
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="confidenceToggle">
+                        <span>Confidence overlay</span>
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="weakClustersToggle">
+                        <span>Weak zone overlay</span>
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="bestProviderToggle">
+                        <span>Best provider view</span>
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="interpolateToggle" checked>
+                        <span>Show interpolated</span>
+                    </label>
+
+                    <label class="toggle">
+                        <input type="checkbox" id="autoRefreshToggle">
+                        <span>Auto refresh</span>
+                    </label>
+
+                    <label class="field">
+                        <span>Refresh interval</span>
+                        <select id="refreshInterval">
+                            <option value="15000">15s</option>
+                            <option value="30000" selected>30s</option>
+                            <option value="60000">60s</option>
+                        </select>
+                    </label>
+
+                    <button id="exportBtn" type="button" class="btn ghost">Export PNG</button>
+                </div>
+            </section>
+        </aside>
+    </div>
+</section>
+
+<section class="section dashboard-insights">
+    <div class="container insights-grid">
+        <article class="surface-card insights-card reveal">
             <div class="panel-header">
                 <div>
-                    <h3>Controls</h3>
-                    <span class="muted">Tune filters, rendering, and export.</span>
+                    <h2>Trend charts</h2>
+                    <p class="muted">Signal and scan volume over time.</p>
                 </div>
-                <span class="chip">Heatmap settings</span>
+                <span class="chip">Last 14 days</span>
             </div>
-            <div class="controls-grid">
-                <label>
-                    Block
-                    <select id="blockSelect">
+
+            <canvas id="trendChart" class="trend-chart" aria-label="Signal trend chart" role="img"></canvas>
+
+            <div class="legend-stats compact" id="trendStats">
+                <div>
+                    <span class="muted">Avg</span>
+                    <strong id="trendAvg">--</strong>
+                </div>
+                <div>
+                    <span class="muted">Min</span>
+                    <strong id="trendMin">--</strong>
+                </div>
+                <div>
+                    <span class="muted">Max</span>
+                    <strong id="trendMax">--</strong>
+                </div>
+                <div>
+                    <span class="muted">Scans</span>
+                    <strong id="trendCount">--</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="surface-card insights-card reveal">
+            <div class="panel-header">
+                <div>
+                    <h2>Alerts</h2>
+                    <p class="muted">Weak zones and confidence shifts.</p>
+                </div>
+                <span class="chip">Live signals</span>
+            </div>
+
+            <div id="alertsList" class="alerts-list">
+                <div class="muted">Loading alerts...</div>
+            </div>
+        </article>
+
+        <article class="surface-card insights-card insights-span reveal">
+            <div class="panel-header">
+                <div>
+                    <h2>Floor comparison</h2>
+                    <p class="muted">Compare this floor with another floor or block.</p>
+                </div>
+                <span class="chip">Side-by-side</span>
+            </div>
+
+            <form id="comparisonForm" class="comparison-form">
+                <label class="field">
+                    <span>Compare block</span>
+                    <select id="compareBlock">
                         {% for block in blocks %}
-                            <option value="{{ block }}">{{ block }}</option>
+                            <option value="{{ block }}"{% if compare_block == block %} selected{% endif %}>{{ block }}</option>
                         {% endfor %}
                     </select>
                 </label>
-                <label>
-                    Floor
-                    <select id="floorSelect">
-                        {% for floor in floors %}
-                            <option value="{{ floor }}">{{ floor }}</option>
-                        {% endfor %}
-                    </select>
+
+                <label class="field">
+                    <span>Compare floor</span>
+                    <select id="compareFloor"></select>
                 </label>
-                <label>
-                    Mode
-                    <select id="modeSelect">
-                        {% for value, label in modes %}
-                            <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Service Provider
-                    <select id="providerSelect"></select>
-                </label>
-                <label>
-                    View
-                    <select id="renderModeSelect">
-                        <option value="smooth" selected>Blended</option>
-                        <option value="contour">Contour Bands</option>
-                    </select>
-                </label>
-                <label>
-                    Spread
-                    <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="autoSmoothToggle" checked>
-                    Auto Smooth
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="confidenceToggle">
-                    Confidence Overlay
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="weakClustersToggle">
-                    Weak Zone Overlay
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="bestProviderToggle">
-                    Best Provider View
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="interpolateToggle" checked>
-                    Show Interpolated
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="autoRefreshToggle">
-                    Auto Refresh
-                </label>
-                <label>
-                    Refresh Interval
-                    <select id="refreshInterval">
-                        <option value="15000">15s</option>
-                        <option value="30000" selected>30s</option>
-                        <option value="60000">60s</option>
-                    </select>
-                </label>
-                <button id="exportBtn" type="button" class="btn ghost">Export PNG</button>
+
+                <button type="button" id="compareRefreshBtn" class="btn ghost">Compare</button>
+            </form>
+
+            <div class="comparison-grid" id="comparisonGrid">
+                <div class="comparison-card">
+                    <span class="chip">Current</span>
+                    <strong id="compareCurrentLabel">--</strong>
+                    <ul>
+                        <li>Avg signal: <strong id="compareCurrentSignal">--</strong></li>
+                        <li>Weak cells: <strong id="compareCurrentWeak">--</strong></li>
+                        <li>Confidence: <strong id="compareCurrentConfidence">--</strong></li>
+                    </ul>
+                </div>
+
+                <div class="comparison-card">
+                    <span class="chip">Target</span>
+                    <strong id="compareTargetLabel">--</strong>
+                    <ul>
+                        <li>Avg signal: <strong id="compareTargetSignal">--</strong></li>
+                        <li>Weak cells: <strong id="compareTargetWeak">--</strong></li>
+                        <li>Confidence: <strong id="compareTargetConfidence">--</strong></li>
+                    </ul>
+                </div>
             </div>
-        </div>
+        </article>
     </div>
 </section>
 
@@ -191,11 +376,17 @@
         heatmapApiUrl: "{% url 'heatmap_api' %}",
         weakClustersApiUrl: "{% url 'weak_clusters_api' %}",
         bestProviderApiUrl: "{% url 'best_provider_api' %}",
+        dashboardInsightsApiUrl: "{% url 'dashboard_insights_api' %}",
         accessStatus: "{{ access_status }}",
+        selectedPreset: "{{ selected_preset|default:'my_institution' }}",
+        selectedInstitutionId: "{{ selected_institution.id|default:'' }}",
+        compareBlock: "{{ compare_block|default:'' }}",
+        compareFloor: "{{ compare_floor|default:'' }}",
+        weakThreshold: "{{ weak_threshold|default:'-80' }}",
         blockFloors: JSON.parse(document.getElementById("block-floors-data").textContent),
         floorConfigs: JSON.parse(document.getElementById("floor-configs-data").textContent),
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/home.js' %}?v=20260413-2"></script>
+<script src="{% static 'heatmap/js/home.js' %}?v=20260501-imagebox-1"></script>
 {% endblock %}

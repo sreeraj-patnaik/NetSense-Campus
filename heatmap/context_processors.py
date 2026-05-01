@@ -1,15 +1,30 @@
-from .models import InstitutionMembership
+from .models import InstitutionMembership, UserDashboardPreference
 
 
 def _current_membership(user):
     if not user or not user.is_authenticated:
         return None
-    return (
-        InstitutionMembership.objects.select_related("institution")
-        .filter(user=user, status=InstitutionMembership.APPROVED)
-        .order_by("institution__name")
-        .first()
+    memberships = InstitutionMembership.objects.select_related("institution").filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
     )
+    admin_membership = memberships.filter(role=InstitutionMembership.ADMIN).order_by(
+        "-approved_at",
+        "-created_at",
+    ).first()
+    if admin_membership:
+        return admin_membership
+    return memberships.order_by("-approved_at", "-created_at").first()
+
+
+def _selected_institution(user):
+    if not user or not user.is_authenticated:
+        return None
+    preference = UserDashboardPreference.objects.select_related("selected_institution").filter(user=user).first()
+    if preference and preference.selected_institution:
+        return preference.selected_institution
+    membership = _current_membership(user)
+    return membership.institution if membership else None
 
 
 def institution_access(request):
@@ -27,8 +42,8 @@ def institution_access(request):
                 role=InstitutionMembership.ADMIN,
             ).exists()
         membership = _current_membership(user)
+        current_institution = _selected_institution(user)
         if membership:
-            current_institution = membership.institution
             can_scan = membership.can_scan or membership.role == InstitutionMembership.ADMIN
     display_name = ""
     email = ""
