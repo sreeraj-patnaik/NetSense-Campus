@@ -49,6 +49,11 @@ class InstitutionMembership(models.Model):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["user", "institution"], name="uniq_institution_membership"),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status="approved"),
+                name="uniq_approved_membership_per_user",
+            ),
         ]
 
     def __str__(self) -> str:

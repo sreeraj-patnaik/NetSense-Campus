@@ -2,29 +2,29 @@
 {% load static %}
 
 {% block title %}Coverage | NetSense{% endblock %}
-{% block meta_description %}View campus coverage, weak areas, and floor comparisons from one calm workspace in NetSense.{% endblock %}
+{% block meta_description %}A calm workspace for checking coverage, spotting weak areas, and comparing spaces in NetSense.{% endblock %}
 
 {% block content %}
 <section class="page-hero dashboard-hero">
-    <div class="container hero-grid">
+    <div class="hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Coverage workspace</span>
-            <h1>Know where campus feels strong, and where it needs attention.</h1>
+            <span class="kicker">Coverage workspace</span>
+            <h1>See the campus clearly, without the clutter.</h1>
             <p class="lead">
-                Use one view to review floor coverage, spot weak areas, and compare spaces without hunting across separate tools.
+                Use one simple view to check the current state, compare spaces, and decide what needs attention next.
             </p>
 
             <div class="hero-actions">
                 <a class="btn primary" href="#coverageWorkspace">Open workspace</a>
-                <button id="reloadBtn" type="button" class="btn ghost">Refresh now</button>
+                <button id="reloadBtn" type="button" class="btn ghost">Refresh view</button>
             </div>
 
-            <div class="hero-stats">
-                <article class="metric-card">
-                    <span>Workspace</span>
-                    <strong>{{ current_institution_name|default:"Your campus" }}</strong>
+            <div class="stat-row">
+                <article class="stat">
+                    <span>Current view</span>
+                    <strong>{{ selected_preset|default:"My campus" }}</strong>
                 </article>
-                <article class="metric-card">
+                <article class="stat">
                     <span>Status</span>
                     <strong>
                         {% if access_status == "pending" %}
@@ -32,304 +32,251 @@
                         {% elif access_status == "none" %}
                             No access yet
                         {% elif access_status == "no_blocks" %}
-                            No spaces set up
+                            Nothing set up
                         {% else %}
                             Ready
                         {% endif %}
                     </strong>
                 </article>
-                <article class="metric-card">
+                <article class="stat">
                     <span>Focus</span>
-                    <strong>{{ selected_preset|default:"My campus" }}</strong>
+                    <strong>Coverage and gaps</strong>
                 </article>
             </div>
 
             {% if access_status == "pending" %}
-                <div class="notice notice-warning">Your request is still waiting for approval.</div>
+                <div class="notice">Your workspace request is still being reviewed.</div>
             {% elif access_status == "none" %}
-                <div class="notice notice-warning">You do not have an approved workspace yet.</div>
+                <div class="notice">You do not have access to a workspace yet.</div>
             {% elif access_status == "no_blocks" %}
-                <div class="notice notice-warning">This workspace does not have any spaces configured yet.</div>
+                <div class="notice">This workspace does not have any areas set up yet.</div>
             {% endif %}
         </div>
 
-        <aside class="hero-showcase reveal">
-            <div class="showcase-card">
-                <div class="panel-header">
-                    <div>
-                        <span class="chip">Quick summary</span>
-                        <h2>Everything you need at a glance</h2>
+        <div class="hero-media reveal">
+            <div class="panel">
+                <span class="kicker">At a glance</span>
+                <h2>What you can read here</h2>
+                <div class="doc-list">
+                    <div class="item-card">
+                        <strong>Where things feel good</strong>
+                        <p>Quickly see the stronger parts of the floor.</p>
                     </div>
-                </div>
-
-                <div class="showcase-metrics">
-                    <div>
-                        <span class="muted">Grid size</span>
-                        <strong>{{ grid_rows }} × {{ grid_cols }}</strong>
+                    <div class="item-card">
+                        <strong>Where to look next</strong>
+                        <p>Spot the areas that need a closer look.</p>
                     </div>
-                    <div>
-                        <span class="muted">View</span>
-                        <strong>{{ selected_preset|default:"My campus" }}</strong>
-                    </div>
-                    <div>
-                        <span class="muted">Health focus</span>
-                        <strong>Coverage and gaps</strong>
+                    <div class="item-card">
+                        <strong>How spaces compare</strong>
+                        <p>Check one location against another with ease.</p>
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="workspace-toolbar reveal">
+        <div class="card-grid">
+            <label class="field">
+                <span>Area</span>
+                <select id="blockSelect">
+                    {% for block in blocks %}
+                        <option value="{{ block }}">{{ block }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="field">
+                <span>Floor</span>
+                <select id="floorSelect">
+                    {% for floor in floors %}
+                        <option value="{{ floor }}">{{ floor }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="field">
+                <span>Mode</span>
+                <select id="modeSelect">
+                    {% for value, label in modes %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="field">
+                <span>Provider</span>
+                <select id="providerSelect"></select>
+            </label>
+
+            <label class="field">
+                <span>View</span>
+                <select id="renderModeSelect">
+                    <option value="smooth" selected>Soft</option>
+                    <option value="contour">Focused</option>
+                </select>
+            </label>
+
+            <label class="field">
+                <span>Blend</span>
+                <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
+            </label>
+        </div>
+
+        <div class="chip-row">
+            <label class="toggle"><input type="checkbox" id="autoSmoothToggle" checked><span>Auto blend</span></label>
+            <label class="toggle"><input type="checkbox" id="confidenceToggle"><span>Quality layer</span></label>
+            <label class="toggle"><input type="checkbox" id="weakClustersToggle"><span>Weak zones</span></label>
+            <label class="toggle"><input type="checkbox" id="bestProviderToggle"><span>Best signal</span></label>
+            <label class="toggle"><input type="checkbox" id="interpolateToggle" checked><span>Fill gaps</span></label>
+            <label class="toggle"><input type="checkbox" id="autoRefreshToggle"><span>Live refresh</span></label>
+            <label class="field">
+                <span>Refresh rate</span>
+                <select id="refreshInterval">
+                    <option value="15000">15 seconds</option>
+                    <option value="30000" selected>30 seconds</option>
+                    <option value="60000">60 seconds</option>
+                </select>
+            </label>
+            <button id="exportBtn" type="button" class="btn ghost">Save image</button>
+        </div>
     </div>
 </section>
 
 <section class="section" id="coverageWorkspace">
-    <div class="container dashboard-layout">
-        <main class="dashboard-main">
-            <section class="surface-card dashboard-map reveal">
-                <div class="panel-header">
+    <div class="workspace-grid">
+        <main class="workspace-card reveal">
+            <div class="panel-head">
+                <div>
+                    <span class="kicker">Coverage map</span>
+                    <h2>Current view</h2>
+                    <p>Read the floor and see where attention is needed.</p>
+                </div>
+                <span class="pill">Live view</span>
+            </div>
+
+            <div class="map-wrap" id="mapWrap" data-rows="{{ grid_rows }}" data-cols="{{ grid_cols }}">
+                <img id="floorMap" src="{{ initial_floor_image }}" alt="Floor map">
+                <div id="gridLayer" class="grid-layer"></div>
+                <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
+                <div id="weakClusterTooltip" class="map-tooltip" hidden></div>
+                <div class="map-status" id="mapStatus" aria-live="polite"></div>
+            </div>
+
+            <div class="legend">
+                <div class="panel-head">
                     <div>
-                        <span class="eyebrow">Campus map</span>
-                        <h2>Coverage view</h2>
-                        <p class="muted">A clear look at signal quality across the selected floor.</p>
-                    </div>
-                    <span class="chip">Live workspace</span>
-                </div>
-
-                <div class="map-wrap" id="mapWrap" data-rows="{{ grid_rows }}" data-cols="{{ grid_cols }}">
-                    <img id="floorMap" src="{{ initial_floor_image }}" alt="Floor map">
-                    <div id="gridLayer" class="grid-layer"></div>
-                    <canvas id="heatmapCanvas" class="heatmap-layer"></canvas>
-                    <div id="weakClusterTooltip" class="map-tooltip" hidden></div>
-                    <div class="map-status" id="mapStatus" aria-live="polite"></div>
-                </div>
-
-                <div class="legend">
-                    <div class="legend-head">
-                        <h3>What the map means</h3>
-                        <span class="muted">Simple scale</span>
-                    </div>
-
-                    <div class="legend-scale">
-                        <span id="legendMin">Min</span>
-                        <div class="legend-bar"></div>
-                        <span id="legendMax">Max</span>
-                    </div>
-
-                    <div class="legend-scale">
-                        <span>Filled areas</span>
-                        <div class="legend-bar interp-bar"></div>
-                    </div>
-
-                    <div class="legend-stats" id="legendStats">
-                        <div><span class="muted">Average</span><strong id="legendAvg">--</strong></div>
-                        <div><span class="muted">Strong</span><strong id="legendStrong">--</strong></div>
-                        <div><span class="muted">Weak</span><strong id="legendWeak">--</strong></div>
-                    </div>
-
-                    <div class="legend-grid">
-                        <div><span class="swatch green"></span> Strong
-                        </div>
-                        <div><span class="swatch yellow"></span> Fair
-                        </div>
-                        <div><span class="swatch red"></span> Weak
-                        </div>
-                        <div><span class="swatch none"></span> No data
-                        </div>
-                        <div><span class="swatch none" style="background:#175c78; opacity:0.45;"></span> Estimated
-                        </div>
-                        <div><span class="swatch none" style="background:#dc2626;"></span> Weak zone
-                        </div>
+                        <span class="kicker">Simple legend</span>
+                        <h3>How to read the map</h3>
                     </div>
                 </div>
-            </section>
+                <div class="legend-bar"></div>
+                <div class="legend-grid">
+                    <div><span class="pill">Quiet</span> Softer areas</div>
+                    <div><span class="pill">Mixed</span> In-between areas</div>
+                    <div><span class="pill">Busy</span> Stronger areas</div>
+                    <div><span class="pill">Marked</span> Needs attention</div>
+                </div>
+            </div>
         </main>
 
         <aside class="dashboard-side">
-            <section class="surface-card controls-panel reveal">
-                <div class="panel-header">
+            <section class="sheet reveal">
+                <div class="panel-head">
                     <div>
-                        <span class="eyebrow">Refine view</span>
-                        <h2>Filters</h2>
-                        <p class="muted">Choose the space, the view, and the level of detail you want.</p>
+                        <span class="kicker">Quick read</span>
+                        <h2>What to notice</h2>
                     </div>
                 </div>
 
-                <div class="controls-grid">
+                <div class="doc-list">
+                    <div class="item-card">
+                        <strong>Current tone</strong>
+                        <p id="legendAvg">Balanced</p>
+                    </div>
+                    <div class="item-card">
+                        <strong>Brighter spots</strong>
+                        <p id="legendStrong">Healthy</p>
+                    </div>
+                    <div class="item-card">
+                        <strong>Weaker spots</strong>
+                        <p id="legendWeak">Needs attention</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="sheet reveal">
+                <div class="panel-head">
+                    <div>
+                        <span class="kicker">Compare</span>
+                        <h2>Side by side</h2>
+                    </div>
+                </div>
+
+                <form id="comparisonForm" class="comparison">
                     <label class="field">
-                        <span>Block</span>
-                        <select id="blockSelect">
+                        <span>Compare area</span>
+                        <select id="compareBlock">
                             {% for block in blocks %}
-                                <option value="{{ block }}">{{ block }}</option>
+                                <option value="{{ block }}"{% if compare_block == block %} selected{% endif %}>{{ block }}</option>
                             {% endfor %}
                         </select>
                     </label>
 
                     <label class="field">
-                        <span>Floor</span>
-                        <select id="floorSelect">
-                            {% for floor in floors %}
-                                <option value="{{ floor }}">{{ floor }}</option>
-                            {% endfor %}
-                        </select>
+                        <span>Compare floor</span>
+                        <select id="compareFloor"></select>
                     </label>
 
-                    <label class="field">
-                        <span>Type</span>
-                        <select id="modeSelect">
-                            {% for value, label in modes %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
+                    <button type="button" id="compareRefreshBtn" class="btn ghost">Compare</button>
+                </form>
 
-                    <label class="field">
-                        <span>Provider</span>
-                        <select id="providerSelect"></select>
-                    </label>
-
-                    <label class="field">
-                        <span>View style</span>
-                        <select id="renderModeSelect">
-                            <option value="smooth" selected>Soft view</option>
-                            <option value="contour">Focused view</option>
-                        </select>
-                    </label>
-
-                    <label class="field">
-                        <span>Heat intensity</span>
-                        <input type="range" id="spreadRange" min="0.8" max="2.4" step="0.1" value="1.6">
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="autoSmoothToggle" checked>
-                        <span>Auto blend</span>
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="confidenceToggle">
-                        <span>Quality overlay</span>
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="weakClustersToggle">
-                        <span>Weak zones</span>
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="bestProviderToggle">
-                        <span>Best signal view</span>
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="interpolateToggle" checked>
-                        <span>Fill gaps</span>
-                    </label>
-
-                    <label class="toggle">
-                        <input type="checkbox" id="autoRefreshToggle">
-                        <span>Live refresh</span>
-                    </label>
-
-                    <label class="field">
-                        <span>Refresh rate</span>
-                        <select id="refreshInterval">
-                            <option value="15000">15 seconds</option>
-                            <option value="30000" selected>30 seconds</option>
-                            <option value="60000">60 seconds</option>
-                        </select>
-                    </label>
-
-                    <button id="exportBtn" type="button" class="btn ghost">Save image</button>
+                <div class="doc-list">
+                    <div class="item-card">
+                        <strong id="compareCurrentLabel">Current area</strong>
+                        <p id="compareCurrentSignal">Balanced</p>
+                        <p id="compareCurrentWeak">Some areas may need attention</p>
+                        <p id="compareCurrentConfidence">Steady</p>
+                    </div>
+                    <div class="item-card">
+                        <strong id="compareTargetLabel">Comparison area</strong>
+                        <p id="compareTargetSignal">Balanced</p>
+                        <p id="compareTargetWeak">Some areas may need attention</p>
+                        <p id="compareTargetConfidence">Steady</p>
+                    </div>
                 </div>
             </section>
         </aside>
     </div>
 </section>
 
-<section class="section section-soft">
-    <div class="container insights-grid">
-        <article class="surface-card reveal">
-            <div class="panel-header">
+<section class="section">
+    <div class="insight-grid">
+        <article class="surface reveal">
+            <div class="panel-head">
                 <div>
-                    <span class="eyebrow">Trend</span>
-                    <h2>How coverage has moved</h2>
-                    <p class="muted">A quick look at recent readings across this floor.</p>
+                    <span class="kicker">Recent pattern</span>
+                    <h2>How the view has changed</h2>
+                    <p>Use this as a quick sense check, not as a report.</p>
                 </div>
-                <span class="chip">Recent activity</span>
+                <span class="pill">Recent</span>
             </div>
 
             <canvas id="trendChart" class="trend-chart" aria-label="Coverage trend chart" role="img"></canvas>
-
-            <div class="legend-stats" id="trendStats">
-                <div><span class="muted">Average</span><strong id="trendAvg">--</strong></div>
-                <div><span class="muted">Low</span><strong id="trendMin">--</strong></div>
-                <div><span class="muted">High</span><strong id="trendMax">--</strong></div>
-                <div><span class="muted">Readings</span><strong id="trendCount">--</strong></div>
-            </div>
         </article>
 
-        <article class="surface-card reveal">
-            <div class="panel-header">
+        <article class="surface reveal">
+            <div class="panel-head">
                 <div>
-                    <span class="eyebrow">Alerts</span>
-                    <h2>What needs attention</h2>
-                    <p class="muted">Weak areas and shifts that deserve a closer look.</p>
+                    <span class="kicker">Signals</span>
+                    <h2>What stands out</h2>
+                    <p>Short notes that help you decide what to look at next.</p>
                 </div>
-                <span class="chip">Live signals</span>
             </div>
-
-            <div id="alertsList" class="alerts-list">
+            <div id="alertsList" class="alerts">
                 <div class="muted">Loading updates...</div>
-            </div>
-        </article>
-
-        <article class="surface-card reveal insights-span">
-            <div class="panel-header">
-                <div>
-                    <span class="eyebrow">Compare</span>
-                    <h2>Side-by-side floor review</h2>
-                    <p class="muted">Look at this floor next to another space without leaving the page.</p>
-                </div>
-                <span class="chip">Side by side</span>
-            </div>
-
-            <form id="comparisonForm" class="comparison-form">
-                <label class="field">
-                    <span>Compare block</span>
-                    <select id="compareBlock">
-                        {% for block in blocks %}
-                            <option value="{{ block }}"{% if compare_block == block %} selected{% endif %}>{{ block }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-
-                <label class="field">
-                    <span>Compare floor</span>
-                    <select id="compareFloor"></select>
-                </label>
-
-                <button type="button" id="compareRefreshBtn" class="btn ghost">Compare</button>
-            </form>
-
-            <div class="comparison-grid" id="comparisonGrid">
-                <div class="comparison-card">
-                    <span class="chip">Current</span>
-                    <strong id="compareCurrentLabel">--</strong>
-                    <ul>
-                        <li>Average: <strong id="compareCurrentSignal">--</strong></li>
-                        <li>Weak cells: <strong id="compareCurrentWeak">--</strong></li>
-                        <li>Quality: <strong id="compareCurrentConfidence">--</strong></li>
-                    </ul>
-                </div>
-
-                <div class="comparison-card">
-                    <span class="chip">Comparison</span>
-                    <strong id="compareTargetLabel">--</strong>
-                    <ul>
-                        <li>Average: <strong id="compareTargetSignal">--</strong></li>
-                        <li>Weak cells: <strong id="compareTargetWeak">--</strong></li>
-                        <li>Quality: <strong id="compareTargetConfidence">--</strong></li>
-                    </ul>
-                </div>
             </div>
         </article>
     </div>
@@ -359,5 +306,5 @@
         serviceProviders: JSON.parse(document.getElementById("service-providers-data").textContent)
     };
 </script>
-<script src="{% static 'heatmap/js/home.js' %}?v=20260614-1"></script>
+<script src="{% static 'heatmap/js/home.js' %}?v=20260614-2"></script>
 {% endblock %}

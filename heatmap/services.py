@@ -55,6 +55,68 @@ def current_institution(user):
     return membership.institution if membership else None
 
 
+def institution_for_user(user):
+    if not user or not user.is_authenticated:
+        return None
+    if user.is_superuser:
+        preference = get_dashboard_preference(user)
+        if preference and preference.selected_institution and preference.selected_institution.is_active:
+            return preference.selected_institution
+        return None
+    return current_institution(user)
+
+
+def institution_queryset_for_user(user):
+    if not user or not user.is_authenticated:
+        return Institution.objects.none()
+    if user.is_superuser:
+        return Institution.objects.filter(is_active=True)
+    institution = institution_for_user(user)
+    if not institution:
+        return Institution.objects.none()
+    return Institution.objects.filter(id=institution.id, is_active=True)
+
+
+def approved_institutions_for_user(user):
+    return institution_queryset_for_user(user)
+
+
+def is_institution_admin(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+        role=InstitutionMembership.ADMIN,
+    ).exists()
+
+
+def user_can_scan(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+    ).filter(
+        models.Q(role=InstitutionMembership.ADMIN) | models.Q(can_scan=True)
+    ).exists()
+
+
+def user_can_view_heatmap(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    return InstitutionMembership.objects.filter(
+        user=user,
+        status=InstitutionMembership.APPROVED,
+    ).exists()
+
+
 def get_dashboard_preference(user):
     if not user or not user.is_authenticated:
         return None
@@ -81,6 +143,8 @@ def save_dashboard_preference(
     updated_fields = []
 
     if selected_institution_id is not None:
+        if not user.is_superuser:
+            selected_institution_id = institution_for_user(user).id if institution_for_user(user) else None
         if selected_institution_id in {"", "auto", "none"}:
             preference.selected_institution = None
         else:
@@ -124,11 +188,11 @@ def resolve_dashboard_selection(user) -> DashboardSelection:
         compare_block = preference.compare_block or ""
         compare_floor = preference.compare_floor
         weak_threshold = int(preference.weak_threshold or weak_threshold)
-        if preference.selected_institution_id:
+        if preference.selected_institution_id and user and user.is_superuser:
             institution = preference.selected_institution if preference.selected_institution and preference.selected_institution.is_active else None
 
     if institution is None:
-        institution = current_institution(user)
+        institution = institution_for_user(user)
 
     return DashboardSelection(
         institution=institution,
@@ -146,14 +210,12 @@ def _registry_for_user(user):
     if user.is_superuser:
         return registry
 
-    allowed_institutions = Institution.objects.filter(
-        is_active=True,
-        memberships__user=user,
-        memberships__status=InstitutionMembership.APPROVED,
-    ).distinct()
+    institution = institution_for_user(user)
+    if not institution:
+        return {"blocks": [], "block_floors": {}, "floor_configs": {}}
     allowed_blocks = set(
         Block.objects.filter(
-            institution__in=allowed_institutions,
+            institution=institution,
             is_active=True,
         ).values_list("code", flat=True)
     )
@@ -201,15 +263,14 @@ def viewer_context(user=None):
     approved = Institution.objects.none()
     access_status = "public"
     if user and user.is_authenticated:
-        if user.is_staff or user.is_superuser:
+        if user.is_superuser:
+            approved = Institution.objects.filter(is_active=True)
+            access_status = "approved"
+        elif user.is_staff:
             approved = Institution.objects.filter(is_active=True)
             access_status = "approved"
         else:
-            approved = Institution.objects.filter(
-                is_active=True,
-                memberships__user=user,
-                memberships__status=InstitutionMembership.APPROVED,
-            ).distinct()
+            approved = institution_queryset_for_user(user)
             if approved.exists():
                 access_status = "approved"
             elif InstitutionMembership.objects.filter(user=user, status=InstitutionMembership.PENDING).exists():
@@ -257,6 +318,25 @@ def _aggregate_queryset(floor_plan, mode: str | None = None, service_provider: s
     return queryset
 
 
+def _floor_plan_for_user(user, block: str, floor: int):
+    floor_plan = get_floor_plan(block, floor)
+    if not floor_plan:
+        return None
+    if user and user.is_authenticated and not user.is_superuser:
+        institution = institution_for_user(user)
+        if not institution or floor_plan.block.institution_id != institution.id:
+            return None
+    return floor_plan
+
+
+def floor_plan_for_user(user, block: str, floor: int):
+    return _floor_plan_for_user(user, block, floor)
+
+
+def registry_for_user(user):
+    return _registry_for_user(user)
+
+
 def _daily_metrics_for_scans(scans):
     buckets: dict[Any, list[float]] = defaultdict(list)
     for scan in scans:
@@ -264,8 +344,8 @@ def _daily_metrics_for_scans(scans):
     return buckets
 
 
-def build_trend_payload(*, block: str, floor: int, mode: str, service_provider: str = "", days: int = 14):
-    floor_plan = get_floor_plan(block, floor)
+def build_trend_payload(*, block: str, floor: int, mode: str, service_provider: str = "", days: int = 14, user=None):
+    floor_plan = _floor_plan_for_user(user, block, floor)
     if not floor_plan:
         return {"points": [], "summary": {}}
 
@@ -311,8 +391,8 @@ def build_trend_payload(*, block: str, floor: int, mode: str, service_provider: 
     return {"points": points, "summary": summary}
 
 
-def _floor_snapshot_metrics(*, block: str, floor: int, mode: str, service_provider: str = "", weak_threshold: int = -80):
-    floor_plan = get_floor_plan(block, floor)
+def _floor_snapshot_metrics(*, block: str, floor: int, mode: str, service_provider: str = "", weak_threshold: int = -80, user=None):
+    floor_plan = _floor_plan_for_user(user, block, floor)
     if not floor_plan:
         return None
 
@@ -369,8 +449,8 @@ def _period_metrics(signal_values: list[float]):
     }
 
 
-def build_alerts_payload(*, block: str, floor: int, mode: str, service_provider: str = "", weak_threshold: int = -80):
-    floor_plan = get_floor_plan(block, floor)
+def build_alerts_payload(*, block: str, floor: int, mode: str, service_provider: str = "", weak_threshold: int = -80, user=None):
+    floor_plan = _floor_plan_for_user(user, block, floor)
     if not floor_plan:
         return {"alerts": [], "summary": {}}
 
@@ -432,6 +512,7 @@ def build_alerts_payload(*, block: str, floor: int, mode: str, service_provider:
         mode=mode,
         service_provider=service_provider,
         weak_threshold=weak_threshold,
+        user=user,
     )
 
     alerts = []
@@ -493,21 +574,30 @@ def build_alerts_payload(*, block: str, floor: int, mode: str, service_provider:
     return {"alerts": alerts, "summary": summary}
 
 
-def _target_floor(floor_plan, compare_block: str | None, compare_floor: int | None):
+def _target_floor(floor_plan, compare_block: str | None, compare_floor: int | None, institution_id: int | None = None):
     if compare_block and compare_floor is not None:
-        return get_floor_plan(compare_block, compare_floor)
+        target = get_floor_plan(compare_block, compare_floor)
+        if institution_id and target and target.block.institution_id != institution_id:
+            return None
+        return target
 
     same_block_floor = get_floor_plan(floor_plan.block.code, floor_plan.number + 1)
+    if institution_id and same_block_floor and same_block_floor.block.institution_id != institution_id:
+        same_block_floor = None
     if same_block_floor:
         return same_block_floor
 
     prev_same_block_floor = get_floor_plan(floor_plan.block.code, max(1, floor_plan.number - 1))
+    if institution_id and prev_same_block_floor and prev_same_block_floor.block.institution_id != institution_id:
+        prev_same_block_floor = None
     if prev_same_block_floor and prev_same_block_floor.number != floor_plan.number:
         return prev_same_block_floor
 
+    alt_blocks = Block.objects.filter(is_active=True)
+    if institution_id:
+        alt_blocks = alt_blocks.filter(institution_id=institution_id)
     alt_block = (
-        Block.objects.filter(is_active=True)
-        .exclude(code=floor_plan.block.code)
+        alt_blocks.exclude(code=floor_plan.block.code)
         .order_by("code")
         .first()
     )
@@ -525,12 +615,18 @@ def build_comparison_payload(
     compare_block: str | None = None,
     compare_floor: int | None = None,
     weak_threshold: int = -80,
+    user=None,
 ):
-    floor_plan = get_floor_plan(block, floor)
+    floor_plan = _floor_plan_for_user(user, block, floor)
     if not floor_plan:
         return {"current": None, "comparison": None}
 
-    target_floor = _target_floor(floor_plan, compare_block, compare_floor)
+    target_floor = _target_floor(
+        floor_plan,
+        compare_block,
+        compare_floor,
+        institution_id=floor_plan.block.institution_id,
+    )
     if not target_floor:
         return {"current": None, "comparison": None}
 
@@ -540,6 +636,7 @@ def build_comparison_payload(
         mode=mode,
         service_provider=service_provider,
         weak_threshold=weak_threshold,
+        user=user,
     )
     comparison = _floor_snapshot_metrics(
         block=target_floor.block.code,
@@ -547,6 +644,7 @@ def build_comparison_payload(
         mode=mode,
         service_provider=service_provider,
         weak_threshold=weak_threshold,
+        user=user,
     )
     return {
         "current": {

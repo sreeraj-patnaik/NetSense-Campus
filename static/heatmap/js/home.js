@@ -12,8 +12,6 @@
     const weakClustersToggle = document.getElementById("weakClustersToggle");
     const bestProviderToggle = document.getElementById("bestProviderToggle");
     const spreadRange = document.getElementById("spreadRange");
-    const legendMin = document.getElementById("legendMin");
-    const legendMax = document.getElementById("legendMax");
     const legendAvg = document.getElementById("legendAvg");
     const legendStrong = document.getElementById("legendStrong");
     const legendWeak = document.getElementById("legendWeak");
@@ -113,6 +111,26 @@
             return "--";
         }
         return Number(value).toFixed(digits);
+    }
+
+    function toneFromSignal(value) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return "Balanced";
+        }
+        const signal = Number(value);
+        if (signal >= -65) return "Strong";
+        if (signal >= -80) return "Balanced";
+        return "Needs attention";
+    }
+
+    function toneFromConfidence(value) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return "Mixed";
+        }
+        const confidence = Number(value);
+        if (confidence >= 0.75) return "Steady";
+        if (confidence >= 0.45) return "Mixed";
+        return "Unclear";
     }
 
     function setText(idNode, value) {
@@ -219,13 +237,13 @@
         const current = comparison.current || {};
         const target = comparison.comparison || {};
         if (compareCurrentLabel) compareCurrentLabel.textContent = `${current.block || "--"} - F${current.floor ?? "--"}`;
-        if (compareCurrentSignal) compareCurrentSignal.textContent = current.avg_signal === null || current.avg_signal === undefined ? "--" : `${fmtNumber(current.avg_signal)} dBm`;
-        if (compareCurrentWeak) compareCurrentWeak.textContent = current.weak_cells ?? "--";
-        if (compareCurrentConfidence) compareCurrentConfidence.textContent = current.avg_confidence === null || current.avg_confidence === undefined ? "--" : fmtNumber(current.avg_confidence, 3);
+        if (compareCurrentSignal) compareCurrentSignal.textContent = current.avg_signal === null || current.avg_signal === undefined ? "Balanced" : toneFromSignal(current.avg_signal);
+        if (compareCurrentWeak) compareCurrentWeak.textContent = current.weak_cells === null || current.weak_cells === undefined ? "No clear concern" : (current.weak_cells > 0 ? "Some areas need attention" : "Looks steady");
+        if (compareCurrentConfidence) compareCurrentConfidence.textContent = current.avg_confidence === null || current.avg_confidence === undefined ? "Mixed" : toneFromConfidence(current.avg_confidence);
         if (compareTargetLabel) compareTargetLabel.textContent = `${target.block || "--"} - F${target.floor ?? "--"}`;
-        if (compareTargetSignal) compareTargetSignal.textContent = target.avg_signal === null || target.avg_signal === undefined ? "--" : `${fmtNumber(target.avg_signal)} dBm`;
-        if (compareTargetWeak) compareTargetWeak.textContent = target.weak_cells ?? "--";
-        if (compareTargetConfidence) compareTargetConfidence.textContent = target.avg_confidence === null || target.avg_confidence === undefined ? "--" : fmtNumber(target.avg_confidence, 3);
+        if (compareTargetSignal) compareTargetSignal.textContent = target.avg_signal === null || target.avg_signal === undefined ? "Balanced" : toneFromSignal(target.avg_signal);
+        if (compareTargetWeak) compareTargetWeak.textContent = target.weak_cells === null || target.weak_cells === undefined ? "No clear concern" : (target.weak_cells > 0 ? "Some areas need attention" : "Looks steady");
+        if (compareTargetConfidence) compareTargetConfidence.textContent = target.avg_confidence === null || target.avg_confidence === undefined ? "Mixed" : toneFromConfidence(target.avg_confidence);
     }
 
     async function loadDashboardInsights() {
@@ -261,9 +279,12 @@
         renderTrendChart(points);
         renderAlerts(dashboardInsights?.alerts?.alerts || []);
         renderComparison(dashboardInsights?.comparison || {});
-        if (trendAvg) trendAvg.textContent = summary.avg_signal === null || summary.avg_signal === undefined ? "--" : `${fmtNumber(summary.avg_signal)} dBm`;
-        if (trendMin) trendMin.textContent = summary.min_signal === null || summary.min_signal === undefined ? "--" : `${fmtNumber(summary.min_signal)} dBm`;
-        if (trendMax) trendMax.textContent = summary.max_signal === null || summary.max_signal === undefined ? "--" : `${fmtNumber(summary.max_signal)} dBm`;
+        if (legendAvg) legendAvg.textContent = toneFromSignal(summary.avg_signal);
+        if (legendStrong) legendStrong.textContent = "Healthier areas";
+        if (legendWeak) legendWeak.textContent = "Areas to revisit";
+        if (trendAvg) trendAvg.textContent = toneFromConfidence(summary.avg_signal);
+        if (trendMin) trendMin.textContent = summary.total_scans === null || summary.total_scans === undefined ? "--" : `${summary.total_scans} updates`;
+        if (trendMax) trendMax.textContent = summary.max_signal === null || summary.max_signal === undefined ? "Quiet" : toneFromSignal(summary.max_signal);
         if (trendCount) trendCount.textContent = summary.total_scans ?? "--";
     }
 
@@ -497,8 +518,9 @@
 
         if (!response.ok) {
             if (response.status === 401) {
-                legendMin.textContent = "Sign in";
-                legendMax.textContent = "--";
+                if (legendAvg) legendAvg.textContent = "Sign in";
+                if (legendStrong) legendStrong.textContent = "Open the workspace";
+                if (legendWeak) legendWeak.textContent = "To see coverage";
                 if (mapStatus) {
                     mapStatus.textContent = "Sign in to view coverage.";
                 }
@@ -512,9 +534,9 @@
                 mapWrap.classList.remove("is-loading");
                 return;
             }
-                if (mapStatus) {
-                    mapStatus.textContent = "Unable to load coverage.";
-                }
+            if (mapStatus) {
+                mapStatus.textContent = "Unable to load coverage.";
+            }
             mapWrap.classList.remove("is-loading");
             return;
         }
@@ -549,15 +571,11 @@
         const minSignal = Math.min(...signals);
         const maxSignal = Math.max(...signals);
         const range = Math.max(1, maxSignal - minSignal);
-        legendMin.textContent = `${minSignal.toFixed(1)} dBm`;
-        legendMax.textContent = `${maxSignal.toFixed(1)} dBm`;
         if (legendAvg && legendStrong && legendWeak) {
             const avg = signals.reduce((acc, value) => acc + value, 0) / signals.length;
-            const strong = signals.filter((value) => value >= -65).length;
-            const weak = signals.filter((value) => value < -80).length;
-            legendAvg.textContent = `${avg.toFixed(1)} dBm`;
-            legendStrong.textContent = `${strong}`;
-            legendWeak.textContent = `${weak}`;
+            legendAvg.textContent = toneFromSignal(avg);
+            legendStrong.textContent = "Healthier areas";
+            legendWeak.textContent = "Areas to revisit";
         }
 
         const renderMode = renderModeSelect.value;
@@ -821,7 +839,7 @@
             return;
         }
         const cluster = weakClusters[weakClusterLookup.get(key)];
-        const text = `Weak zone: ${cluster.size} cells, avg ${cluster.avg_signal} dBm`;
+        const text = `Weak zone: ${cluster.size} cells`;
         showWeakTooltip(text, frame.left + x + 12, frame.top + y + 12);
     });
 

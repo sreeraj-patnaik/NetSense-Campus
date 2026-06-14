@@ -1,141 +1,66 @@
 {% extends "base.html" %}
 
 {% block title %}How teams use NetSense{% endblock %}
-{% block meta_description %}Understand the simple workflow from onboarding to scanning and review in NetSense.{% endblock %}
+{% block meta_description %}A simple walkthrough of the NetSense user journey from sign in to capture and review.{% endblock %}
 
 {% block content %}
-<section class="page-hero page-hero-tight">
-    <div class="container hero-grid">
-        <div class="hero-copy reveal">
-            <span class="eyebrow">Team workflow</span>
-            <h1>A straightforward path from access to action.</h1>
-            <p class="lead">
-                People can join, capture, review, and follow up without needing to learn a complicated system.
-            </p>
-
-            <div class="hero-stats">
-                <article class="metric-card">
-                    <span>Start</span>
-                    <strong>Request access</strong>
-                </article>
-                <article class="metric-card">
-                    <span>Use</span>
-                    <strong>Open coverage or capture</strong>
-                </article>
-                <article class="metric-card">
-                    <span>Finish</span>
-                    <strong>Share the next step</strong>
-                </article>
-            </div>
-        </div>
-
-        <aside class="hero-showcase reveal">
-            <div class="showcase-card">
-                <div class="panel-header">
-                    <div>
-                        <span class="chip">Journey</span>
-                        <h2>Simple from the first visit</h2>
-                    </div>
-                </div>
-
-                <div class="showcase-metrics">
-                    <div>
-                        <span class="muted">Discover</span>
-                        <strong>See the product</strong>
-                    </div>
-                    <div>
-                        <span class="muted">Act</span>
-                        <strong>Capture or review</strong>
-                    </div>
-                    <div>
-                        <span class="muted">Resolve</span>
-                        <strong>Make the decision</strong>
-                    </div>
-                </div>
-            </div>
-        </aside>
+<section class="page-hero">
+    <div class="page-copy reveal">
+        <span class="kicker">User journey</span>
+        <h1>A simple path from joining the workspace to taking action.</h1>
+        <p class="lead">
+            The product should feel obvious at every step, whether someone is new to the app or coming back after a while.
+        </p>
     </div>
 </section>
 
 <section class="section">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Journey</span>
-            <h2>What happens from start to finish</h2>
-        </div>
+    <div class="card-grid">
+        <article class="surface reveal">
+            <span class="pill">1</span>
+            <h3>Sign in or request access</h3>
+            <p>People start with a clear entry point and simple approval flow.</p>
+        </article>
 
-        <div class="timeline-grid">
-            <article class="timeline-card reveal">
-                <strong>01</strong>
-                <h3>Join the workspace</h3>
-                <p>Request access and wait for approval from your institution admin.</p>
-            </article>
+        <article class="surface reveal">
+            <span class="pill">2</span>
+            <h3>Open the workspace</h3>
+            <p>The current view and next action are right where they should be.</p>
+        </article>
 
-            <article class="timeline-card reveal">
-                <strong>02</strong>
-                <h3>Open the coverage map</h3>
-                <p>Review the current state of a floor in a clean workspace.</p>
-            </article>
-
-            <article class="timeline-card reveal">
-                <strong>03</strong>
-                <h3>Capture a reading</h3>
-                <p>Tap the map and add a new reading where it matters most.</p>
-            </article>
-
-            <article class="timeline-card reveal">
-                <strong>04</strong>
-                <h3>Review changes</h3>
-                <p>Check what shifted and where attention is needed next.</p>
-            </article>
-
-            <article class="timeline-card reveal">
-                <strong>05</strong>
-                <h3>Share the result</h3>
-                <p>Give the team a simple summary and a clear next move.</p>
-            </article>
-
-            <article class="timeline-card reveal">
-                <strong>06</strong>
-                <h3>Keep it tidy</h3>
-                <p>Use the same workspace for the next round of updates.</p>
-            </article>
-        </div>
+        <article class="surface reveal">
+            <span class="pill">3</span>
+            <h3>Capture or review</h3>
+            <p>The map and the form work together without feeling heavy.</p>
+        </article>
     </div>
 </section>
 
-<section class="section section-soft">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Good habits</span>
-            <h2>Small rules that keep the experience smooth</h2>
-        </div>
-
-        <div class="feature-grid feature-grid-3">
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">01</span>
-                    <h3>One page, one purpose</h3>
+<section class="section">
+    <div class="split-grid">
+        <article class="surface reveal">
+            <span class="kicker">What good feels like</span>
+            <h2>People should always know what is happening.</h2>
+            <div class="doc-list">
+                <div class="item-card">
+                    <strong>Clear status</strong>
+                    <p>Waiting, ready, or done should always be obvious.</p>
                 </div>
-                <p>Each screen should answer a single question for the user.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">02</span>
-                    <h3>Show the state</h3>
+                <div class="item-card">
+                    <strong>Gentle guidance</strong>
+                    <p>Hints should help without getting in the way.</p>
                 </div>
-                <p>People should always know if they are waiting, ready, or done.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">03</span>
-                    <h3>Keep actions visible</h3>
+                <div class="item-card">
+                    <strong>Easy movement</strong>
+                    <p>Each screen should naturally lead to the next one.</p>
                 </div>
-                <p>The main action should always be easy to find and easy to trust.</p>
-            </article>
-        </div>
+            </div>
+        </article>
+
+        <article class="surface reveal">
+            <span class="kicker">Outcome</span>
+            <h2>A workflow that feels shorter than it is.</h2>
+        </article>
     </div>
 </section>
 {% endblock %}

@@ -1,153 +1,105 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}NetSense | Campus coverage workspace{% endblock %}
-{% block meta_description %}NetSense helps campus teams track coverage, capture readings, and make clearer decisions from one calm workspace.{% endblock %}
+{% block title %}NetSense | Simple campus workspace{% endblock %}
+{% block meta_description %}NetSense helps campus teams see coverage, capture readings, and manage access in one calm workspace.{% endblock %}
 
 {% block content %}
 <section class="page-hero landing-hero">
-    <div class="container hero-grid">
+    <div class="hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Campus coverage workspace</span>
-            <h1>See what people feel on campus before they have to complain.</h1>
+            <span class="kicker">Campus workspace</span>
+            <h1>One calm place for coverage, capture, and access.</h1>
             <p class="lead">
-                NetSense brings coverage maps, quick scans, and approval flows into one simple place so teams can act faster and communicate clearly.
+                NetSense keeps the important parts visible and the rest out of the way, so teams can move without friction.
             </p>
 
             <div class="hero-actions">
-                <a class="btn primary" href="{% url 'dashboard' %}">Open coverage map</a>
-                <a class="btn ghost" href="{% url 'scan' %}">Capture a reading</a>
+                <a class="btn primary" href="{% url 'dashboard' %}">Open workspace</a>
+                <a class="btn ghost" href="{% url 'scan' %}">Capture reading</a>
                 <button class="btn ghost" id="installAppBtn" type="button" hidden>Install app</button>
             </div>
 
             <span class="install-status" id="installAppStatus" hidden></span>
 
-            <div class="hero-stats">
-                <article class="metric-card">
-                    <span>One view</span>
-                    <strong>Coverage, scans, and follow-up</strong>
+            <div class="stat-row">
+                <article class="stat">
+                    <span>Fast</span>
+                    <strong>Open, scan, review</strong>
                 </article>
-                <article class="metric-card">
-                    <span>For teams</span>
-                    <strong>Easy for admins and field staff</strong>
+                <article class="stat">
+                    <span>Clear</span>
+                    <strong>Simple next steps</strong>
                 </article>
-                <article class="metric-card">
-                    <span>Always current</span>
-                    <strong>Fresh readings and clear status</strong>
+                <article class="stat">
+                    <span>Quiet</span>
+                    <strong>Less clutter, more focus</strong>
                 </article>
             </div>
         </div>
 
-        <div class="hero-showcase reveal">
-            <div class="showcase-card">
-                <div class="panel-header">
-                    <div>
-                        <span class="chip">Live preview</span>
-                        <h2>Your campus at a glance</h2>
-                    </div>
-                    <span class="muted">Simple, readable, calm</span>
-                </div>
-
-                <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Campus floor preview" class="showcase-image">
-
-                <div class="showcase-metrics">
-                    <div>
-                        <span class="muted">Coverage health</span>
-                        <strong>Stable</strong>
-                    </div>
-                    <div>
-                        <span class="muted">Weak spots</span>
-                        <strong>Visible</strong>
-                    </div>
-                    <div>
-                        <span class="muted">Next step</span>
-                        <strong>Scan or review</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section section-soft">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Why teams use it</span>
-            <h2>Everything feels easier when the right context is already in front of you.</h2>
-            <p>NetSense keeps the experience focused on the person making the decision, not the system behind it.</p>
-        </div>
-
-        <div class="feature-grid feature-grid-3">
-            <article class="feature-card reveal">
-                <div class="feature-icon">01</div>
-                <div>
-                    <h3>Clear coverage</h3>
-                    <p>See where the campus feels strong, where it drops off, and where attention is needed next.</p>
-                </div>
-            </article>
-
-            <article class="feature-card reveal">
-                <div class="feature-icon">02</div>
-                <div>
-                    <h3>Fast capture</h3>
-                    <p>Tap a spot, add a reading, and move on with a flow that feels made for real work.</p>
-                </div>
-            </article>
-
-            <article class="feature-card reveal">
-                <div class="feature-icon">03</div>
-                <div>
-                    <h3>Simple access</h3>
-                    <p>Keep users, requests, and approvals tidy without making the product feel complicated.</p>
-                </div>
-            </article>
+        <div class="hero-media reveal">
+            <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Workspace preview" class="showcase-image">
         </div>
     </div>
 </section>
 
 <section class="section">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">How it works</span>
-            <h2>A short path from location to decision.</h2>
-        </div>
+    <div class="section-head reveal">
+        <span class="kicker">Why it feels different</span>
+        <h2>Built to feel like a premium product, not a dense admin panel.</h2>
+    </div>
 
-        <div class="step-track">
-            <article class="step-pill reveal">
-                <strong>1</strong>
-                <span>Choose the place</span>
-            </article>
-            <article class="step-pill reveal">
-                <strong>2</strong>
-                <span>Capture the reading</span>
-            </article>
-            <article class="step-pill reveal">
-                <strong>3</strong>
-                <span>Review coverage</span>
-            </article>
-            <article class="step-pill reveal">
-                <strong>4</strong>
-                <span>Share the next step</span>
-            </article>
-        </div>
+    <div class="card-grid">
+        <article class="surface reveal">
+            <span class="pill">Simple</span>
+            <h3>Every screen has one job</h3>
+            <p>The app stays focused on what people came to do.</p>
+        </article>
+
+        <article class="surface reveal">
+            <span class="pill">Gentle</span>
+            <h3>Less visual noise</h3>
+            <p>Soft surfaces, clear spacing, and a more relaxed rhythm.</p>
+        </article>
+
+        <article class="surface reveal">
+            <span class="pill">Useful</span>
+            <h3>Guidance is built in</h3>
+            <p>Next actions are obvious without needing to read a manual.</p>
+        </article>
     </div>
 </section>
 
-<section class="section section-soft">
-    <div class="container">
-        <div class="cta-panel surface-card reveal">
-            <div class="section-head compact">
-                <span class="eyebrow">Ready to move</span>
-                <h2>Open the dashboard or jump straight into capture.</h2>
-                <p>Everything is designed to feel obvious, useful, and easy to trust on first use.</p>
+<section class="section">
+    <div class="split-grid">
+        <article class="surface reveal">
+            <span class="kicker">What you can do</span>
+            <h2>A short list of useful actions.</h2>
+            <div class="doc-list">
+                <div class="item-card">
+                    <strong>Check the current view</strong>
+                    <p>See where things look good and where attention is needed.</p>
+                </div>
+                <div class="item-card">
+                    <strong>Add a new reading</strong>
+                    <p>Move from location to value without a complicated flow.</p>
+                </div>
+                <div class="item-card">
+                    <strong>Handle access</strong>
+                    <p>Keep requests organized and easy to review.</p>
+                </div>
             </div>
+        </article>
 
-            <div class="hero-actions">
-                <a class="btn primary" href="{% url 'dashboard' %}">Open dashboard</a>
-                <a class="btn ghost" href="{% url 'scan' %}">Open scan console</a>
+        <article class="surface reveal">
+            <span class="kicker">Get started</span>
+            <h2>Open the workspace in the way that fits you best.</h2>
+            <div class="button-row">
+                <a class="btn primary" href="{% url 'dashboard' %}">Go to workspace</a>
                 <a class="btn ghost" href="{% url 'signup' %}">Request access</a>
             </div>
-        </div>
+        </article>
     </div>
 </section>
 {% endblock %}

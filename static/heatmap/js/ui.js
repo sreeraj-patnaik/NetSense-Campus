@@ -1,46 +1,28 @@
 (function () {
-    const header = document.querySelector(".site-header");
-    const navToggle = document.querySelector(".nav-toggle");
-    const navLinks = document.querySelector("[data-nav]");
+    const rail = document.getElementById("siteRail");
+    const railToggle = document.querySelector(".rail-toggle");
     const revealTargets = document.querySelectorAll(".reveal");
 
-    function setHeaderState() {
-        if (!header) return;
-        header.classList.toggle("is-scrolled", window.scrollY > 8);
+    function closeRail() {
+        if (!rail || !railToggle) return;
+        rail.classList.remove("is-open");
+        railToggle.setAttribute("aria-expanded", "false");
     }
 
-    function closeNavigation() {
-        if (!header || !navToggle) return;
-        header.classList.remove("nav-open");
-        navToggle.setAttribute("aria-expanded", "false");
-    }
-
-    if (header && navToggle) {
-        navToggle.addEventListener("click", () => {
-            const isOpen = header.classList.toggle("nav-open");
-            navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (rail && railToggle) {
+        railToggle.addEventListener("click", () => {
+            const isOpen = rail.classList.toggle("is-open");
+            railToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
         });
 
         document.addEventListener("click", (event) => {
-            if (!header.classList.contains("nav-open")) return;
-            if (header.contains(event.target)) return;
-            closeNavigation();
+            if (!rail.classList.contains("is-open")) return;
+            if (rail.contains(event.target) || railToggle.contains(event.target)) return;
+            closeRail();
         });
 
         document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape") {
-                closeNavigation();
-            }
-        });
-    }
-
-    if (navLinks) {
-        const currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
-        navLinks.querySelectorAll("a").forEach((link) => {
-            const href = new URL(link.href, window.location.origin).pathname.replace(/\/+$/, "") || "/";
-            if (href === currentPath) {
-                link.setAttribute("aria-current", "page");
-            }
+            if (event.key === "Escape") closeRail();
         });
     }
 
@@ -59,12 +41,4 @@
 
         revealTargets.forEach((target) => observer.observe(target));
     }
-
-    setHeaderState();
-    window.addEventListener("scroll", setHeaderState, { passive: true });
-    window.addEventListener("resize", () => {
-        if (window.innerWidth > 760) {
-            closeNavigation();
-        }
-    });
 })();

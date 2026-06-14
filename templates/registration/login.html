@@ -1,59 +1,47 @@
 {% extends "base.html" %}
 
 {% block title %}Sign in | NetSense{% endblock %}
-{% block meta_description %}Sign in to NetSense to open the coverage workspace and manage readings or requests.{% endblock %}
+{% block meta_description %}Sign in to NetSense and open your workspace.{% endblock %}
 
 {% block content %}
 <section class="auth-page">
-    <div class="container auth-shell">
+    <div class="auth-grid">
         <div class="auth-copy reveal">
-            <span class="eyebrow">Welcome back</span>
-            <h1>Sign in and pick up where you left off.</h1>
+            <span class="kicker">Welcome back</span>
+            <h1>Sign in and continue where you left off.</h1>
             <p class="lead">
-                Access your workspace, continue scanning, and keep your campus decisions in one place.
+                Open your workspace, check the current view, and keep moving without extra friction.
             </p>
 
-            <div class="feature-stack">
-                <article class="feature-card">
-                    <div class="feature-icon">01</div>
-                    <div>
-                        <h3>Fast return</h3>
-                        <p>Get back to the dashboard without extra friction.</p>
-                    </div>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon">02</div>
-                    <div>
-                        <h3>Clear access</h3>
-                        <p>See only the workspace you are approved to use.</p>
-                    </div>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon">03</div>
-                    <div>
-                        <h3>Focused tools</h3>
-                        <p>Coverage, capture, and requests are all kept in the same place.</p>
-                    </div>
-                </article>
+            <div class="doc-list">
+                <div class="item-card">
+                    <strong>Simple return</strong>
+                    <p>Jump back into the app quickly.</p>
+                </div>
+                <div class="item-card">
+                    <strong>Clear access</strong>
+                    <p>See only the workspace you can use.</p>
+                </div>
+                <div class="item-card">
+                    <strong>One place</strong>
+                    <p>Coverage, capture, and requests live together.</p>
+                </div>
             </div>
         </div>
 
-        <div class="auth-card reveal login-panel">
-            <div class="auth-card-header">
-                <span class="chip">Sign in</span>
-                <h2>Welcome back</h2>
-                <p>Use your account details to continue.</p>
+        <div class="auth-card reveal">
+            <div class="panel-head">
+                <div>
+                    <span class="kicker">Sign in</span>
+                    <h2>Welcome back</h2>
+                </div>
             </div>
 
             <form method="post" class="auth-form">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
-                    <div class="form-alert form-alert-error">
-                        {{ form.non_field_errors }}
-                    </div>
+                    <div class="notice">{{ form.non_field_errors }}</div>
                 {% endif %}
 
                 <div class="form-grid">
@@ -69,20 +57,20 @@
                             {{ field }}
 
                             {% if field.help_text %}
-                                <small class="help-text">{{ field.help_text }}</small>
+                                <small class="muted">{{ field.help_text }}</small>
                             {% endif %}
 
                             {% for error in field.errors %}
-                                <div class="field-error">{{ error }}</div>
+                                <div class="notice">{{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endfor %}
                 </div>
 
-                <button class="btn primary auth-submit" type="submit">Sign in</button>
+                <button class="btn primary" type="submit">Sign in</button>
             </form>
 
-            <p class="auth-footer">
+            <p class="muted">
                 Need access?
                 <a href="{% url 'signup' %}">Request it here</a>.
             </p>

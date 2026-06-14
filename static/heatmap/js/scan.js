@@ -166,7 +166,7 @@
     function clearSelectedCell() {
         cellXInput.value = "";
         cellYInput.value = "";
-        selectedCellText.textContent = "None";
+        selectedCellText.textContent = "No spot selected";
         const selectedMarker = markerLayer.querySelector(".selected-marker");
         if (selectedMarker) {
             selectedMarker.remove();
@@ -243,14 +243,14 @@
 
         if (isBlockedCell(cellX, cellY)) {
             clearSelectedCell();
-            selectedCellText.textContent = "Blocked cell";
+            selectedCellText.textContent = "That spot is unavailable";
             return;
         }
 
         clearSuggestedCell();
         cellXInput.value = cellX;
         cellYInput.value = cellY;
-        selectedCellText.textContent = `${cellX}, ${cellY}`;
+        selectedCellText.textContent = "Spot selected";
         drawSelectedCell(cellX, cellY);
     });
 
@@ -417,9 +417,9 @@
             drawSuggestedCell(cellX, cellY);
             cellXInput.value = cellX;
             cellYInput.value = cellY;
-            selectedCellText.textContent = `${cellX}, ${cellY}`;
+            selectedCellText.textContent = "Suggested spot selected";
             drawSelectedCell(cellX, cellY);
-            setSuggestStatus(`Suggested cell: ${cellX}, ${cellY}`, "success");
+            setSuggestStatus("Suggested spot added.", "success");
         });
     }
 

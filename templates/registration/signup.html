@@ -1,59 +1,47 @@
 {% extends "base.html" %}
 
 {% block title %}Request access | NetSense{% endblock %}
-{% block meta_description %}Request a NetSense account and join the workspace managed by your institution.{% endblock %}
+{% block meta_description %}Request an account and join the right NetSense workspace.{% endblock %}
 
 {% block content %}
 <section class="auth-page">
-    <div class="container auth-shell">
+    <div class="auth-grid">
         <div class="auth-copy reveal">
-            <span class="eyebrow">Request access</span>
+            <span class="kicker">Request access</span>
             <h1>Create your account and join the right workspace.</h1>
             <p class="lead">
-                Tell us who you are and which institution you belong to, then your admin can review the request.
+                Tell us who you are, and your admin can review the request from there.
             </p>
 
-            <div class="feature-stack">
-                <article class="feature-card">
-                    <div class="feature-icon">01</div>
-                    <div>
-                        <h3>Right workspace</h3>
-                        <p>Keep every user inside the correct campus or institution.</p>
-                    </div>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon">02</div>
-                    <div>
-                        <h3>Approval flow</h3>
-                        <p>Requests are reviewed before access is granted.</p>
-                    </div>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon">03</div>
-                    <div>
-                        <h3>Simple onboarding</h3>
-                        <p>The first step feels clear, not heavy.</p>
-                    </div>
-                </article>
+            <div class="doc-list">
+                <div class="item-card">
+                    <strong>Right place</strong>
+                    <p>Keep every user tied to the correct workspace.</p>
+                </div>
+                <div class="item-card">
+                    <strong>Review first</strong>
+                    <p>Access is approved before the account becomes active.</p>
+                </div>
+                <div class="item-card">
+                    <strong>Simple start</strong>
+                    <p>The first step is short and clear.</p>
+                </div>
             </div>
         </div>
 
-        <div class="auth-card reveal signup-panel">
-            <div class="auth-card-header">
-                <span class="chip">Request access</span>
-                <h2>Create account</h2>
-                <p>Fill in your details to start the review process.</p>
+        <div class="auth-card reveal">
+            <div class="panel-head">
+                <div>
+                    <span class="kicker">New account</span>
+                    <h2>Request access</h2>
+                </div>
             </div>
 
             <form method="post" class="auth-form">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
-                    <div class="form-alert form-alert-error">
-                        {{ form.non_field_errors }}
-                    </div>
+                    <div class="notice">{{ form.non_field_errors }}</div>
                 {% endif %}
 
                 <div class="form-grid">
@@ -69,21 +57,21 @@
                             {{ field }}
 
                             {% if field.help_text %}
-                                <small class="help-text">{{ field.help_text }}</small>
+                                <small class="muted">{{ field.help_text }}</small>
                             {% endif %}
 
                             {% for error in field.errors %}
-                                <div class="field-error">{{ error }}</div>
+                                <div class="notice">{{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endfor %}
                 </div>
 
-                <button class="btn primary auth-submit" type="submit">Request access</button>
+                <button class="btn primary" type="submit">Request access</button>
             </form>
 
-            <p class="auth-footer">
-                Already have access?
+            <p class="muted">
+                Already have an account?
                 <a href="{% url 'login' %}">Sign in</a>
             </p>
         </div>

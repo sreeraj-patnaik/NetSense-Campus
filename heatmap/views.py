@@ -22,6 +22,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 from .aggregation import rebuild_aggregates_for_floor, refresh_cell_aggregates
+from .chatbot import route_chatbot_request
 from .models import CellAggregate, Scan, Block, Institution, InstitutionMembership, UserDashboardPreference
 from .forms import SignupForm
 from .services import (
@@ -29,9 +30,15 @@ from .services import (
     build_comparison_payload,
     build_trend_payload,
     current_institution as service_current_institution,
+    current_membership as service_current_membership,
+    institution_for_user,
+    institution_queryset_for_user,
+    is_institution_admin as service_is_institution_admin,
     resolve_dashboard_selection,
     save_dashboard_preference,
     viewer_context as service_viewer_context,
+    user_can_scan as service_user_can_scan,
+    user_can_view_heatmap as service_user_can_view_heatmap,
 )
 from .utils import (
     compute_confidence,
@@ -51,6 +58,30 @@ MAX_DOC_CONTEXT_CHARS = 12000
 MAX_FLOOR_CONTEXT_CHARS = 8000
 AI_RESPONSE_MAX_CHARS = 12000
 SUPPORTED_MODES = {Scan.WIFI, Scan.MOBILE}
+GENERAL_ASSISTANT_SYSTEM_PROMPT = (
+    "You are Spen Sense, a helpful general-purpose assistant for this website. "
+    "Respond naturally and concisely. "
+    "Do not claim to know project background, documentation, user accounts, or institution data unless the user explicitly provides that context. "
+    "Never invent app details, institutional context, or live analytics. "
+    "If the question depends on NetSense data, ask for the missing block, floor, mode, or provider details, or ask the user to sign in."
+)
+GENERAL_ASSISTANT_FALLBACK = (
+    "I’m here to help with general questions. "
+    "If you want NetSense analytics, sign in and share the block and floor."
+)
+_PROJECT_HALLUCINATION_PATTERNS = (
+    r"netsense campus",
+    r"project assistant",
+    r"helps?\s+students\s+manage\s+their\s+time",
+    r"study\s+or\s+take\s+breaks",
+    r"schedules?\s+and\s+preferences",
+    r"personal assistant for your productivity",
+    r"working on helps? students",
+)
+_GREETING_MESSAGE_RE = re.compile(
+    r"^(hi|hello|hey|hiya|hello there|hi there|hey there|hello dear)[\s!.?]*$",
+    re.IGNORECASE,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -130,6 +161,24 @@ def _format_ai_answer(text: str) -> str:
     return _trim(formatted, AI_RESPONSE_MAX_CHARS)
 
 
+def _looks_like_project_hallucination(text: str) -> bool:
+    lowered = _normalize_text(text).lower()
+    return any(re.search(pattern, lowered, re.IGNORECASE) for pattern in _PROJECT_HALLUCINATION_PATTERNS)
+
+
+def _sanitize_general_assistant_answer(answer: str, message: str) -> str:
+    cleaned = _format_ai_answer(answer)
+    if not cleaned:
+        return GENERAL_ASSISTANT_FALLBACK
+
+    if _looks_like_project_hallucination(cleaned):
+        if _GREETING_MESSAGE_RE.match(_normalize_text(message)):
+            return "Hi! I’m Spen Sense. How can I help?"
+        return GENERAL_ASSISTANT_FALLBACK
+
+    return cleaned
+
+
 # -----------------------------------------------------------------------------
 # Page context
 # -----------------------------------------------------------------------------
@@ -140,68 +189,27 @@ def _viewer_context(user=None):
 
 
 def _approved_institutions(user):
-    if not user or not user.is_authenticated:
-        return Institution.objects.none()
-    return Institution.objects.filter(
-        is_active=True,
-        memberships__user=user,
-        memberships__status=InstitutionMembership.APPROVED,
-    ).distinct()
+    return institution_queryset_for_user(user)
 
 
 def _current_membership(user):
-    if not user or not user.is_authenticated:
-        return None
-    memberships = InstitutionMembership.objects.select_related("institution").filter(
-        user=user,
-        status=InstitutionMembership.APPROVED,
-    )
-    admin_membership = memberships.filter(role=InstitutionMembership.ADMIN).order_by(
-        "-approved_at",
-        "-created_at",
-    ).first()
-    if admin_membership:
-        return admin_membership
-    return memberships.order_by("-approved_at", "-created_at").first()
+    return service_current_membership(user)
 
 
 def _current_institution(user):
-    membership = _current_membership(user)
-    return membership.institution if membership else None
+    return service_current_institution(user)
 
 
 def _is_institution_admin(user):
-    if not user or not user.is_authenticated:
-        return False
-    return InstitutionMembership.objects.filter(
-        user=user,
-        status=InstitutionMembership.APPROVED,
-        role=InstitutionMembership.ADMIN,
-    ).exists()
+    return service_is_institution_admin(user)
 
 
 def _user_can_scan(user):
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return True
-    return InstitutionMembership.objects.filter(
-        user=user,
-        status=InstitutionMembership.APPROVED,
-    ).filter(
-        models.Q(role=InstitutionMembership.ADMIN) | models.Q(can_scan=True)
-    ).exists()
+    return service_user_can_scan(user)
 
 
 def _user_can_view_heatmap(user):
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_staff or user.is_superuser:
-        return True
-    return InstitutionMembership.objects.filter(
-        user=user,
-        status=InstitutionMembership.APPROVED,
-    ).exists()
+    return service_user_can_view_heatmap(user)
 
 
 def _filter_registry_for_user(user, registry):
@@ -210,10 +218,12 @@ def _filter_registry_for_user(user, registry):
     if user.is_superuser:
         return registry
 
-    allowed_institutions = _approved_institutions(user)
+    institution = institution_for_user(user)
+    if not institution:
+        return {"blocks": [], "block_floors": {}, "floor_configs": {}}
     allowed_blocks = set(
         Block.objects.filter(
-            institution__in=allowed_institutions,
+            institution=institution,
             is_active=True,
         ).values_list("code", flat=True)
     )
@@ -238,13 +248,8 @@ def _user_can_access_floor(user, floor_plan):
         return True
     if not floor_plan or not floor_plan.block_id:
         return False
-    if not floor_plan.block.institution_id:
-        return False
-    return InstitutionMembership.objects.filter(
-        user=user,
-        institution_id=floor_plan.block.institution_id,
-        status=InstitutionMembership.APPROVED,
-    ).exists()
+    institution = institution_for_user(user)
+    return bool(institution and floor_plan.block.institution_id == institution.id)
 
 
 # -----------------------------------------------------------------------------
@@ -422,12 +427,19 @@ def dashboard_insights_api(request):
         return JsonResponse({"error": "floor not configured"}, status=404)
     if not _user_can_access_floor(request.user, floor_plan):
         return JsonResponse({"error": "access denied"}, status=403)
+    if compare_block and compare_floor is not None:
+        compare_floor_plan = get_floor_plan(compare_block, compare_floor)
+        if not compare_floor_plan:
+            return JsonResponse({"error": "comparison floor not configured"}, status=404)
+        if not _user_can_access_floor(request.user, compare_floor_plan):
+            return JsonResponse({"error": "access denied"}, status=403)
 
     trend = build_trend_payload(
         block=block,
         floor=floor,
         mode=mode,
         service_provider=service_provider,
+        user=request.user,
     )
     alerts = build_alerts_payload(
         block=block,
@@ -435,6 +447,7 @@ def dashboard_insights_api(request):
         mode=mode,
         service_provider=service_provider,
         weak_threshold=weak_threshold if weak_threshold is not None else -80,
+        user=request.user,
     )
     comparison = build_comparison_payload(
         block=block,
@@ -444,6 +457,7 @@ def dashboard_insights_api(request):
         compare_block=compare_block or None,
         compare_floor=compare_floor,
         weak_threshold=weak_threshold if weak_threshold is not None else -80,
+        user=request.user,
     )
 
     selection = resolve_dashboard_selection(request.user)
@@ -495,12 +509,8 @@ def institution_requests_view(request):
     if request.user.is_staff or request.user.is_superuser:
         admin_institutions = Institution.objects.filter(is_active=True)
     else:
-        admin_institutions = Institution.objects.filter(
-            is_active=True,
-            memberships__user=request.user,
-            memberships__status=InstitutionMembership.APPROVED,
-            memberships__role=InstitutionMembership.ADMIN,
-        ).distinct()
+        institution = _current_institution(request.user)
+        admin_institutions = Institution.objects.filter(is_active=True, id=institution.id) if institution else Institution.objects.none()
 
     if request.method == "POST":
         membership_id = request.POST.get("membership_id")
@@ -515,6 +525,16 @@ def institution_requests_view(request):
             return redirect("institution_requests")
 
         if action == "approve" or action == "approve_scan":
+            already_approved = InstitutionMembership.objects.filter(
+                user=membership.user,
+                status=InstitutionMembership.APPROVED,
+            ).exclude(id=membership.id)
+            if already_approved.exists():
+                messages.error(
+                    request,
+                    f"{membership.user.username} already belongs to another approved institution.",
+                )
+                return redirect("institution_requests")
             membership.status = InstitutionMembership.APPROVED
             membership.approved_at = timezone.now()
             if action == "approve_scan":
@@ -1143,147 +1163,291 @@ def _post_json(url, headers, body):
         headers=headers,
         method="POST",
     )
+
+    print("\n========== API REQUEST ==========")
+    print("URL:", url)
+    print("Headers:", {k: ("***" if k.lower() == "authorization" else v) for k, v in headers.items()})
+    print("=================================\n")
+
     try:
         with urllib.request.urlopen(request, timeout=25) as response:
             raw = response.read()
-            return json.loads(raw.decode("utf-8")), None
+            text = raw.decode("utf-8")
+
+            print("\n========== API SUCCESS ==========")
+            print(text[:2000])
+            print("=================================\n")
+
+            return json.loads(text), None
+
     except urllib.error.HTTPError as exc:
         try:
-            error_body = exc.read().decode("utf-8")
+            error_body = exc.read().decode("utf-8", errors="ignore")
         except Exception:
-            error_body = "Upstream API error."
+            error_body = "Unable to read error body."
+
+        print("\n========== HTTP ERROR ==========")
+        print("Status:", exc.code)
+        print("Reason:", exc.reason)
+        print("Body:", error_body)
+        print("================================\n")
+
         return None, error_body
-    except urllib.error.URLError:
-        return None, "Unable to reach upstream API."
-    except json.JSONDecodeError:
-        return None, "Invalid upstream response."
 
+    except urllib.error.URLError as exc:
+        print("\n========== URL ERROR ==========")
+        print(repr(exc))
+        print("================================\n")
 
-def _build_chat_prompt(message: str, docs_context: str, floor_context: str, history: list[dict[str, Any]] | None):
-    instructions = [
-    "You are a helpful personal assistant.",
-    "Reply naturally, like a smart human assistant.",
-    "Answer the user's question directly.",
-    "Be concise unless the user asks for detail.",
-    "Use the provided documentation or floor context only when it is relevant to the user's question.",
-    "Do not explain the project unless the user asks about it.",
-    "Do not invent facts. If something is missing, say you do not have enough information.",
-    "Keep the tone calm, helpful, and conversational.",
-    "Always respond in English.",
-]
+        return None, f"Unable to reach upstream API: {exc}"
 
+    except Exception as exc:
+        print("\n========== UNKNOWN ERROR ==========")
+        print(repr(exc))
+        print("===================================\n")
+
+        return None, str(exc)
+
+def _build_chat_prompt(
+    message: str,
+    docs_context: str,
+    floor_context: str,
+    history: list[dict[str, Any]] | None,
+):
     history_lines = []
+
     for item in (history or [])[-6:]:
         if not isinstance(item, dict):
             continue
+
         role = item.get("role", "user")
-        text = _normalize_text(str(item.get("text") or "")).strip()
+
+        text = _normalize_text(
+            str(item.get("text") or "")
+        ).strip()
+
         if not text:
             continue
-        if role not in {"user", "assistant"}:
-            role = "user"
-        history_lines.append(f"{role.title()}: {text}")
+
+        history_lines.append(
+            f"{role}: {text}"
+        )
 
     sections = [
-        "\n".join(instructions),
+        GENERAL_ASSISTANT_SYSTEM_PROMPT,
         "",
-        "Internal documentation:",
-        docs_context,
+        "Answer naturally and conversationally.",
+        "Keep answers concise unless asked otherwise.",
         "",
-        "Current floor context:",
-        floor_context or "No floor context selected.",
-        "",
-        "Recent conversation:",
-        "\n".join(history_lines) if history_lines else "No prior conversation.",
-        "",
-        f"User message: {message}",
-        "",
-        "Answer:",
     ]
+
+    if docs_context:
+        sections.extend([
+            "PROJECT DOCUMENTATION:",
+            docs_context,
+            "",
+        ])
+
+    if floor_context:
+        sections.extend([
+            "FLOOR DATA:",
+            floor_context,
+            "",
+        ])
+
+    if history_lines:
+        sections.extend([
+            "CHAT HISTORY:",
+            "\n".join(history_lines),
+            "",
+        ])
+
+    sections.extend([
+        f"USER: {message}",
+        "",
+        "ASSISTANT:",
+    ])
+
     return "\n".join(sections)
 
 
 def _call_ollama(prompt: str):
     base_url = (getattr(settings, "OLLAMA_BASE_URL", "") or "").strip()
     model = (getattr(settings, "OLLAMA_MODEL", "") or "").strip()
+
     if not base_url or not model:
         return None, "Ollama not configured."
 
-    url = f"{base_url.rstrip('/')}/api/generate"
+    print("\n========== OLLAMA MODEL ==========")
+    print(model)
+    print("==================================\n")
+
+    url = f"{base_url.rstrip('/')}/api/chat"
+
     payload = {
         "model": model,
-        "prompt": prompt,
+        "messages": [
+            {
+                "role": "system",
+                "content": GENERAL_ASSISTANT_SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
         "stream": False,
     }
-    data, error = _post_json(url, {"Content-Type": "application/json"}, payload)
+
+    print("\n========== OLLAMA PROMPT ==========")
+    print(prompt[:3000])
+    print("===================================\n")
+
+    data, error = _post_json(
+        url,
+        {"Content-Type": "application/json"},
+        payload,
+    )
+
     if error:
         return None, error
 
-    response = data.get("response", "") if isinstance(data, dict) else ""
-    response = _normalize_text(str(response))
-    if not response:
-        return None, "Empty Ollama response."
-    return response, None
+    try:
+        response = (
+            data.get("message", {})
+            .get("content", "")
+        )
 
+        response = _normalize_text(str(response))
 
+        if not response:
+            return None, "Empty Ollama response."
+
+        return response, None
+
+    except Exception as exc:
+        return None, str(exc)
 def _call_groq(prompt: str, history: list[dict[str, Any]] | None):
     api_key = _require_groq_key()
-    api_url = getattr(settings, "GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
-    model = getattr(settings, "GROQ_MODEL", "llama-3.1-70b-versatile")
+
+    api_url = getattr(
+        settings,
+        "GROQ_API_URL",
+        "https://api.groq.com/openai/v1/chat/completions",
+    )
+
+    model = getattr(
+        settings,
+        "GROQ_MODEL",
+        "llama-3.1-8b-instant",
+    )
+
+    print("\n========== GROQ CONFIG ==========")
+    print("API KEY EXISTS:", bool(api_key))
+    print("API KEY PREFIX:", api_key[:10] if api_key else "NONE")
+    print("MODEL:", model)
+    print("URL:", api_url)
+    print("=================================\n")
 
     messages_payload = [
         {
-            "role": "system",
-          "content": (
-    "Always respond in English. "
-    "You are a helpful personal assistant. "
-    "Answer the user's question directly and naturally. "
-    "Use the provided context only when relevant. "
-    "Do not explain the project unless the user asks about it."
-),
-        }
+                "role": "system",
+                "content": (
+                    "Always respond in English. "
+                    f"{GENERAL_ASSISTANT_SYSTEM_PROMPT} "
+                    "Answer the user's question directly and naturally."
+                ),
+            }
     ]
 
     for item in (history or [])[-6:]:
         if not isinstance(item, dict):
             continue
+
         role = item.get("role", "user")
         text = _normalize_text(str(item.get("text") or "")).strip()
+
         if not text:
             continue
+
         if role not in {"user", "assistant"}:
             role = "user"
-        messages_payload.append({"role": role, "content": text})
 
-    messages_payload.append({"role": "user", "content": prompt})
+        messages_payload.append(
+            {
+                "role": role,
+                "content": text,
+            }
+        )
+
+    messages_payload.append(
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    )
 
     payload = {
         "model": model,
         "messages": messages_payload,
         "temperature": 0.2,
+        "max_tokens": 1024,
     }
-    data, error = _post_json(
-        api_url,
-        {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-        payload,
-    )
-    if error:
-        return None, error
 
     try:
-        response = data["choices"][0]["message"]["content"]
-        response = _normalize_text(str(response))
-        if not response:
+        req = urllib.request.Request(
+            api_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+
+        print("\n========== GROQ RAW RESPONSE ==========")
+        print(raw[:2000])
+        print("=======================================\n")
+
+        data = json.loads(raw)
+
+        response_text = data["choices"][0]["message"]["content"]
+        response_text = _normalize_text(str(response_text))
+
+        if not response_text:
             return None, "Empty Groq response."
-        return response, None
-    except (KeyError, IndexError, AttributeError, TypeError):
-        return None, "Invalid Groq response."
 
+        return response_text, None
 
-# -----------------------------------------------------------------------------
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read().decode("utf-8", errors="ignore")
+        except Exception:
+            body = "Unable to read error body"
+
+        print("\n========== GROQ HTTP ERROR ==========")
+        print("STATUS:", exc.code)
+        print("BODY:", body)
+        print("=====================================\n")
+
+        return None, body
+
+    except urllib.error.URLError as exc:
+        print("\n========== GROQ URL ERROR ==========")
+        print(repr(exc))
+        print("====================================\n")
+
+        return None, str(exc)
+
+    except Exception as exc:
+        print("\n========== GROQ UNKNOWN ERROR ==========")
+        print(repr(exc))
+        print("========================================\n")
+
+        return None, str(exc)# -----------------------------------------------------------------------------
 # Chatbot API
 # -----------------------------------------------------------------------------
 
@@ -1294,47 +1458,92 @@ def chatbot_api(request):
 
     content_type = request.headers.get("Content-Type", "")
     if "application/json" not in content_type:
-        return JsonResponse({"error": "Content-Type must be application/json"}, status=415)
+        return JsonResponse(
+            {"error": "Content-Type must be application/json"},
+            status=415,
+        )
 
     try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
+        payload = json.loads(
+            request.body.decode("utf-8") or "{}"
+        )
     except json.JSONDecodeError:
-        return JsonResponse({"error": "invalid JSON"}, status=400)
+        return JsonResponse(
+            {"error": "invalid JSON"},
+            status=400,
+        )
 
-    message = _normalize_text(str(payload.get("message") or "")).strip()
-    history = payload.get("history") if isinstance(payload.get("history"), list) else []
+    message = _normalize_text(
+        str(payload.get("message") or "")
+    ).strip()
+
+    history = (
+        payload.get("history")
+        if isinstance(payload.get("history"), list)
+        else []
+    )
 
     if not message:
-        return JsonResponse({"error": "message required"}, status=400)
+        return JsonResponse(
+            {"error": "message required"},
+            status=400,
+        )
 
-    docs_context = _docs_context()
-    floor_scope = _extract_floor_scope(payload)
-    floor_context = _floor_context_for_ai(floor_scope)
+    routed = route_chatbot_request(request, message, history, payload)
+    if routed.get("mode") in {"analytics", "auth"}:
+        answer = routed.get("answer") or ""
+        if answer:
+            return JsonResponse(
+                {
+                    "answer": _format_ai_answer(str(answer)),
+                    "choices": routed.get("choices") or [],
+                    "context_scope": routed.get("context_scope") or routed.get("mode") or "analytics",
+                }
+            )
 
-    # Floor context is only attached when the caller is actually working with a floor.
-    # Otherwise, the AI stays on documentation-only context.
-    prompt = _build_chat_prompt(message, docs_context, floor_context, history)
+    if routed.get("reset_state"):
+        return JsonResponse(
+            {
+                "answer": "Hi! I’m Spen Sense. Ask me a question anytime.",
+                "context_scope": "general",
+            }
+        )
 
     try:
-        answer, error = _call_ollama(prompt)
+        answer, error = _call_ollama(message)
     except Exception as exc:
         answer, error = None, str(exc)
 
     if not answer:
         try:
-            answer, error = _call_groq(prompt, history)
+            answer, error = _call_groq(
+                message,
+                history,
+            )
+
         except ImproperlyConfigured as exc:
-            return JsonResponse({"error": str(exc)}, status=500)
+            return JsonResponse(
+                {"error": str(exc)},
+                status=500,
+            )
+
         except Exception as exc:
-            return JsonResponse({"error": str(exc)}, status=502)
+            return JsonResponse(
+                {"error": str(exc)},
+                status=502,
+            )
 
     if not answer:
-        return JsonResponse({"error": error or "Unable to generate response."}, status=502)
+        return JsonResponse(
+            {"error": error or "Unable to generate response."},
+            status=502,
+        )
 
-    answer = _format_ai_answer(answer)
+    answer = _sanitize_general_assistant_answer(answer, message)
+
     return JsonResponse(
         {
             "answer": answer,
-            "context_scope": "floor" if floor_context else "docs_only",
+            "context_scope": "general",
         }
     )

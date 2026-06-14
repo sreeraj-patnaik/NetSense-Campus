@@ -1,55 +1,31 @@
-.landing-hero .hero-copy h1 {
-    max-width: 12ch;
+.landing-hero .hero-media {
+    min-height: 420px;
 }
 
 .dashboard-hero .hero-copy h1,
 .scan-hero .hero-copy h1 {
-    max-width: 13ch;
+    max-width: 12ch;
 }
 
-.page-hero .lead,
-.hero-copy .lead,
-.auth-copy .lead {
-    font-size: 1.05rem;
-    max-width: 58ch;
-}
-
-.workspace-note,
-.section-note,
-.empty-state,
-.timeline-card p,
-.endpoint-card p,
-.feature-card p,
-.info-card p,
-.request-card p,
-.alert-card p {
-    color: var(--ink-soft);
-}
-
-.dashboard-map .panel-header,
-.scan-map .panel-header,
-.hero-panel .panel-header {
-    margin-bottom: 0;
-}
-
-.dashboard-side .surface-card,
-.scan-layout .dashboard-side .surface-card {
+.dashboard-side,
+.scan-side {
     position: sticky;
-    top: 110px;
+    top: 1.5rem;
 }
 
-.landing-hero .hero-showcase {
-    margin-top: 0.5rem;
+.workspace-toolbar {
+    margin-bottom: 1rem;
 }
 
-.login-panel,
-.signup-panel {
-    max-width: 520px;
+.workspace-card,
+.panel,
+.sheet {
+    position: relative;
 }
 
 @media (max-width: 1100px) {
-    .dashboard-side .surface-card,
-    .scan-layout .dashboard-side .surface-card {
+    .dashboard-side,
+    .scan-side {
         position: static;
         top: auto;
     }
