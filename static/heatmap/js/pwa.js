@@ -16,11 +16,9 @@
     }
 
     window.addEventListener("load", () => {
-        navigator.serviceWorker
-            .register("/sw.js")
-            .catch((error) => {
-                console.warn("Service worker registration failed:", error);
-            });
+        navigator.serviceWorker.register("/sw.js").catch((error) => {
+            console.warn("Service worker registration failed:", error);
+        });
     });
 
     window.addEventListener("beforeinstallprompt", (event) => {
@@ -33,11 +31,11 @@
     if (installBtn) {
         installBtn.addEventListener("click", async () => {
             if (isIos()) {
-                setStatus("On iOS: Share -> Add to Home Screen.");
+                setStatus("On iPhone or iPad, use Share then Add to Home Screen.");
                 return;
             }
             if (!deferredPrompt) {
-                setStatus("Install not ready. Use browser menu -> Install app (⋮).");
+                setStatus("Install is not ready yet. Use the browser menu to install the app.");
                 return;
             }
             deferredPrompt.prompt();
@@ -50,11 +48,11 @@
 
     if (isIos() && installBtn) {
         installBtn.hidden = false;
-        setStatus("On iOS: Share -> Add to Home Screen.");
+        setStatus("On iPhone or iPad, use Share then Add to Home Screen.");
     }
 
     if (installBtn && !isIos()) {
         installBtn.hidden = false;
-        setStatus("If no prompt: browser menu -> Install app (⋮).");
+        setStatus("If no prompt appears, use the browser menu to install the app.");
     }
 })();

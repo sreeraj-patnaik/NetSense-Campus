@@ -1,95 +1,91 @@
 {% extends "base.html" %}
 
-{% block title %}Sign in | NetSense Campus{% endblock %}
-{% block meta_description %}Sign in to NetSense Campus to access dashboards, scan workflows, and institution-scoped insights.{% endblock %}
+{% block title %}Sign in | NetSense{% endblock %}
+{% block meta_description %}Sign in to NetSense to open the coverage workspace and manage readings or requests.{% endblock %}
 
 {% block content %}
 <section class="auth-page">
     <div class="container auth-shell">
-        <div class="auth-panel auth-panel-copy">
-            <span class="eyebrow">Secure access</span>
-            <h1>Welcome back to NetSense Campus.</h1>
+        <div class="auth-copy reveal">
+            <span class="eyebrow">Welcome back</span>
+            <h1>Sign in and pick up where you left off.</h1>
             <p class="lead">
-                Sign in to access institution-scoped dashboards, scan workflows, and operational insights.
+                Access your workspace, continue scanning, and keep your campus decisions in one place.
             </p>
 
             <div class="feature-stack">
                 <article class="feature-card">
                     <div class="feature-icon">01</div>
                     <div>
-                        <h2>Role-aware access</h2>
-                        <p>Every session respects the correct permissions and boundaries.</p>
+                        <h3>Fast return</h3>
+                        <p>Get back to the dashboard without extra friction.</p>
                     </div>
                 </article>
 
                 <article class="feature-card">
                     <div class="feature-icon">02</div>
                     <div>
-                        <h2>Traceable actions</h2>
-                        <p>Scan activity and key operations stay auditable.</p>
+                        <h3>Clear access</h3>
+                        <p>See only the workspace you are approved to use.</p>
                     </div>
                 </article>
 
                 <article class="feature-card">
                     <div class="feature-icon">03</div>
                     <div>
-                        <h2>Institution segregation</h2>
-                        <p>Data stays isolated to the approved organization.</p>
+                        <h3>Focused tools</h3>
+                        <p>Coverage, capture, and requests are all kept in the same place.</p>
                     </div>
                 </article>
             </div>
         </div>
 
-        <div class="auth-panel auth-panel-form">
-            <div class="auth-card">
-                <div class="auth-card-header">
-                    <span class="chip">Sign in</span>
-                    <h2>Login</h2>
-                    <p>Enter your credentials to continue.</p>
+        <div class="auth-card reveal login-panel">
+            <div class="auth-card-header">
+                <span class="chip">Sign in</span>
+                <h2>Welcome back</h2>
+                <p>Use your account details to continue.</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-alert form-alert-error">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-grid">
+                    {% for field in form %}
+                        <div class="form-group {% if field.errors %}has-error{% endif %}">
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span class="required">*</span>
+                                {% endif %}
+                            </label>
+
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <small class="help-text">{{ field.help_text }}</small>
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
                 </div>
 
-                <form method="post" class="auth-form">
-                    {% csrf_token %}
+                <button class="btn primary auth-submit" type="submit">Sign in</button>
+            </form>
 
-                    {% if form.non_field_errors %}
-                        <div class="form-alert form-alert-error">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-
-                    <div class="form-grid">
-                        {% for field in form %}
-                            <div class="form-group {% if field.errors %}has-error{% endif %}">
-                                <label for="{{ field.id_for_label }}">
-                                    {{ field.label }}
-                                    {% if field.field.required %}
-                                        <span class="required">*</span>
-                                    {% endif %}
-                                </label>
-
-                                {{ field }}
-
-                                {% if field.help_text %}
-                                    <small class="help-text">{{ field.help_text }}</small>
-                                {% endif %}
-
-                                {% for error in field.errors %}
-                                    <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    <button class="btn primary auth-submit" type="submit">
-                        Sign in
-                    </button>
-                </form>
-
-                <p class="auth-footer">
-                    Need access?
-                    <a href="{% url 'signup' %}">Request it here</a>.
-                </p>
-            </div>
+            <p class="auth-footer">
+                Need access?
+                <a href="{% url 'signup' %}">Request it here</a>.
+            </p>
         </div>
     </div>
 </section>

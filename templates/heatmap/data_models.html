@@ -1,167 +1,130 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Data models + APIs | NetSense Campus{% endblock %}
-{% block meta_description %}Explore the data models, formulas, constraints, and API contracts behind NetSense Campus.{% endblock %}
+{% block title %}How information moves | NetSense{% endblock %}
+{% block meta_description %}See how readings, approvals, and coverage updates move through the NetSense workspace.{% endblock %}
 
 {% block content %}
 <section class="page-hero page-hero-tight">
     <div class="container hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Data contract</span>
-            <h1>Data models and API contracts powering the signal intelligence layer.</h1>
+            <span class="eyebrow">How it works</span>
+            <h1>Readings move through the app in a predictable way.</h1>
             <p class="lead">
-                A structured view of the entities, constraints, and endpoints that keep the platform predictable,
-                scalable, and safe to extend.
+                From capture to review, each step is shaped to keep the experience understandable for the people using it.
             </p>
 
-            <div class="hero-metrics">
-                <div class="metric-card">
-                    <strong>6</strong>
-                    <span>Core API endpoints</span>
-                </div>
-                <div class="metric-card">
-                    <strong>4</strong>
-                    <span>Primary domain entities</span>
-                </div>
-                <div class="metric-card">
-                    <strong>1</strong>
-                    <span>Institution-scoped data model</span>
-                </div>
+            <div class="hero-stats">
+                <article class="metric-card">
+                    <span>Input</span>
+                    <strong>Quick reading</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Review</span>
+                    <strong>Workspace update</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Action</span>
+                    <strong>Clear next step</strong>
+                </article>
             </div>
         </div>
 
-        <aside class="hero-panel reveal">
-            <div class="panel-card">
-                <span class="chip">Design principle</span>
-                <h2>Clean contracts, fewer surprises</h2>
-                <p>
-                    Every scan, aggregate, and visualization should be traceable back to a predictable model and a
-                    well-defined endpoint.
-                </p>
+        <aside class="hero-showcase reveal">
+            <div class="showcase-card">
+                <div class="panel-header">
+                    <div>
+                        <span class="chip">Product flow</span>
+                        <h2>Capture, check, decide</h2>
+                    </div>
+                </div>
+
+                <div class="showcase-metrics">
+                    <div>
+                        <span class="muted">Capture</span>
+                        <strong>Easy input</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Review</span>
+                        <strong>Simple map view</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Approve</span>
+                        <strong>Admin control</strong>
+                    </div>
+                </div>
             </div>
         </aside>
     </div>
 </section>
 
 <section class="section">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Core entities</span>
-            <h2>Domain objects</h2>
-            <p>These models describe how space, identity, and scan telemetry connect.</p>
-        </div>
-
-        <div class="feature-grid feature-grid-3">
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">01</span>
-                    <h3>Institution + Membership</h3>
-                </div>
-                <p>Access-scoped tenancy with approval workflows and role boundaries.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">02</span>
-                    <h3>Block + FloorPlan</h3>
-                </div>
-                <p>Spatial context and grid definitions for every floor in a workspace.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">03</span>
-                    <h3>Scan + CellAggregate</h3>
-                </div>
-                <p>Raw telemetry and derived metrics with provider-aware buckets.</p>
-            </article>
-        </div>
-    </div>
-</section>
-
-<section class="section section-soft">
     <div class="container split-layout">
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Formulas</span>
-                <h2>Key calculations</h2>
+                <span class="eyebrow">Core pieces</span>
+                <h2>What the product is built around</h2>
             </div>
 
-            <pre class="code-block"><code>cell_id = cell_y * cols + cell_x
-median_signal = median(signals)
-confidence = f(scan_count, variance)</code></pre>
+            <ul class="check-list">
+                <li>Workspaces for each institution or campus</li>
+                <li>Floors and spaces that match the real environment</li>
+                <li>Readings that can be reviewed and acted on quickly</li>
+            </ul>
         </article>
 
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Constraints</span>
-                <h2>Indexes and rules</h2>
+                <span class="eyebrow">User outcomes</span>
+                <h2>Why it matters</h2>
             </div>
 
             <ul class="check-list">
-                <li>Spatial indexes on cell coordinates and id</li>
-                <li>Unique aggregate key per cell + mode + provider bucket</li>
-                <li>Institution-bound block uniqueness</li>
+                <li>People know where they are in the flow</li>
+                <li>Admins see requests and approvals clearly</li>
+                <li>Teams can act without extra explanation</li>
             </ul>
         </article>
     </div>
 </section>
 
-<section class="section">
+<section class="section section-soft">
     <div class="container">
         <div class="section-head reveal">
-            <span class="eyebrow">API surface</span>
-            <h2>Endpoints</h2>
-            <p>Frontend initialization, ingestion, and analysis all flow through these contracts.</p>
+            <span class="eyebrow">At a glance</span>
+            <h2>The pieces people use every day</h2>
         </div>
 
         <div class="endpoint-grid">
             <article class="endpoint-card reveal">
                 <div class="endpoint-meta">
-                    <span class="method method-post">POST</span>
-                    <code>/api/scan/</code>
+                    <span class="method method-post">Capture</span>
+                    <strong>Save a reading</strong>
                 </div>
-                <p>Validated scan ingestion with provider-aware normalization.</p>
+                <p>Enter location and value in one guided flow.</p>
             </article>
 
             <article class="endpoint-card reveal">
                 <div class="endpoint-meta">
-                    <span class="method method-get">GET</span>
-                    <code>/api/heatmap/</code>
+                    <span class="method method-get">Coverage</span>
+                    <strong>Review the map</strong>
                 </div>
-                <p>Primary visualization payload with optional interpolation.</p>
+                <p>See the state of a floor without leaving the page.</p>
             </article>
 
             <article class="endpoint-card reveal">
                 <div class="endpoint-meta">
-                    <span class="method method-get">GET</span>
-                    <code>/api/weak-clusters/</code>
+                    <span class="method method-get">Compare</span>
+                    <strong>View side by side</strong>
                 </div>
-                <p>Weak zone grouping for alert overlays.</p>
+                <p>Check one space against another with less effort.</p>
             </article>
 
             <article class="endpoint-card reveal">
                 <div class="endpoint-meta">
-                    <span class="method method-get">GET</span>
-                    <code>/api/best-provider/</code>
+                    <span class="method method-get">Access</span>
+                    <strong>Manage requests</strong>
                 </div>
-                <p>Cell-level strongest-provider recommendation map.</p>
-            </article>
-
-            <article class="endpoint-card reveal">
-                <div class="endpoint-meta">
-                    <span class="method method-get">GET</span>
-                    <code>/api/next-scan/</code>
-                </div>
-                <p>Guided sampling recommendation for data completeness.</p>
-            </article>
-
-            <article class="endpoint-card reveal">
-                <div class="endpoint-meta">
-                    <span class="method method-get">GET</span>
-                    <code>/api/config/</code>
-                </div>
-                <p>Block, floor, and provider config for frontend initialization.</p>
+                <p>Approve new people in a clean, controlled list.</p>
             </article>
         </div>
     </div>

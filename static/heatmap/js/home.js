@@ -125,7 +125,7 @@
         if (!alerts || !alerts.length) {
             const empty = document.createElement("div");
             empty.className = "muted";
-            empty.textContent = "No active alerts for this selection.";
+            empty.textContent = "No updates for this view right now.";
             alertsList.appendChild(empty);
             return;
         }
@@ -155,7 +155,7 @@
         if (!points || !points.length) {
             trendCtx.fillStyle = "rgba(16,32,64,0.45)";
             trendCtx.font = "600 14px Inter, sans-serif";
-            trendCtx.fillText("No trend data yet.", 20, 30);
+            trendCtx.fillText("No coverage data yet.", 20, 30);
             return;
         }
 
@@ -163,7 +163,7 @@
         if (!validSignals.length) {
             trendCtx.fillStyle = "rgba(16,32,64,0.45)";
             trendCtx.font = "600 14px Inter, sans-serif";
-            trendCtx.fillText("No trend data yet.", 20, 30);
+            trendCtx.fillText("No coverage data yet.", 20, 30);
             return;
         }
 
@@ -460,7 +460,7 @@
         }
 
         if (mapStatus) {
-            mapStatus.textContent = "Loading heatmap...";
+            mapStatus.textContent = "Loading coverage...";
         }
         mapWrap.classList.add("is-loading");
 
@@ -497,24 +497,24 @@
 
         if (!response.ok) {
             if (response.status === 401) {
-                legendMin.textContent = "Login required";
+                legendMin.textContent = "Sign in";
                 legendMax.textContent = "--";
                 if (mapStatus) {
-                    mapStatus.textContent = "Login required for heatmap.";
+                    mapStatus.textContent = "Sign in to view coverage.";
                 }
                 mapWrap.classList.remove("is-loading");
                 return;
             }
             if (response.status === 403) {
                 if (mapStatus) {
-                    mapStatus.textContent = "Access denied for this institution.";
+                    mapStatus.textContent = "This workspace is not available to you.";
                 }
                 mapWrap.classList.remove("is-loading");
                 return;
             }
-            if (mapStatus) {
-                mapStatus.textContent = "Unable to load heatmap.";
-            }
+                if (mapStatus) {
+                    mapStatus.textContent = "Unable to load coverage.";
+                }
             mapWrap.classList.remove("is-loading");
             return;
         }

@@ -1,8 +1,19 @@
 (function () {
     const header = document.querySelector(".site-header");
     const navToggle = document.querySelector(".nav-toggle");
+    const navLinks = document.querySelector("[data-nav]");
     const revealTargets = document.querySelectorAll(".reveal");
-    const parallaxTargets = document.querySelectorAll("[data-parallax]");
+
+    function setHeaderState() {
+        if (!header) return;
+        header.classList.toggle("is-scrolled", window.scrollY > 8);
+    }
+
+    function closeNavigation() {
+        if (!header || !navToggle) return;
+        header.classList.remove("nav-open");
+        navToggle.setAttribute("aria-expanded", "false");
+    }
 
     if (header && navToggle) {
         navToggle.addEventListener("click", () => {
@@ -13,8 +24,23 @@
         document.addEventListener("click", (event) => {
             if (!header.classList.contains("nav-open")) return;
             if (header.contains(event.target)) return;
-            header.classList.remove("nav-open");
-            navToggle.setAttribute("aria-expanded", "false");
+            closeNavigation();
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeNavigation();
+            }
+        });
+    }
+
+    if (navLinks) {
+        const currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
+        navLinks.querySelectorAll("a").forEach((link) => {
+            const href = new URL(link.href, window.location.origin).pathname.replace(/\/+$/, "") || "/";
+            if (href === currentPath) {
+                link.setAttribute("aria-current", "page");
+            }
         });
     }
 
@@ -28,24 +54,17 @@
                     }
                 });
             },
-            { threshold: 0.14, rootMargin: "0px 0px -30px 0px" }
+            { threshold: 0.14, rootMargin: "0px 0px -20px 0px" }
         );
+
         revealTargets.forEach((target) => observer.observe(target));
     }
 
-    if (parallaxTargets.length) {
-        const updateParallax = () => {
-            const viewportMid = window.innerHeight / 2;
-            parallaxTargets.forEach((el) => {
-                const speed = Number(el.dataset.parallax || 0.08);
-                const rect = el.getBoundingClientRect();
-                const itemMid = rect.top + rect.height / 2;
-                const offset = (itemMid - viewportMid) * speed * -1;
-                el.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0)`;
-            });
-        };
-        window.addEventListener("scroll", updateParallax, { passive: true });
-        window.addEventListener("resize", updateParallax);
-        updateParallax();
-    }
+    setHeaderState();
+    window.addEventListener("scroll", setHeaderState, { passive: true });
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 760) {
+            closeNavigation();
+        }
+    });
 })();

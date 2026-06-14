@@ -1,95 +1,91 @@
 {% extends "base.html" %}
 
-{% block title %}Create account | NetSense Campus{% endblock %}
-{% block meta_description %}Create a NetSense Campus account and request access for your institution.{% endblock %}
+{% block title %}Request access | NetSense{% endblock %}
+{% block meta_description %}Request a NetSense account and join the workspace managed by your institution.{% endblock %}
 
 {% block content %}
 <section class="auth-page">
     <div class="container auth-shell">
-        <div class="auth-panel auth-panel-copy">
-            <span class="eyebrow">Institution access</span>
-            <h1>Create your NetSense account</h1>
+        <div class="auth-copy reveal">
+            <span class="eyebrow">Request access</span>
+            <h1>Create your account and join the right workspace.</h1>
             <p class="lead">
-                Select your institution, request approval, and join the workspace your admin manages.
+                Tell us who you are and which institution you belong to, then your admin can review the request.
             </p>
 
             <div class="feature-stack">
                 <article class="feature-card">
                     <div class="feature-icon">01</div>
                     <div>
-                        <h2>Institution routing</h2>
-                        <p>Every workspace stays scoped to the correct organization.</p>
+                        <h3>Right workspace</h3>
+                        <p>Keep every user inside the correct campus or institution.</p>
                     </div>
                 </article>
 
                 <article class="feature-card">
                     <div class="feature-icon">02</div>
                     <div>
-                        <h2>Admin approval</h2>
-                        <p>Access is reviewed before your account becomes active.</p>
+                        <h3>Approval flow</h3>
+                        <p>Requests are reviewed before access is granted.</p>
                     </div>
                 </article>
 
                 <article class="feature-card">
                     <div class="feature-icon">03</div>
                     <div>
-                        <h2>Secure by default</h2>
-                        <p>Role-based permissions keep each workflow controlled.</p>
+                        <h3>Simple onboarding</h3>
+                        <p>The first step feels clear, not heavy.</p>
                     </div>
                 </article>
             </div>
         </div>
 
-        <div class="auth-panel auth-panel-form">
-            <div class="auth-card">
-                <div class="auth-card-header">
-                    <span class="chip">New account</span>
-                    <h2>Request access</h2>
-                    <p>Fill in your details to create your account.</p>
+        <div class="auth-card reveal signup-panel">
+            <div class="auth-card-header">
+                <span class="chip">Request access</span>
+                <h2>Create account</h2>
+                <p>Fill in your details to start the review process.</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-alert form-alert-error">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-grid">
+                    {% for field in form %}
+                        <div class="form-group {% if field.errors %}has-error{% endif %}">
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span class="required">*</span>
+                                {% endif %}
+                            </label>
+
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <small class="help-text">{{ field.help_text }}</small>
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
                 </div>
 
-                <form method="post" class="auth-form">
-                    {% csrf_token %}
+                <button class="btn primary auth-submit" type="submit">Request access</button>
+            </form>
 
-                    {% if form.non_field_errors %}
-                        <div class="form-alert form-alert-error">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-
-                    <div class="form-grid">
-                        {% for field in form %}
-                            <div class="form-group {% if field.errors %}has-error{% endif %}">
-                                <label for="{{ field.id_for_label }}">
-                                    {{ field.label }}
-                                    {% if field.field.required %}
-                                        <span class="required">*</span>
-                                    {% endif %}
-                                </label>
-
-                                {{ field }}
-
-                                {% if field.help_text %}
-                                    <small class="help-text">{{ field.help_text }}</small>
-                                {% endif %}
-
-                                {% for error in field.errors %}
-                                    <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    <button class="btn primary auth-submit" type="submit">
-                        Create account
-                    </button>
-                </form>
-
-                <p class="auth-footer">
-                    Already have an account?
-                    <a href="{% url 'login' %}">Sign in</a>
-                </p>
-            </div>
+            <p class="auth-footer">
+                Already have access?
+                <a href="{% url 'login' %}">Sign in</a>
+            </p>
         </div>
     </div>
 </section>

@@ -1,119 +1,70 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}NetSense Campus | Indoor Signal Intelligence{% endblock %}
-{% block meta_description %}NetSense Campus is a premium indoor signal intelligence platform for campus connectivity, scan analysis, and confidence-aware heatmaps.{% endblock %}
+{% block title %}NetSense | Campus coverage workspace{% endblock %}
+{% block meta_description %}NetSense helps campus teams track coverage, capture readings, and make clearer decisions from one calm workspace.{% endblock %}
 
 {% block content %}
-<section class="hero hero-home">
-    <div class="container hero-grid hero-grid-wide">
+<section class="page-hero landing-hero">
+    <div class="container hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Enterprise indoor signal intelligence</span>
-            <h1>A premium operational cockpit for campus connectivity decisions.</h1>
+            <span class="eyebrow">Campus coverage workspace</span>
+            <h1>See what people feel on campus before they have to complain.</h1>
             <p class="lead">
-                Capture Wi-Fi and mobile scans, compute trustworthy cell-level metrics, and communicate coverage quality
-                through modern, confidence-aware visualizations.
+                NetSense brings coverage maps, quick scans, and approval flows into one simple place so teams can act faster and communicate clearly.
             </p>
 
             <div class="hero-actions">
-                <a class="btn primary" href="{% url 'dashboard' %}">Open heatmap</a>
-                <a class="btn ghost" href="{% url 'scan' %}">Open scan console</a>
-                <button class="btn ghost" id="installAppBtn" type="button" hidden>Download app</button>
+                <a class="btn primary" href="{% url 'dashboard' %}">Open coverage map</a>
+                <a class="btn ghost" href="{% url 'scan' %}">Capture a reading</a>
+                <button class="btn ghost" id="installAppBtn" type="button" hidden>Install app</button>
             </div>
 
             <span class="install-status" id="installAppStatus" hidden></span>
 
             <div class="hero-stats">
-                <article class="stat-card">
-                    <span>Aggregation</span>
-                    <strong>Median per cell</strong>
+                <article class="metric-card">
+                    <span>One view</span>
+                    <strong>Coverage, scans, and follow-up</strong>
                 </article>
-                <article class="stat-card">
-                    <span>Inference</span>
-                    <strong>IDW interpolation</strong>
+                <article class="metric-card">
+                    <span>For teams</span>
+                    <strong>Easy for admins and field staff</strong>
                 </article>
-                <article class="stat-card">
-                    <span>Detection</span>
-                    <strong>Weak zone clusters</strong>
-                </article>
-                <article class="stat-card">
-                    <span>Delivery</span>
-                    <strong>API + dashboard</strong>
+                <article class="metric-card">
+                    <span>Always current</span>
+                    <strong>Fresh readings and clear status</strong>
                 </article>
             </div>
         </div>
 
         <div class="hero-showcase reveal">
             <div class="showcase-card">
-                <div class="showcase-head">
-                    <span class="chip">Live coverage snapshot</span>
-                    <span class="muted">Campus floor preview</span>
+                <div class="panel-header">
+                    <div>
+                        <span class="chip">Live preview</span>
+                        <h2>Your campus at a glance</h2>
+                    </div>
+                    <span class="muted">Simple, readable, calm</span>
                 </div>
 
-                <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Floor plan preview" class="showcase-image">
+                <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Campus floor preview" class="showcase-image">
 
                 <div class="showcase-metrics">
                     <div>
-                        <span>Coverage</span>
-                        <strong>94%</strong>
-                    </div>
-                    <div>
-                        <span>Weak cells</span>
-                        <strong>12</strong>
-                    </div>
-                    <div>
-                        <span>Trend</span>
+                        <span class="muted">Coverage health</span>
                         <strong>Stable</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Weak spots</span>
+                        <strong>Visible</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Next step</span>
+                        <strong>Scan or review</strong>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Core capabilities</span>
-            <h2>Everything needed for end-to-end indoor signal governance.</h2>
-        </div>
-
-        <div class="feature-grid feature-grid-3">
-            <article class="surface-card reveal feature-card">
-                <div class="feature-card-top">
-                    <span class="card-index">01</span>
-                    <h3>Deterministic aggregation</h3>
-                </div>
-                <p>Median-based computation resists outliers and stabilizes decision baselines.</p>
-                <ul class="check-list compact">
-                    <li>Provider and all-provider buckets</li>
-                    <li>Cell-level confidence metrics</li>
-                </ul>
-            </article>
-
-            <article class="surface-card reveal feature-card">
-                <div class="feature-card-top">
-                    <span class="card-index">02</span>
-                    <h3>Explainable interpolation</h3>
-                </div>
-                <p>Single-pass weighted inference fills sparse zones while preserving traceability.</p>
-                <ul class="check-list compact">
-                    <li><code>weight = (1 / d^2) * sqrt(count)</code></li>
-                    <li>No chained synthetic propagation</li>
-                </ul>
-            </article>
-
-            <article class="surface-card reveal feature-card">
-                <div class="feature-card-top">
-                    <span class="card-index">03</span>
-                    <h3>Operational overlays</h3>
-                </div>
-                <p>Weak cluster detection and best-provider maps accelerate remediation.</p>
-                <ul class="check-list compact">
-                    <li>Confidence visualization</li>
-                    <li>Cross-provider comparisons</li>
-                </ul>
-            </article>
         </div>
     </div>
 </section>
@@ -121,31 +72,80 @@
 <section class="section section-soft">
     <div class="container">
         <div class="section-head reveal">
-            <span class="eyebrow">Operational flow</span>
-            <h2>From field sampling to actionable insights.</h2>
+            <span class="eyebrow">Why teams use it</span>
+            <h2>Everything feels easier when the right context is already in front of you.</h2>
+            <p>NetSense keeps the experience focused on the person making the decision, not the system behind it.</p>
         </div>
 
-        <div class="step-track">
-            <article class="step-pill reveal"><strong>1</strong><span>Capture</span></article>
-            <article class="step-pill reveal"><strong>2</strong><span>Validate</span></article>
-            <article class="step-pill reveal"><strong>3</strong><span>Aggregate</span></article>
-            <article class="step-pill reveal"><strong>4</strong><span>Analyze</span></article>
-            <article class="step-pill reveal"><strong>5</strong><span>Decide</span></article>
+        <div class="feature-grid feature-grid-3">
+            <article class="feature-card reveal">
+                <div class="feature-icon">01</div>
+                <div>
+                    <h3>Clear coverage</h3>
+                    <p>See where the campus feels strong, where it drops off, and where attention is needed next.</p>
+                </div>
+            </article>
+
+            <article class="feature-card reveal">
+                <div class="feature-icon">02</div>
+                <div>
+                    <h3>Fast capture</h3>
+                    <p>Tap a spot, add a reading, and move on with a flow that feels made for real work.</p>
+                </div>
+            </article>
+
+            <article class="feature-card reveal">
+                <div class="feature-icon">03</div>
+                <div>
+                    <h3>Simple access</h3>
+                    <p>Keep users, requests, and approvals tidy without making the product feel complicated.</p>
+                </div>
+            </article>
         </div>
     </div>
 </section>
 
 <section class="section">
     <div class="container">
-        <div class="cta-panel reveal">
-            <div>
-                <span class="eyebrow">Unified design system</span>
-                <h2>Start with architecture or jump straight into live dashboards.</h2>
-                <p>All pages use one consistent system for layout, hierarchy, and controls.</p>
+        <div class="section-head reveal">
+            <span class="eyebrow">How it works</span>
+            <h2>A short path from location to decision.</h2>
+        </div>
+
+        <div class="step-track">
+            <article class="step-pill reveal">
+                <strong>1</strong>
+                <span>Choose the place</span>
+            </article>
+            <article class="step-pill reveal">
+                <strong>2</strong>
+                <span>Capture the reading</span>
+            </article>
+            <article class="step-pill reveal">
+                <strong>3</strong>
+                <span>Review coverage</span>
+            </article>
+            <article class="step-pill reveal">
+                <strong>4</strong>
+                <span>Share the next step</span>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container">
+        <div class="cta-panel surface-card reveal">
+            <div class="section-head compact">
+                <span class="eyebrow">Ready to move</span>
+                <h2>Open the dashboard or jump straight into capture.</h2>
+                <p>Everything is designed to feel obvious, useful, and easy to trust on first use.</p>
             </div>
+
             <div class="hero-actions">
-                <a class="btn primary" href="{% url 'project_structure' %}">Project structure</a>
-                <a class="btn ghost" href="{% url 'data_models' %}">Data models + APIs</a>
+                <a class="btn primary" href="{% url 'dashboard' %}">Open dashboard</a>
+                <a class="btn ghost" href="{% url 'scan' %}">Open scan console</a>
+                <a class="btn ghost" href="{% url 'signup' %}">Request access</a>
             </div>
         </div>
     </div>

@@ -1,114 +1,79 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Project structure | NetSense Campus{% endblock %}
-{% block meta_description %}A clear view of the architecture, product logic, and implementation path behind NetSense Campus.{% endblock %}
+{% block title %}Strategy | NetSense{% endblock %}
+{% block meta_description %}See the product thinking behind NetSense and why the workspace feels simple to use.{% endblock %}
 
 {% block content %}
 <section class="page-hero page-hero-tight">
     <div class="container hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Design thinking + innovation</span>
-            <h1>Architecture decisions linked directly to user pain and operational outcomes.</h1>
+            <span class="eyebrow">Product thinking</span>
+            <h1>Built to feel clear, calm, and trustworthy.</h1>
             <p class="lead">
-                This page explains the rationale behind model design, aggregation, interpolation, and interface behavior.
+                Every screen is shaped around the person making the decision: less noise, more context, and faster next steps.
             </p>
 
-            <div class="hero-metrics">
-                <div class="metric-card">
-                    <strong>4</strong>
-                    <span>Core design stages</span>
-                </div>
-                <div class="metric-card">
-                    <strong>3</strong>
-                    <span>System principles</span>
-                </div>
-                <div class="metric-card">
-                    <strong>1</strong>
-                    <span>Operational workflow</span>
-                </div>
+            <div class="hero-stats">
+                <article class="metric-card">
+                    <span>Focus</span>
+                    <strong>One task at a time</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Result</span>
+                    <strong>Fewer clicks</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Feel</span>
+                    <strong>Calm and premium</strong>
+                </article>
             </div>
         </div>
 
-        <aside class="hero-panel reveal">
-            <div class="panel-card">
-                <span class="chip">Product logic</span>
-                <h2>Built for explainability</h2>
-                <p>
-                    Every decision in the architecture should help operators understand what happened, where it happened,
-                    and what to do next.
-                </p>
+        <aside class="hero-showcase reveal">
+            <div class="showcase-card">
+                <div class="panel-header">
+                    <div>
+                        <span class="chip">Guiding idea</span>
+                        <h2>Helpful before impressive</h2>
+                    </div>
+                </div>
+
+                <p>We keep the workspace readable, direct, and easy to trust so people can move quickly without feeling lost.</p>
             </div>
         </aside>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container">
-        <div class="section-head reveal">
-            <span class="eyebrow">Discovery</span>
-            <h2>How the problem is framed</h2>
-            <p>These blocks show how the system moves from user pain to a practical solution.</p>
-        </div>
-
-        <div class="feature-grid feature-grid-3">
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">01</span>
-                    <h3>Empathize</h3>
-                </div>
-                <p>Teams need location-aware evidence to troubleshoot signal complaints quickly.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">02</span>
-                    <h3>Define</h3>
-                </div>
-                <p>The problem is formalized as cell-indexed signal quality per block and floor.</p>
-            </article>
-
-            <article class="info-card reveal">
-                <div class="info-card-top">
-                    <span class="card-index">03</span>
-                    <h3>Ideate</h3>
-                </div>
-                <p>Median aggregation plus confidence inference balances quality and explainability.</p>
-            </article>
-        </div>
     </div>
 </section>
 
 <section class="section section-soft">
     <div class="container">
         <div class="section-head reveal">
-            <span class="eyebrow">Execution path</span>
-            <h2>Development sequence</h2>
-            <p>Each stage builds toward a stable, production-ready system.</p>
+            <span class="eyebrow">Principles</span>
+            <h2>What the experience should always do</h2>
         </div>
 
-        <div class="timeline-grid">
-            <article class="timeline-card reveal">
-                <strong>01</strong>
-                <h3>Prototype</h3>
-                <p>Django APIs, scan UI, and heatmap renderer.</p>
+        <div class="feature-grid feature-grid-3">
+            <article class="feature-card reveal">
+                <div class="feature-icon">01</div>
+                <div>
+                    <h3>Make the next move obvious</h3>
+                    <p>People should understand what to do next without scanning through clutter.</p>
+                </div>
             </article>
 
-            <article class="timeline-card reveal">
-                <strong>02</strong>
-                <h3>Validate</h3>
-                <p>Strict bounds checks and blocked-cell protection.</p>
+            <article class="feature-card reveal">
+                <div class="feature-icon">02</div>
+                <div>
+                    <h3>Surface the useful context</h3>
+                    <p>Coverage, status, and access should always be close to the decision.</p>
+                </div>
             </article>
 
-            <article class="timeline-card reveal">
-                <strong>03</strong>
-                <h3>Optimize</h3>
-                <p>Provider buckets, weak-zone clusters, and best-provider layers.</p>
-            </article>
-
-            <article class="timeline-card reveal">
-                <strong>04</strong>
-                <h3>Deploy</h3>
-                <p>Render-ready architecture with operational commands.</p>
+            <article class="feature-card reveal">
+                <div class="feature-icon">03</div>
+                <div>
+                    <h3>Keep the tone confident</h3>
+                    <p>The interface should feel polished, steady, and built for real work.</p>
+                </div>
             </article>
         </div>
     </div>
@@ -118,28 +83,28 @@
     <div class="container split-layout">
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Architecture principles</span>
-                <h2>Innovation blocks</h2>
+                <span class="eyebrow">Experience</span>
+                <h2>How the product feels</h2>
             </div>
 
             <ul class="check-list">
-                <li>Cell index model for deterministic spatial mapping</li>
-                <li>Median + variance + confidence for robust summaries</li>
-                <li>Single-pass interpolation to avoid compounding synthetic errors</li>
+                <li>Simple navigation with only the actions people need</li>
+                <li>Clear workspace states so users know what is happening</li>
+                <li>Strong contrast and soft surfaces for a premium look</li>
             </ul>
         </article>
 
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Math layer</span>
-                <h2>Core formulas</h2>
+                <span class="eyebrow">Outcome</span>
+                <h2>What users get</h2>
             </div>
 
-            <pre class="code-block"><code>cell_id = cell_y * cols + cell_x
-
-weight = (1 / distance^2) * sqrt(count)
-
-alpha = base + 0.2 * sqrt(count)/6</code></pre>
+            <ul class="check-list">
+                <li>A better first impression for campus teams</li>
+                <li>A flow that is easier to explain to others</li>
+                <li>More confidence when acting on coverage issues</li>
+            </ul>
         </article>
     </div>
 </section>

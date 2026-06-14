@@ -1,42 +1,57 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Project structure | NetSense Campus{% endblock %}
-{% block meta_description %}Understand the repository architecture, layers, and system organization behind NetSense Campus.{% endblock %}
+{% block title %}Workspace map | NetSense{% endblock %}
+{% block meta_description %}See how NetSense is organized into a simple product workspace, not a confusing stack of tools.{% endblock %}
 
 {% block content %}
 <section class="page-hero page-hero-tight">
     <div class="container hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Repository architecture</span>
-            <h1>Project structure designed for maintainability and fast iteration.</h1>
+            <span class="eyebrow">Workspace map</span>
+            <h1>Organized like a product, not a codebase.</h1>
             <p class="lead">
-                A clean separation of domain logic, presentation, and operations ensures predictable scaling
-                and faster development cycles.
+                The goal is simple: keep the experience easy to navigate, easy to understand, and easy to extend over time.
             </p>
 
-            <div class="hero-metrics">
-                <div class="metric-card">
-                    <strong>3</strong>
-                    <span>Core layers</span>
-                </div>
-                <div class="metric-card">
-                    <strong>5</strong>
-                    <span>Top-level modules</span>
-                </div>
-                <div class="metric-card">
-                    <strong>1</strong>
-                    <span>Unified system</span>
-                </div>
+            <div class="hero-stats">
+                <article class="metric-card">
+                    <span>Layers</span>
+                    <strong>Visibility, capture, access</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Structure</span>
+                    <strong>One system</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Result</span>
+                    <strong>Less confusion</strong>
+                </article>
             </div>
         </div>
 
-        <aside class="hero-panel reveal">
-            <div class="panel-card">
-                <span class="chip">System philosophy</span>
-                <h2>Separation without friction</h2>
-                <p>
-                    Each layer is independent enough to evolve, yet tightly integrated for performance and clarity.
-                </p>
+        <aside class="hero-showcase reveal">
+            <div class="showcase-card">
+                <div class="panel-header">
+                    <div>
+                        <span class="chip">Product layout</span>
+                        <h2>Clear sections, clear purpose</h2>
+                    </div>
+                </div>
+
+                <div class="showcase-metrics">
+                    <div>
+                        <span class="muted">Home</span>
+                        <strong>First impression</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Coverage</span>
+                        <strong>Daily workspace</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Capture</span>
+                        <strong>Quick action</strong>
+                    </div>
+                </div>
             </div>
         </aside>
     </div>
@@ -46,28 +61,28 @@
     <div class="container split-layout">
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Structure</span>
-                <h2>Repository tree</h2>
+                <span class="eyebrow">What lives where</span>
+                <h2>Simple product areas</h2>
             </div>
 
-            <pre class="code-block"><code>nsc/
-  netsense/      # project settings and root urls
-  heatmap/       # domain logic and APIs
-  templates/     # rendered frontend templates
-  static/        # global UI assets
-  scripts/       # tooling and docs builders</code></pre>
+            <ul class="check-list">
+                <li>Home for first-time orientation and product story</li>
+                <li>Coverage for day-to-day map review and comparison</li>
+                <li>Capture for quick readings and guided entry</li>
+                <li>Access for approvals and workspace control</li>
+            </ul>
         </article>
 
         <article class="surface-card reveal">
             <div class="section-head compact">
-                <span class="eyebrow">Responsibilities</span>
-                <h2>Layer definition</h2>
+                <span class="eyebrow">Design intent</span>
+                <h2>Why the structure feels easier</h2>
             </div>
 
             <ul class="check-list">
-                <li><strong>Domain:</strong> models, services, aggregation, interpolation</li>
-                <li><strong>Presentation:</strong> templates and JS renderer</li>
-                <li><strong>Operations:</strong> management commands and deployment config</li>
+                <li>Each page has one primary job</li>
+                <li>The same visual language repeats across the app</li>
+                <li>Navigation stays short and predictable</li>
             </ul>
         </article>
     </div>
@@ -76,34 +91,33 @@
 <section class="section section-soft">
     <div class="container">
         <div class="section-head reveal">
-            <span class="eyebrow">Modules</span>
-            <h2>Key directories</h2>
-            <p>Each directory exists with a single clear responsibility.</p>
+            <span class="eyebrow">Key areas</span>
+            <h2>What the user sees across the product</h2>
         </div>
 
         <div class="feature-grid feature-grid-3">
             <article class="info-card reveal">
                 <div class="info-card-top">
                     <span class="card-index">01</span>
-                    <h3>netsense/</h3>
+                    <h3>Home</h3>
                 </div>
-                <p>Global Django configuration, middleware, routing, and deployment posture.</p>
+                <p>Explains the product clearly and invites the next action.</p>
             </article>
 
             <article class="info-card reveal">
                 <div class="info-card-top">
                     <span class="card-index">02</span>
-                    <h3>heatmap/</h3>
+                    <h3>Coverage</h3>
                 </div>
-                <p>Core signal intelligence domain, aggregation logic, and API orchestration.</p>
+                <p>Shows the current state of the campus in a calm, readable way.</p>
             </article>
 
             <article class="info-card reveal">
                 <div class="info-card-top">
                     <span class="card-index">03</span>
-                    <h3>templates + static/</h3>
+                    <h3>Capture</h3>
                 </div>
-                <p>Production UI shell, visualization layers, and reusable design system.</p>
+                <p>Makes adding a reading quick and easy to understand.</p>
             </article>
         </div>
     </div>

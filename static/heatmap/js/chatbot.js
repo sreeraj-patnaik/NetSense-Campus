@@ -106,7 +106,7 @@
             } catch (parseError) {
                 data = null;
             }
-            const answer = data?.answer || data?.error || (response.ok ? "I don't have that information in the current context." : "Assistant unavailable.");
+            const answer = data?.answer || data?.error || (response.ok ? "I couldn't find that here yet." : "Assistant unavailable.");
             appendMessage("assistant", answer);
             history.push({ role: "assistant", text: answer });
         } catch (error) {

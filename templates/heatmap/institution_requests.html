@@ -1,41 +1,57 @@
 {% extends "base.html" %}
 
-{% block title %}Access requests | NetSense Campus{% endblock %}
-{% block meta_description %}Review pending institution access requests for NetSense Campus and approve or reject users safely.{% endblock %}
+{% block title %}Requests | NetSense{% endblock %}
+{% block meta_description %}Review access requests for your NetSense workspace and manage approvals in one place.{% endblock %}
 
 {% block content %}
 <section class="page-hero page-hero-tight">
     <div class="container hero-grid">
         <div class="hero-copy reveal">
-            <span class="eyebrow">Institution approvals</span>
-            <h1>Access requests</h1>
+            <span class="eyebrow">Approvals</span>
+            <h1>Review access requests without leaving the flow.</h1>
             <p class="lead">
-                Review pending users for your institution and approve access with one clean workflow.
+                Keep your campus workspace tidy by approving, granting scan access, or declining requests from one simple list.
             </p>
 
-            <div class="hero-metrics">
-                <div class="metric-card">
+            <div class="hero-stats">
+                <article class="metric-card">
+                    <span>Pending</span>
                     <strong>{{ pending|length }}</strong>
-                    <span>Pending requests</span>
-                </div>
-                <div class="metric-card">
-                    <strong>3</strong>
-                    <span>Actions per request</span>
-                </div>
-                <div class="metric-card">
-                    <strong>1</strong>
-                    <span>Decision queue</span>
-                </div>
+                </article>
+                <article class="metric-card">
+                    <span>Actions</span>
+                    <strong>Approve or review</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Workspace</span>
+                    <strong>Managed access</strong>
+                </article>
             </div>
         </div>
 
-        <aside class="hero-panel reveal">
-            <div class="panel-card">
-                <span class="chip">Admin workflow</span>
-                <h2>Fast review, clear control</h2>
-                <p>
-                    Approve, approve with scan access, or reject each request from a single list.
-                </p>
+        <aside class="hero-showcase reveal">
+            <div class="showcase-card">
+                <div class="panel-header">
+                    <div>
+                        <span class="chip">Admin view</span>
+                        <h2>Simple review queue</h2>
+                    </div>
+                </div>
+
+                <div class="showcase-metrics">
+                    <div>
+                        <span class="muted">Review</span>
+                        <strong>One request at a time</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Access</span>
+                        <strong>Approved by you</strong>
+                    </div>
+                    <div>
+                        <span class="muted">Control</span>
+                        <strong>Clear decisions</strong>
+                    </div>
+                </div>
             </div>
         </aside>
     </div>
@@ -47,10 +63,11 @@
             <div class="surface-card reveal">
                 <div class="panel-header">
                     <div>
-                        <h2>Pending requests</h2>
-                        <p class="muted">Approve to grant access.</p>
+                        <span class="eyebrow">Pending list</span>
+                        <h2>Requests waiting for your decision</h2>
+                        <p class="muted">Choose the action that fits each person.</p>
                     </div>
-                    <span class="chip">{{ pending|length }} pending</span>
+                    <span class="chip">{{ pending|length }} waiting</span>
                 </div>
 
                 <div class="request-list">
@@ -63,7 +80,7 @@
                                 </div>
 
                                 <div class="request-meta">
-                                    <span class="muted">Institution</span>
+                                    <span class="muted">Workspace</span>
                                     <strong>{{ membership.institution.name }}</strong>
                                 </div>
                             </div>
@@ -80,14 +97,14 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="membership_id" value="{{ membership.id }}">
                                     <input type="hidden" name="action" value="approve_scan">
-                                    <button class="btn primary" type="submit">Approve + Scan</button>
+                                    <button class="btn primary" type="submit">Approve for scan</button>
                                 </form>
 
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="membership_id" value="{{ membership.id }}">
                                     <input type="hidden" name="action" value="reject">
-                                    <button class="btn ghost" type="submit">Reject</button>
+                                    <button class="btn ghost" type="submit">Decline</button>
                                 </form>
                             </div>
                         </article>
@@ -98,8 +115,9 @@
             <div class="surface-card reveal empty-state">
                 <div class="panel-header">
                     <div>
-                        <h2>No pending requests</h2>
-                        <p class="muted">New access requests will appear here.</p>
+                        <span class="eyebrow">All clear</span>
+                        <h2>No requests right now</h2>
+                        <p class="muted">New requests will show up here when people ask to join your workspace.</p>
                     </div>
                 </div>
             </div>

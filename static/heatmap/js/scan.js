@@ -313,14 +313,14 @@
 
     if (autoScanBtn) {
         autoScanBtn.addEventListener("click", function () {
-            setAutoScanStatus("Scanning device network...", "info");
+            setAutoScanStatus("Reading device details...", "info");
             if (window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
                 try {
                     const raw = window.NetSenseBridge.getNetworkInfo();
                     setAutoScanDebug(`Bridge response: ${raw}`);
                     const info = JSON.parse(raw || "{}");
                     if (info.error === "permission") {
-                        setAutoScanStatus("Allow Location permission to read dBm/SSID, then retry.", "warning");
+                        setAutoScanStatus("Allow the requested permission, then try again.", "warning");
                         return;
                     }
                     if (info.mode) {
@@ -340,9 +340,9 @@
                         signalStrengthInput.value = info.dbm;
                     }
                     if (info.dbm !== undefined && info.dbm !== "") {
-                        setAutoScanStatus("Auto scan populated from device network.", "success");
+                        setAutoScanStatus("Device details filled in.", "success");
                     } else {
-                        setAutoScanStatus("Network detected, but dBm unavailable. Check permissions.", "warning");
+                        setAutoScanStatus("Network detected, but the reading value is missing.", "warning");
                     }
                     return;
                 } catch (error) {
@@ -361,13 +361,13 @@
                 }
                 setAutoScanStatus(
                     inferred === "wifi"
-                        ? "Wi-Fi detected. Enter SSID/provider if missing."
-                        : "Mobile data detected. Enter carrier if missing.",
+                        ? "Wi-Fi detected. Add any missing details."
+                        : "Mobile signal detected. Add any missing details.",
                     "success"
                 );
             } else {
-                setAutoScanStatus("Auto detect not supported on this browser. Pick mode manually.", "warning");
-                setAutoScanDebug("Bridge missing. Window.NetSenseBridge not found.");
+                setAutoScanStatus("Auto fill is not available here. Enter the details manually.", "warning");
+                setAutoScanDebug("Device bridge not available in this browser.");
             }
         });
     }
@@ -435,9 +435,9 @@
     applyOverlayFrame();
 
     if (autoScanStatus && window.NetSenseBridge && typeof window.NetSenseBridge.getNetworkInfo === "function") {
-        setAutoScanStatus("Native auto scan ready. Tap Auto Scan.", "info");
-        setAutoScanDebug("Bridge detected.");
+        setAutoScanStatus("Device fill is ready. Tap Fill from device.", "info");
+        setAutoScanDebug("Device bridge detected.");
     } else {
-        setAutoScanDebug("Bridge missing on load. If using APK, reinstall latest build.");
+        setAutoScanDebug("Device bridge not detected on load.");
     }
 })();
