@@ -47,15 +47,30 @@ class LoadingScreen {
             this.dismiss();
         });
 
+        this.unmuteBtn = document.getElementById('loading-screen-unmute');
+        if (this.unmuteBtn) {
+            this.unmuteBtn.addEventListener('click', () => {
+                console.log('LoadingScreen: Unmute clicked');
+                this.video.muted = false;
+                this.video.volume = 1;
+                this.unmuteBtn.classList.add('hidden');
+            });
+        }
+
         // Add slight delay before showing to ensure smooth page load
         setTimeout(() => {
             console.log('LoadingScreen: Showing overlay and playing video');
             this.loadingOverlay.classList.add('show');
             
             // Ensure video is ready and play
-            this.video.play().catch(err => {
+            this.video.play().then(() => {
+                console.log('LoadingScreen: Video play started');
+            }).catch(err => {
                 console.error('LoadingScreen: Error playing video:', err);
-                this.dismiss();
+                if (this.unmuteBtn) {
+                    this.unmuteBtn.classList.remove('hidden');
+                }
+                this.video.muted = true;
             });
         }, 100);
     }
