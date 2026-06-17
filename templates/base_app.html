@@ -52,8 +52,9 @@
             <a class="marketing-brand" href="{% url 'home' %}" aria-label="NetSense home">
                 <img class="brand-lockup" src="{% url 'brand_logo_with_name' %}" alt="NetSense">
             </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="appNav">Menu</button>
 
-            <nav class="app-links" aria-label="Primary">
+            <nav id="appNav" class="app-links" aria-label="Primary">
                 <a href="{% url 'home' %}">Home</a>
                 <a href="{% url 'dashboard' %}">Coverage</a>
                 <a href="{% url 'scan' %}">Capture</a>

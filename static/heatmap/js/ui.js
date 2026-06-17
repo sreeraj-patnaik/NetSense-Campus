@@ -26,6 +26,46 @@
         });
     }
 
+    const navToggles = document.querySelectorAll(".nav-toggle");
+
+    function closeNavMenus() {
+        navToggles.forEach((button) => {
+            const targetId = button.getAttribute("aria-controls");
+            const menu = targetId ? document.getElementById(targetId) : null;
+            if (!menu) return;
+            menu.classList.remove("is-open");
+            button.setAttribute("aria-expanded", "false");
+        });
+    }
+
+    navToggles.forEach((button) => {
+        const targetId = button.getAttribute("aria-controls");
+        const menu = targetId ? document.getElementById(targetId) : null;
+        if (!menu) return;
+
+        button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const isOpen = menu.classList.toggle("is-open");
+            button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+        if (Array.from(navToggles).some((button) => {
+            const targetId = button.getAttribute("aria-controls");
+            const menu = targetId ? document.getElementById(targetId) : null;
+            return menu && menu.classList.contains("is-open") && (menu.contains(event.target) || button.contains(event.target));
+        })) {
+            return;
+        }
+
+        closeNavMenus();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeNavMenus();
+    });
+
     if (revealTargets.length) {
         const observer = new IntersectionObserver(
             (entries) => {

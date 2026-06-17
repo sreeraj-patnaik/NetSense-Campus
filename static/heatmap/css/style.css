@@ -198,6 +198,21 @@ h1,h2,h3,h4{margin:0;font-family:"Manrope",system-ui,sans-serif;letter-spacing:-
     justify-content:space-between;
     gap:1rem
 }
+.nav-toggle{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    padding:.72rem 1rem;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:#fff;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .18s var(--ease),transform .18s var(--ease);
+}
+.nav-toggle:hover{background:rgba(255,255,255,.1);}
 .app-links{
     display:flex;
     flex-wrap:wrap;
@@ -470,6 +485,40 @@ select option{background:#111218;color:#fff}
     .hero-media{min-height:280px}
     .legend-grid,.showcase-grid{grid-template-columns:1fr}
     .chatbot-panel{right:.5rem;left:.5rem;width:auto;height:min(72vh,760px)}
-    .app-links{display:none}
+    .nav-toggle{display:inline-flex}
+    .app-topbar-inner{flex-direction:column;align-items:flex-start;padding:1rem;gap:1rem;position:relative}
+    .app-links{display:none;position:absolute;top:100%;right:1rem;width:min(90vw,320px);padding:1rem 0.9rem 1rem;border-radius:20px;background:rgba(7,7,9,.98);border:1px solid rgba(255,255,255,.08);box-shadow:0 30px 80px rgba(0,0,0,.25);flex-direction:column;align-items:stretch;gap:.75rem;z-index:350}
+    .app-links.is-open{display:flex}
+    .app-links a{display:block;width:100%;padding:.95rem 1rem;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);text-align:left}
+    .app-links a:hover{background:rgba(255,255,255,.06)}
+    .app-topbar-actions{width:100%;justify-content:flex-start}
+    .marketing-nav-inner{position:relative;flex-direction:column;align-items:flex-start;gap:1rem}
+    .marketing-links{display:none;position:absolute;top:100%;right:1rem;width:min(90vw,320px);padding:1rem .9rem 1rem;border-radius:20px;background:rgba(7,7,9,.98);border:1px solid rgba(255,255,255,.08);box-shadow:0 30px 80px rgba(0,0,0,.25);flex-direction:column;align-items:stretch;gap:.75rem;z-index:350}
+    .marketing-links.is-open{display:flex}
+    .marketing-links a{display:block;width:100%;padding:.95rem 1rem;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);text-align:left}
+    .marketing-links a:hover{background:rgba(255,255,255,.06)}
+    .marketing-actions{display:grid;grid-template-columns:1fr;gap:.75rem;width:100%}
+    .marketing-actions .btn{width:100%;justify-content:center}
     .brand-lockup{height:38px;max-width:48vw}
+    .hero-shell,.hero-grid,.landing-hero-grid{grid-template-columns:1fr;gap:1.5rem}
+    .hero-visual{min-height:260px}
+    .hero-actions{justify-content:flex-start;flex-wrap:wrap}
+    .page-content-inner,.marketing-content,.message-stack{width:min(100% - 1.5rem,100%)}
+    .footer-line,.request-main,.chatbot-header{flex-direction:column;align-items:flex-start}
+    .section-heading{padding:0 1rem}
+    .marketing-main,.page-main{padding-top:74px;padding-left:1rem;padding-right:1rem}
+    .marketing-nav,.app-topbar{padding-left:0;padding-right:0}
+    .app-shell{grid-template-columns:1fr}
+}
+
+@media (max-width:480px){
+    .marketing-links a,.app-links a{font-size:.95rem;padding:.75rem .85rem}
+    .marketing-actions .btn{font-size:.95rem;padding:.85rem 1rem}
+    .hero-copy h1,.auth-copy h1,.page-copy h1,.section-heading h2,.closing-cta h2{font-size:clamp(1.75rem,10vw,2.4rem)}
+    .hero-visual{min-height:220px}
+    .page-content-inner,.marketing-content,.message-stack{gap:1rem}
+    .marketing-nav-inner{gap:.75rem}
+    .footer-line{gap:.75rem}
+    .app-topbar-actions{gap:.5rem}
+    .skip-link{padding:.65rem .85rem}
 }
