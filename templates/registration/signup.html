@@ -1,83 +1,255 @@
 {% extends "base_marketing.html" %}
 
-{% block title %}Request access | NetSense{% endblock %}
-{% block meta_description %}Request an account and join the right NetSense workspace.{% endblock %}
+{% block title %}Request Access | NetSense{% endblock %}
+{% block meta_description %}Request access to your institution's NetSense workspace.{% endblock %}
 
 {% block content %}
-<section class="auth-page">
-    <div class="auth-grid">
-        <div class="auth-copy reveal">
-            <span class="kicker">Request access</span>
-            <h1>Create your account and join the right workspace.</h1>
-            <p class="lead">
-                Tell us who you are, and your admin can review the request from there.
-            </p>
 
-            <div class="doc-list">
-                <div class="item-card">
-                    <strong>Right place</strong>
-                    <p>Keep every user tied to the correct workspace.</p>
-                </div>
-                <div class="item-card">
-                    <strong>Review first</strong>
-                    <p>Access is approved before the account becomes active.</p>
-                </div>
-                <div class="item-card">
-                    <strong>Simple start</strong>
-                    <p>The first step is short and clear.</p>
-                </div>
+<style>
+.auth-shell{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px 20px;
+    background:
+        radial-gradient(circle at top, rgba(79,70,229,.15), transparent 35%),
+        radial-gradient(circle at right, rgba(6,182,255,.10), transparent 30%),
+        #05070a;
+}
+
+.auth-container{
+    width:100%;
+    max-width:620px;
+    padding:40px;
+    border-radius:32px;
+    background:rgba(16,21,34,.82);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    animation:fadeUp .6s ease forwards;
+}
+
+.brand{
+    text-align:center;
+    margin-bottom:28px;
+}
+
+.brand img{
+    width:180px;
+    margin:auto;
+}
+
+.auth-header{
+    text-align:center;
+    margin-bottom:32px;
+}
+
+.auth-header h1{
+    margin:0;
+    color:#f8fafc;
+    font-size:3rem;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:-0.05em;
+}
+
+.auth-header p{
+    margin-top:14px;
+    color:#94a3b8;
+    line-height:1.7;
+}
+
+.auth-form{
+    display:grid;
+    gap:20px;
+}
+
+.form-grid{
+    display:grid;
+    gap:18px;
+}
+
+.form-group{
+    display:grid;
+    gap:8px;
+}
+
+.form-group label{
+    color:#cbd5e1;
+    font-size:.92rem;
+    font-weight:600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea{
+    width:100%;
+    min-height:58px;
+    padding:14px 18px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);
+    color:#f8fafc;
+    transition:.25s ease;
+}
+
+.form-group textarea{
+    min-height:120px;
+    resize:vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+    outline:none;
+    border-color:#06b6ff;
+    box-shadow:0 0 0 4px rgba(6,182,255,.12);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder{
+    color:#64748b;
+}
+
+.auth-btn{
+    height:58px;
+    border:none;
+    border-radius:18px;
+    background:linear-gradient(
+        135deg,
+        #4f46e5,
+        #06b6ff
+    );
+    color:white;
+    font-weight:700;
+    font-size:1rem;
+    cursor:pointer;
+    transition:.3s ease;
+}
+
+.auth-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 30px rgba(79,70,229,.35);
+}
+
+.notice{
+    padding:14px 16px;
+    border-radius:14px;
+    background:rgba(239,68,68,.12);
+    border:1px solid rgba(239,68,68,.2);
+    color:#fecaca;
+}
+
+.auth-footer{
+    margin-top:24px;
+    text-align:center;
+    color:#94a3b8;
+}
+
+.auth-footer a{
+    color:#06b6ff;
+    text-decoration:none;
+    font-weight:600;
+}
+
+.auth-footer a:hover{
+    color:white;
+}
+
+.access-note{
+    margin-bottom:24px;
+    padding:16px 18px;
+    border-radius:18px;
+    background:rgba(79,70,229,.08);
+    border:1px solid rgba(79,70,229,.15);
+    color:#c7d2fe;
+    line-height:1.6;
+}
+
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(20px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+</style>
+
+<section class="auth-shell">
+
+```
+<div class="auth-container">
+
+    <div class="brand">
+        <img src="{% url 'brand_logo_with_name' %}" alt="NetSense">
+    </div>
+
+    <div class="auth-header">
+        <h1>Request access</h1>
+        <p>
+            Join your institution's NetSense workspace and help build
+            a smarter picture of campus connectivity.
+        </p>
+    </div>
+
+    <div class="access-note">
+        Access requests are reviewed before approval. Once approved,
+        you'll receive access to your institution's workspace.
+    </div>
+
+    <form method="post" class="auth-form" novalidate>
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="notice">
+                {{ form.non_field_errors }}
             </div>
-        </div>
+        {% endif %}
 
-        <div class="auth-card reveal">
-            <div class="auth-brand">
-                <img class="brand-lockup" src="{% url 'brand_logo_with_name' %}" alt="NetSense">
-            </div>
-            <div class="panel-head">
-                <div>
-                    <span class="kicker">New account</span>
-                    <h2>Request access</h2>
-                </div>
-            </div>
+        <div class="form-grid">
 
-            <form method="post" class="auth-form">
-                {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
 
-                {% if form.non_field_errors %}
-                    <div class="notice">{{ form.non_field_errors }}</div>
-                {% endif %}
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
 
-                <div class="form-grid">
-                    {% for field in form %}
-                        <div class="form-group {% if field.errors %}has-error{% endif %}">
-                            <label for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                                {% if field.field.required %}
-                                    <span class="required">*</span>
-                                {% endif %}
-                            </label>
+                    {{ field }}
 
-                            {{ field }}
-
-                            {% if field.help_text %}
-                                <small class="muted">{{ field.help_text }}</small>
-                            {% endif %}
-
-                            {% for error in field.errors %}
-                                <div class="notice">{{ error }}</div>
-                            {% endfor %}
+                    {% for error in field.errors %}
+                        <div class="notice">
+                            {{ error }}
                         </div>
                     {% endfor %}
+
                 </div>
+            {% endfor %}
 
-                <button class="btn primary" type="submit">Request access</button>
-            </form>
-
-            <p class="muted">
-                Already have an account?
-                <a href="{% url 'login' %}">Sign in</a>
-            </p>
         </div>
+
+        <button type="submit" class="auth-btn">
+            Request Access
+        </button>
+
+    </form>
+
+    <div class="auth-footer">
+        Already have an account?
+        <a href="{% url 'login' %}">
+            Sign in
+        </a>
     </div>
+
+</div>
+```
+
 </section>
+
 {% endblock %}

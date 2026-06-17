@@ -1,83 +1,219 @@
 {% extends "base_marketing.html" %}
 
 {% block title %}Sign in | NetSense{% endblock %}
-{% block meta_description %}Sign in to NetSense and open your workspace.{% endblock %}
+{% block meta_description %}Sign in to your NetSense workspace.{% endblock %}
 
 {% block content %}
-<section class="auth-page">
-    <div class="auth-grid">
-        <div class="auth-copy reveal">
-            <span class="kicker">Welcome back</span>
-            <h1>Sign in and continue where you left off.</h1>
-            <p class="lead">
-                Open your workspace, check the current view, and keep moving without extra friction.
-            </p>
 
-            <div class="doc-list">
-                <div class="item-card">
-                    <strong>Simple return</strong>
-                    <p>Jump back into the app quickly.</p>
-                </div>
-                <div class="item-card">
-                    <strong>Clear access</strong>
-                    <p>See only the workspace you can use.</p>
-                </div>
-                <div class="item-card">
-                    <strong>One place</strong>
-                    <p>Coverage, capture, and requests live together.</p>
-                </div>
-            </div>
-        </div>
+<style>
+.auth-shell{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+    background:
+        radial-gradient(circle at top, rgba(79,70,229,.15), transparent 35%),
+        radial-gradient(circle at right, rgba(6,182,255,.10), transparent 30%),
+        #05070a;
+}
 
-        <div class="auth-card reveal">
-            <div class="auth-brand">
-                <img class="brand-lockup" src="{% url 'brand_logo_with_name' %}" alt="NetSense">
-            </div>
-            <div class="panel-head">
-                <div>
-                    <span class="kicker">Sign in</span>
-                    <h2>Welcome back</h2>
-                </div>
-            </div>
+.auth-container{
+    width:100%;
+    max-width:520px;
+    padding:40px;
+    border-radius:32px;
+    background:rgba(16,21,34,.82);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    animation:fadeUp .6s ease forwards;
+}
 
-            <form method="post" class="auth-form">
-                {% csrf_token %}
+.brand{
+    text-align:center;
+    margin-bottom:32px;
+}
 
-                {% if form.non_field_errors %}
-                    <div class="notice">{{ form.non_field_errors }}</div>
-                {% endif %}
+.brand img{
+    width:180px;
+    margin:auto;
+}
 
-                <div class="form-grid">
-                    {% for field in form %}
-                        <div class="form-group {% if field.errors %}has-error{% endif %}">
-                            <label for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                                {% if field.field.required %}
-                                    <span class="required">*</span>
-                                {% endif %}
-                            </label>
+.auth-header{
+    text-align:center;
+    margin-bottom:32px;
+}
 
-                            {{ field }}
+.auth-header h1{
+    margin:0;
+    color:#f8fafc;
+    font-size:3rem;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:-0.05em;
+}
 
-                            {% if field.help_text %}
-                                <small class="muted">{{ field.help_text }}</small>
-                            {% endif %}
+.auth-header p{
+    margin-top:14px;
+    color:#94a3b8;
+    font-size:1rem;
+    line-height:1.7;
+}
 
-                            {% for error in field.errors %}
-                                <div class="notice">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
+.auth-form{
+    display:grid;
+    gap:20px;
+}
 
-                <button class="btn primary" type="submit">Sign in</button>
-            </form>
+.form-group{
+    display:grid;
+    gap:8px;
+}
 
-            <p class="muted">
-                Need access?
-                <a href="{% url 'signup' %}">Request it here</a>.
-            </p>
-        </div>
+.form-group label{
+    color:#cbd5e1;
+    font-size:.92rem;
+    font-weight:600;
+}
+
+.form-group input{
+    width:100%;
+    height:58px;
+    padding:0 18px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);
+    color:#f8fafc;
+    transition:.25s ease;
+}
+
+.form-group input:focus{
+    outline:none;
+    border-color:#06b6ff;
+    box-shadow:0 0 0 4px rgba(6,182,255,.12);
+}
+
+.form-group input::placeholder{
+    color:#64748b;
+}
+
+.auth-btn{
+    height:58px;
+    border:none;
+    border-radius:18px;
+    background:linear-gradient(
+        135deg,
+        #4f46e5,
+        #06b6ff
+    );
+    color:white;
+    font-weight:700;
+    font-size:1rem;
+    cursor:pointer;
+    transition:.3s ease;
+}
+
+.auth-btn:hover{
+    transform:translateY(-2px);
+}
+
+.notice{
+    padding:14px 16px;
+    border-radius:14px;
+    background:rgba(239,68,68,.12);
+    border:1px solid rgba(239,68,68,.2);
+    color:#fecaca;
+}
+
+.auth-footer{
+    margin-top:24px;
+    text-align:center;
+    color:#94a3b8;
+}
+
+.auth-footer a{
+    color:#06b6ff;
+    text-decoration:none;
+    font-weight:600;
+}
+
+.auth-footer a:hover{
+    color:white;
+}
+
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(20px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+</style>
+
+<section class="auth-shell">
+
+
+<div class="auth-container">
+
+    <div class="brand">
+        <img src="{% url 'brand_logo_with_name' %}" alt="NetSense">
     </div>
+
+    <div class="auth-header">
+        <h1>Welcome back</h1>
+        <p>
+            Sign in to your NetSense workspace and continue exploring
+            campus connectivity intelligence.
+        </p>
+    </div>
+
+    <form method="post" class="auth-form" novalidate>
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="notice">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <div class="notice">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="auth-btn">
+            Sign in
+        </button>
+
+    </form>
+
+    <div class="auth-footer">
+        Don't have an account?
+        <a href="{% url 'signup' %}">
+            Request access
+        </a>
+    </div>
+
+</div>
+
+
 </section>
+
 {% endblock %}
