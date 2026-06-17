@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.db import models
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import FileResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
@@ -58,6 +59,8 @@ MAX_DOC_CONTEXT_CHARS = 12000
 MAX_FLOOR_CONTEXT_CHARS = 8000
 AI_RESPONSE_MAX_CHARS = 12000
 SUPPORTED_MODES = {Scan.WIFI, Scan.MOBILE}
+BRAND_WITH_NAME_PATH = Path(settings.BASE_DIR) / "logo-with-name.png"
+BRAND_WITHOUT_NAME_PATH = Path(settings.BASE_DIR) / "logo-without-name.png"
 GENERAL_ASSISTANT_SYSTEM_PROMPT = (
     "You are Spen Sense, a helpful general-purpose assistant for this website. "
     "Respond naturally and concisely. "
@@ -240,7 +243,7 @@ def _build_general_chat_messages(message: str, history: list[dict[str, Any]] | N
         }
     ]
 
-    for item in (history or [])[-6:]:
+    for item in (history or [])[-8:]:
         if not isinstance(item, dict):
             continue
 
@@ -1120,15 +1123,15 @@ def manifest_view(_request):
   "theme_color": "#0b1324",
   "icons": [
     {
-      "src": "/static/logo.jpeg",
+      "src": "/brand/logo-without-name.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/static/logo.jpeg",
+      "src": "/brand/logo-without-name.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
@@ -1137,6 +1140,22 @@ def manifest_view(_request):
     response = HttpResponse(content, content_type="application/manifest+json; charset=utf-8")
     response["Cache-Control"] = "no-cache"
     return response
+
+
+def _brand_file_response(path: Path, content_type: str = "image/png"):
+    if not path.exists():
+        return HttpResponse(status=404)
+    response = FileResponse(path.open("rb"), content_type=content_type)
+    response["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
+
+def brand_logo_with_name(_request):
+    return _brand_file_response(BRAND_WITH_NAME_PATH)
+
+
+def brand_logo_without_name(_request):
+    return _brand_file_response(BRAND_WITHOUT_NAME_PATH)
 
 
 # -----------------------------------------------------------------------------
@@ -1517,6 +1536,9 @@ def chatbot_api(request):
             status=400,
         )
 
+    if not isinstance(payload, dict):
+        payload = {}
+
     message = _normalize_text(
         str(payload.get("message") or "")
     ).strip()
@@ -1533,7 +1555,27 @@ def chatbot_api(request):
             status=400,
         )
 
-    routed = route_chatbot_request(request, message, history, payload)
+    try:
+        routed = route_chatbot_request(request, message, history, payload)
+    except Exception:
+        routed = {
+            "mode": "general",
+            "context_scope": "general",
+            "answer": "I'm having trouble connecting right now. Please try again.",
+            "choices": [{"label": "Help me get started", "message": "What is this app for?"}],
+        }
+
+    if not isinstance(routed, dict):
+        routed = {"mode": "general", "context_scope": "general"}
+
+    if routed.get("reset_state"):
+        return JsonResponse(
+            {
+                "answer": "Hi! I'm Spen Sense. Ask me a question anytime.",
+                "context_scope": "general",
+                "choices": routed.get("choices") or [],
+            }
+        )
     if routed.get("mode") in {"analytics", "auth"}:
         answer = routed.get("answer") or ""
         if answer:
@@ -1544,14 +1586,6 @@ def chatbot_api(request):
                     "context_scope": routed.get("context_scope") or routed.get("mode") or "analytics",
                 }
             )
-
-    if routed.get("reset_state"):
-        return JsonResponse(
-            {
-                "answer": "Hi! I’m Spen Sense. Ask me a question anytime.",
-                "context_scope": "general",
-            }
-        )
 
     try:
         answer, error = _call_ollama(message, history)
@@ -1593,3 +1627,4 @@ def chatbot_api(request):
             "context_scope": "general",
         }
     )
+

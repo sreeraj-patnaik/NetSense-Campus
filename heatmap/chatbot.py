@@ -108,6 +108,27 @@ def _normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip()).lower()
 
 
+def _safe_message_text(text: Any, limit: int = 600) -> str:
+    value = _normalize_text(str(text or ""))
+    return value[:limit].strip()
+
+
+def _normalize_history_items(history: Any) -> list[dict[str, str]]:
+    if not isinstance(history, list):
+        return []
+
+    normalized: list[dict[str, str]] = []
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+        role = "assistant" if item.get("role") == "assistant" else "user"
+        text = _safe_message_text(item.get("text"))
+        if not text:
+            continue
+        normalized.append({"role": role, "text": text})
+    return normalized
+
+
 def _message_tokens(message: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", _normalize_text(message))
 
@@ -339,6 +360,15 @@ def _app_info_response(user) -> dict[str, Any]:
         "context_scope": "general",
         "answer": answer,
         "choices": choices,
+    }
+
+
+def _assistant_fallback_response() -> dict[str, Any]:
+    return {
+        "mode": "general",
+        "context_scope": "general",
+        "answer": "I’m having trouble connecting right now. Please try again in a moment.",
+        "choices": [_choice("Help me get started", message="What is this app for?")],
     }
 
 
@@ -690,7 +720,6 @@ def _clarification_response(user, scope: dict[str, Any], missing: list[str], int
         "choices": choices,
         "state": _build_pending_state(intent, scope),
     }
-
 
 def _institution_name(scope: dict[str, Any]) -> str:
     institution = scope.get("institution")
@@ -1067,6 +1096,7 @@ def _answer_general_analytics(user, scope: dict[str, Any]) -> str:
 
 
 def _resolve_analytics_answer(request, message: str, history: list[dict[str, Any]], payload: dict[str, Any]) -> dict[str, Any]:
+    history = _normalize_history_items(history)
     if _is_general_greeting(message):
         _clear_pending_state(request)
         return {"mode": "general", "reset_state": True}
@@ -1135,5 +1165,13 @@ def route_chatbot_request(request, message: str, history: list[dict[str, Any]], 
     if not message:
         return {"mode": "general"}
 
-    analytics = _resolve_analytics_answer(request, message, history, payload)
-    return analytics
+    try:
+        analytics = _resolve_analytics_answer(request, message, history, payload)
+        if not isinstance(analytics, dict):
+            return _assistant_fallback_response()
+        analytics.setdefault("choices", [])
+        analytics.setdefault("context_scope", "general")
+        analytics.setdefault("mode", "general")
+        return analytics
+    except Exception:
+        return _assistant_fallback_response()

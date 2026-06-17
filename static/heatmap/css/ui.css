@@ -1,42 +1,75 @@
 :root {
-    --ui-bg: #f6f8fc;
-    --ui-bg-alt: #eef2ff;
-    --ui-surface: rgba(255, 255, 255, 0.82);
-    --ui-surface-strong: rgba(255, 255, 255, 0.96);
-    --ui-ink: #0f172a;
-    --ui-ink-soft: #334155;
-    --ui-muted: #64748b;
-    --ui-border: rgba(15, 23, 42, 0.08);
-    --ui-border-strong: rgba(15, 23, 42, 0.14);
-    --ui-primary: #2563eb;
-    --ui-primary-strong: #1d4ed8;
-    --ui-accent: #14b8a6;
-    --ui-accent-strong: #0f766e;
+    --ui-bg: #05070a;
+    --ui-bg-alt: #0b1020;
+
+    --ui-surface: rgba(16, 20, 36, 0.72);
+    --ui-surface-strong: rgba(20, 26, 48, 0.92);
+
+    --ui-ink: #f8fafc;
+    --ui-ink-soft: #d7def0;
+    --ui-muted: #94a3b8;
+
+    --ui-border: rgba(255, 255, 255, 0.08);
+    --ui-border-strong: rgba(255, 255, 255, 0.14);
+
+    /* Logo Indigo */
+    --ui-primary: #4f46e5;
+    --ui-primary-strong: #4338ca;
+
+    /* Logo Cyan */
+    --ui-accent: #06b6ff;
+    --ui-accent-strong: #0891d1;
+
     --ui-warn: #f59e0b;
     --ui-danger: #ef4444;
+
     --ui-radius-sm: 12px;
     --ui-radius-md: 18px;
     --ui-radius-lg: 24px;
     --ui-radius-xl: 32px;
-    --ui-shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
-    --ui-shadow-md: 0 18px 48px rgba(15, 23, 42, 0.10);
-    --ui-shadow-lg: 0 32px 72px rgba(15, 23, 42, 0.14);
-    --ui-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
 
+    --ui-shadow-sm:
+        0 8px 24px rgba(0, 0, 0, 0.25);
+
+    --ui-shadow-md:
+        0 18px 48px rgba(0, 0, 0, 0.35);
+
+    --ui-shadow-lg:
+        0 32px 72px rgba(0, 0, 0, 0.50);
+
+    --ui-glow-primary:
+        0 0 40px rgba(79, 70, 229, 0.35);
+
+    --ui-glow-accent:
+        0 0 40px rgba(6, 182, 255, 0.35);
+
+    --ui-ease:
+        cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 html {
     background: var(--ui-bg);
 }
 
 body {
-    font-family: "Inter", system-ui, sans-serif;
-    color: var(--ui-ink);
     background:
-        radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.10), transparent 28%),
-        radial-gradient(circle at 90% 0%, rgba(20, 184, 166, 0.08), transparent 24%),
-        linear-gradient(180deg, #f8fbff 0%, #f3f7fd 45%, #eef3fb 100%);
-}
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(79,70,229,0.12),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 80% 10%,
+            rgba(6,182,255,0.10),
+            transparent 25%
+        ),
+        linear-gradient(
+            180deg,
+            #05070a 0%,
+            #090d17 100%
+        );
 
+    color: var(--ui-ink);
+}
 main {
     padding-bottom: 4rem;
 }

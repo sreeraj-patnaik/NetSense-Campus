@@ -12,12 +12,12 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="NetSense">
     <link rel="manifest" href="/manifest.webmanifest?v=3">
-    <link rel="apple-touch-icon" href="{% static 'logo.jpeg' %}">
-    <link rel="icon" href="{% static 'logo.jpeg' %}">
+    <link rel="apple-touch-icon" href="{% url 'brand_logo_without_name' %}">
+    <link rel="icon" href="{% url 'brand_logo_without_name' %}">
     <meta property="og:title" content="{% block og_title %}NetSense{% endblock %}">
     <meta property="og:description" content="{% block og_description %}A calm workspace for campus coverage and access.{% endblock %}">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="{% static 'logo.jpeg' %}">
+    <meta property="og:image" content="{% url 'brand_logo_with_name' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
@@ -30,8 +30,7 @@
     <header class="marketing-nav">
         <div class="marketing-nav-inner">
             <a class="marketing-brand" href="{% url 'home' %}" aria-label="NetSense home">
-                <span class="marketing-brand-mark">N</span>
-                <span>NetSense</span>
+                <img class="brand-lockup" src="{% url 'brand_logo_with_name' %}" alt="NetSense">
             </a>
             <nav class="marketing-links" aria-label="Primary">
                 <a href="{% url 'home' %}#platform">Platform</a>
@@ -61,7 +60,7 @@
     <footer class="marketing-footer" id="about">
         <div class="marketing-footer-inner">
             <div>
-                <strong>NetSense</strong>
+                <img class="brand-lockup footer-brand" src="{% url 'brand_logo_with_name' %}" alt="NetSense">
                 <p>Community-powered campus connectivity intelligence.</p>
             </div>
             <div class="marketing-footer-links">

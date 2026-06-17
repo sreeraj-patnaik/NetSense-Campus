@@ -1,5 +1,7 @@
 (() => {
     const cfg = window.NETSENSE_ASSISTANT_CONFIG || {};
+    const REQUEST_TIMEOUT_MS = 12000;
+    const MAX_MESSAGE_LENGTH = 600;
     const fab = document.getElementById("chatbotFab");
     const panel = document.getElementById("chatbotPanel");
     const closeBtn = document.getElementById("chatbotClose");
@@ -8,6 +10,7 @@
     const messages = document.getElementById("chatbotMessages");
     const suggestions = document.getElementById("chatbotSuggestions");
     const status = document.getElementById("chatbotStatus");
+    let inFlightRequest = null;
 
     if (!fab || !panel || !closeBtn || !form || !input || !messages) {
         return;
@@ -66,6 +69,24 @@
         setStatus(isLoading ? "Thinking..." : "");
     }
 
+    function clampMessage(text) {
+        const value = String(text || "").trim();
+        if (value.length <= MAX_MESSAGE_LENGTH) {
+            return value;
+        }
+        return value.slice(0, MAX_MESSAGE_LENGTH).trim();
+    }
+
+    function normalizeHistory() {
+        return history
+            .slice(-8)
+            .map((item) => ({
+                role: item && item.role === "assistant" ? "assistant" : "user",
+                text: clampMessage(item && item.text),
+            }))
+            .filter((item) => item.text);
+    }
+
     function getCsrfToken() {
         const name = "csrftoken=";
         const cookies = document.cookie.split(";").map((c) => c.trim());
@@ -111,11 +132,22 @@
     }
 
     async function sendMessage(text) {
-        appendMessage("user", text);
-        history.push({ role: "user", text });
+        const trimmed = clampMessage(text);
+        if (!trimmed) {
+            return;
+        }
+
+        if (inFlightRequest) {
+            inFlightRequest.abort();
+            inFlightRequest = null;
+        }
+
+        appendMessage("user", trimmed);
+        history.push({ role: "user", text: trimmed });
         input.value = "";
         clearSuggestions();
         setLoading(true);
+        let timeoutId = null;
 
         try {
             const blockSelect = document.getElementById("blockSelect");
@@ -131,6 +163,10 @@
                 }
                 : null;
 
+            const controller = new AbortController();
+            inFlightRequest = controller;
+            timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
             const response = await fetch("/api/chatbot/", {
                 method: "POST",
                 headers: {
@@ -138,12 +174,13 @@
                     "X-CSRFToken": getCsrfToken(),
                 },
                 body: JSON.stringify({
-                    message: text,
-                    history: history.slice(-6),
+                    message: trimmed,
+                    history: normalizeHistory(),
                     is_authenticated: Boolean(cfg.isAuthenticated),
                     current_institution_name: cfg.currentInstitutionName || "",
                     heatmap,
                 }),
+                signal: controller.signal,
             });
 
             let data = null;
@@ -158,10 +195,17 @@
             history.push({ role: "assistant", text: answer });
             renderSuggestions(data?.choices || []);
         } catch (error) {
-            appendMessage("assistant", "Unable to reach the assistant right now.");
+            const message = error && error.name === "AbortError"
+                ? "That request took too long. Please try again."
+                : "Unable to reach the assistant right now.";
+            appendMessage("assistant", message);
             renderSuggestions(getDefaultSuggestions());
             setStatus("Connection error.");
         } finally {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+            inFlightRequest = null;
             setLoading(false);
             input.focus();
         }
@@ -177,9 +221,7 @@
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        await sendMessage(text);
+        await sendMessage(input.value);
     });
 
     renderSuggestions(getDefaultSuggestions());
