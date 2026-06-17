@@ -61,6 +61,10 @@ class LoadingScreen {
         setTimeout(() => {
             console.log('LoadingScreen: Showing overlay and playing video');
             this.loadingOverlay.classList.add('show');
+            document.body.classList.add('loading-screen-visible');
+            if (this.unmuteBtn) {
+                this.unmuteBtn.classList.remove('hidden');
+            }
             
             // Ensure video is ready and play
             this.video.play().then(() => {
@@ -79,6 +83,7 @@ class LoadingScreen {
         console.log('LoadingScreen: Dismissing');
         this.loadingOverlay.classList.remove('show');
         this.loadingOverlay.classList.add('dismissed');
+        document.body.classList.remove('loading-screen-visible');
         this.video.pause();
         this.video.currentTime = 0;
         

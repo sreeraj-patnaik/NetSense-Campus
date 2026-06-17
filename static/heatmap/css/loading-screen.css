@@ -33,6 +33,11 @@
     transition: opacity 0.5s ease;
 }
 
+body.loading-screen-visible > :not(#loading-screen-overlay) {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .loading-screen-content {
     position: absolute;
     inset: 0;
