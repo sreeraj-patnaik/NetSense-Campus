@@ -1,0 +1,93 @@
+/**
+ * Loading Screen Styles
+ * Overlay and video container for logo animation
+ */
+
+#loading-screen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#loading-screen-overlay.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+#loading-screen-overlay.dismissed {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.loading-screen-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+}
+
+#loading-screen-video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    width: auto;
+    height: auto;
+}
+
+#loading-screen-skip {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+#loading-screen-skip:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+#loading-screen-skip:active {
+    transform: scale(0.98);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #loading-screen-skip {
+        bottom: 20px;
+        right: 20px;
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+}
+
+/* Prevent scrolling when loading screen is visible */
+body.loading-screen-visible {
+    overflow: hidden;
+}

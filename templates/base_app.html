@@ -22,9 +22,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}?v=20260617-2">
+    <link rel="stylesheet" href="{% static 'heatmap/css/loading-screen.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}theme-app{% endblock %}">
+    <!-- Loading Screen Overlay -->
+    <div id="loading-screen-overlay">
+        <div class="loading-screen-content">
+            <video id="loading-screen-video" muted autoplay playsinline preload="metadata" style="background: #000;">
+                <source src="{% static 'heatmap/videos/logo.mp4' %}" type="video/mp4">
+                Your browser doesn't support HTML5 video.
+            </video>
+            <button id="loading-screen-skip" aria-label="Skip loading screen">Skip</button>
+        </div>
+    </div>
+
     <a class="skip-link" href="#main-content">Skip to content</a>
 
     <header class="app-topbar">
@@ -127,6 +139,7 @@
     <script src="{% static 'heatmap/js/pwa.js' %}?v=20260617-1"></script>
     <script src="{% static 'heatmap/js/chatbot.js' %}?v=20260617-1"></script>
     <script src="{% static 'heatmap/js/ui.js' %}?v=20260617-1"></script>
+    <script src="{% static 'heatmap/js/loading-screen.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

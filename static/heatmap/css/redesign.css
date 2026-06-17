@@ -20,8 +20,8 @@
 
 .marketing-copy h1{
     max-width:11ch;
-    font-size:clamp(4rem,8vw,7.4rem);
-    line-height:.9;
+    font-size:clamp(3rem,6vw,5rem);
+    line-height:1;
 }
 
 .hero-visual{
@@ -237,7 +237,7 @@
     }
     .marketing-copy h1{
         max-width:10ch;
-        font-size:clamp(3rem,12vw,4.4rem);
+        font-size:clamp(2.35rem,8.5vw,3.4rem);
     }
     .signal-grid{
         grid-template-columns:1fr;
