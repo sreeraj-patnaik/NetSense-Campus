@@ -47,6 +47,16 @@
             event.stopPropagation();
             const isOpen = menu.classList.toggle("is-open");
             button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            button.classList.toggle("is-open", isOpen);
+        });
+
+        menu.querySelectorAll("a, button").forEach((item) => {
+            item.addEventListener("click", (event) => {
+                if (item.classList.contains("nav-panel-close")) {
+                    event.stopPropagation();
+                }
+                closeNavMenus();
+            });
         });
     });
 

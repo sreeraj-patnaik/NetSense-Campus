@@ -1,4 +1,4 @@
-{% extends "base_marketing.html" %}
+﻿{% extends "base_marketing.html" %}
 {% load static %}
 
 {% block title %}NetSense | Campus Connectivity Intelligence{% endblock %}
@@ -40,39 +40,20 @@
             </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-            <div class="signal-orbit signal-orbit-one"></div>
-            <div class="signal-orbit signal-orbit-two"></div>
-            <div class="signal-card">
-                <div class="signal-card-top">
-                    <span class="pill">Live signal</span>
-                    <span class="muted">Campus-wide</span>
-                </div>
-                <div class="signal-grid">
-                    <div>
-                        <strong>Strong</strong>
-                        <span>covered zones</span>
-                    </div>
-                    <div>
-                        <strong>Weak</strong>
-                        <span>spots to revisit</span>
-                    </div>
-                    <div>
-                        <strong>Carrier</strong>
-                        <span>comparison layer</span>
-                    </div>
-                    <div>
-                        <strong>Trend</strong>
-                        <span>over time</span>
-                    </div>
-                </div>
-                <div class="signal-wave"></div>
+        <div class="hero-visual hero-video-stage" aria-hidden="true">
+            <div class="hero-video-wrap hero-video-wrap--logo" aria-hidden="true">
+                <video id="heroVideo" class="hero-video hero-video--logo" muted autoplay loop playsinline preload="metadata">
+                    <source src="{% static 'heatmap/videos/logo.mp4' %}" type="video/mp4">
+                    Your browser doesn't support HTML5 video.
+                </video>
             </div>
         </div>
     </div>
 </section>
 
-<section class="marketing-section large-typography" data-reveal>
+<script src="{% static 'heatmap/js/hero-video.js' %}"></script>
+
+<section class="marketing-section section-panel" data-reveal>
     <div class="section-heading">
         <span class="kicker">The problem</span>
         <h2>Students spend time searching for reliable connectivity.</h2>
@@ -82,41 +63,7 @@
     </p>
 </section>
 
-<section class="marketing-section" id="platform" data-reveal>
-    <div class="section-heading">
-        <span class="kicker">Platform story</span>
-        <h2>Every reading strengthens the shared map.</h2>
-    </div>
-
-    <div class="journey-track" role="list" aria-label="Contribution journey">
-        <div class="journey-step" role="listitem">
-            <span>Contribution</span>
-            <strong>Students add readings during normal campus life.</strong>
-        </div>
-        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
-        <div class="journey-step" role="listitem">
-            <span>Aggregation</span>
-            <strong>NetSense combines observations across people and places.</strong>
-        </div>
-        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
-        <div class="journey-step" role="listitem">
-            <span>Analysis</span>
-            <strong>Patterns, trends, and weak zones surface automatically.</strong>
-        </div>
-        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
-        <div class="journey-step" role="listitem">
-            <span>Heatmap</span>
-            <strong>Coverage becomes visible as a clear, navigable layer.</strong>
-        </div>
-        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
-        <div class="journey-step" role="listitem">
-            <span>Community benefit</span>
-            <strong>Everyone moves with more confidence, less guesswork.</strong>
-        </div>
-    </div>
-</section>
-
-<section class="marketing-section showcase-section" id="technology" data-reveal>
+<section class="marketing-section showcase-section section-panel" id="technology" data-reveal>
     <div class="section-heading">
         <span class="kicker">Visual storytelling</span>
         <h2>One contribution helps the entire campus.</h2>
@@ -159,7 +106,7 @@
     </div>
 </section>
 
-<section class="marketing-section split-story" id="community" data-reveal>
+<section class="marketing-section split-story section-panel" id="community" data-reveal>
     <div class="section-heading">
         <span class="kicker">Community</span>
         <h2>Built for collaboration, not data entry.</h2>
