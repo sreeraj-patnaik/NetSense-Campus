@@ -140,6 +140,8 @@
                 body: JSON.stringify({
                     message: text,
                     history: history.slice(-6),
+                    is_authenticated: Boolean(cfg.isAuthenticated),
+                    current_institution_name: cfg.currentInstitutionName || "",
                     heatmap,
                 }),
             });

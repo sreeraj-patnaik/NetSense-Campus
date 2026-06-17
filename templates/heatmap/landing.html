@@ -1,105 +1,204 @@
-{% extends "base.html" %}
+{% extends "base_marketing.html" %}
 {% load static %}
 
-{% block title %}NetSense | Simple campus workspace{% endblock %}
-{% block meta_description %}NetSense helps campus teams see coverage, capture readings, and manage access in one calm workspace.{% endblock %}
+{% block title %}NetSense | Campus Connectivity Intelligence{% endblock %}
+{% block meta_description %}Discover strong and weak signal zones across your campus through community-powered network intelligence and live heatmaps.{% endblock %}
+{% block body_class %}theme-marketing page-landing{% endblock %}
 
 {% block content %}
-<section class="page-hero landing-hero">
-    <div class="hero-grid">
-        <div class="hero-copy reveal">
-            <span class="kicker">Campus workspace</span>
-            <h1>One calm place for coverage, capture, and access.</h1>
+<section class="marketing-hero" data-reveal>
+    <div class="hero-veil hero-veil-a"></div>
+    <div class="hero-veil hero-veil-b"></div>
+    <div class="hero-particles" aria-hidden="true"></div>
+
+    <div class="hero-shell">
+        <div class="hero-copy marketing-copy">
+            <span class="kicker">Campus connectivity intelligence</span>
+            <h1>Know your campus signal before you take a step.</h1>
             <p class="lead">
-                NetSense keeps the important parts visible and the rest out of the way, so teams can move without friction.
+                NetSense turns small student readings into a living map of campus connectivity &mdash; showing strong signal zones, weak pockets, carrier performance, and the patterns behind them.
             </p>
 
             <div class="hero-actions">
-                <a class="btn primary" href="{% url 'dashboard' %}">Open workspace</a>
-                <a class="btn ghost" href="{% url 'scan' %}">Capture reading</a>
-                <button class="btn ghost" id="installAppBtn" type="button" hidden>Install app</button>
+                <a class="btn primary" href="{% url 'dashboard' %}">Explore Heatmaps</a>
+                <a class="btn ghost" href="{% url 'signup' %}">Request Access</a>
             </div>
 
-            <span class="install-status" id="installAppStatus" hidden></span>
-
-            <div class="stat-row">
-                <article class="stat">
-                    <span>Fast</span>
-                    <strong>Open, scan, review</strong>
-                </article>
-                <article class="stat">
-                    <span>Clear</span>
-                    <strong>Simple next steps</strong>
-                </article>
-                <article class="stat">
-                    <span>Quiet</span>
-                    <strong>Less clutter, more focus</strong>
-                </article>
+            <div class="stat-band">
+                <div class="stat">
+                    <span>Community input</span>
+                    <strong>Many small readings</strong>
+                </div>
+                <div class="stat">
+                    <span>Output</span>
+                    <strong>Campus-wide intelligence</strong>
+                </div>
+                <div class="stat">
+                    <span>Focus</span>
+                    <strong>Coverage, trends, insight</strong>
+                </div>
             </div>
         </div>
 
-        <div class="hero-media reveal">
-            <img src="{% static 'heatmap/images/Floor 1.jpeg' %}" alt="Workspace preview" class="showcase-image">
+        <div class="hero-visual" aria-hidden="true">
+            <div class="signal-orbit signal-orbit-one"></div>
+            <div class="signal-orbit signal-orbit-two"></div>
+            <div class="signal-card">
+                <div class="signal-card-top">
+                    <span class="pill">Live signal</span>
+                    <span class="muted">Campus-wide</span>
+                </div>
+                <div class="signal-grid">
+                    <div>
+                        <strong>Strong</strong>
+                        <span>covered zones</span>
+                    </div>
+                    <div>
+                        <strong>Weak</strong>
+                        <span>spots to revisit</span>
+                    </div>
+                    <div>
+                        <strong>Carrier</strong>
+                        <span>comparison layer</span>
+                    </div>
+                    <div>
+                        <strong>Trend</strong>
+                        <span>over time</span>
+                    </div>
+                </div>
+                <div class="signal-wave"></div>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="section">
-    <div class="section-head reveal">
-        <span class="kicker">Why it feels different</span>
-        <h2>Built to feel like a premium product, not a dense admin panel.</h2>
+<section class="marketing-section large-typography" data-reveal>
+    <div class="section-heading">
+        <span class="kicker">The problem</span>
+        <h2>Students spend time searching for reliable connectivity.</h2>
+    </div>
+    <p class="display-copy">
+        NetSense removes guesswork. Instead of discovering signal the hard way, people can see where connection is strong, where it drops off, and where the campus is quietly changing underneath them.
+    </p>
+</section>
+
+<section class="marketing-section" id="platform" data-reveal>
+    <div class="section-heading">
+        <span class="kicker">Platform story</span>
+        <h2>Every reading strengthens the shared map.</h2>
     </div>
 
-    <div class="card-grid">
-        <article class="surface reveal">
-            <span class="pill">Simple</span>
-            <h3>Every screen has one job</h3>
-            <p>The app stays focused on what people came to do.</p>
-        </article>
+    <div class="journey-track" role="list" aria-label="Contribution journey">
+        <div class="journey-step" role="listitem">
+            <span>Contribution</span>
+            <strong>Students add readings during normal campus life.</strong>
+        </div>
+        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
+        <div class="journey-step" role="listitem">
+            <span>Aggregation</span>
+            <strong>NetSense combines observations across people and places.</strong>
+        </div>
+        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
+        <div class="journey-step" role="listitem">
+            <span>Analysis</span>
+            <strong>Patterns, trends, and weak zones surface automatically.</strong>
+        </div>
+        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
+        <div class="journey-step" role="listitem">
+            <span>Heatmap</span>
+            <strong>Coverage becomes visible as a clear, navigable layer.</strong>
+        </div>
+        <div class="journey-arrow" aria-hidden="true">&rarr;</div>
+        <div class="journey-step" role="listitem">
+            <span>Community benefit</span>
+            <strong>Everyone moves with more confidence, less guesswork.</strong>
+        </div>
+    </div>
+</section>
 
-        <article class="surface reveal">
-            <span class="pill">Gentle</span>
-            <h3>Less visual noise</h3>
-            <p>Soft surfaces, clear spacing, and a more relaxed rhythm.</p>
-        </article>
+<section class="marketing-section showcase-section" id="technology" data-reveal>
+    <div class="section-heading">
+        <span class="kicker">Visual storytelling</span>
+        <h2>One contribution helps the entire campus.</h2>
+        <p class="lead">The product should feel like a system, not a form. Individual readings become a shared intelligence layer that helps everyone make better choices.</p>
+    </div>
 
-        <article class="surface reveal">
-            <span class="pill">Useful</span>
-            <h3>Guidance is built in</h3>
-            <p>Next actions are obvious without needing to read a manual.</p>
+    <div class="community-loop">
+        <div class="loop-node">Students</div>
+        <div class="loop-connector">&rarr;</div>
+        <div class="loop-node">Readings</div>
+        <div class="loop-connector">&rarr;</div>
+        <div class="loop-node loop-core">NetSense</div>
+        <div class="loop-connector">&rarr;</div>
+        <div class="loop-node">Heatmap</div>
+        <div class="loop-connector">&rarr;</div>
+        <div class="loop-node">Campus</div>
+    </div>
+
+    <div class="showcase-grid">
+        <article class="showcase-frame">
+            <span class="kicker">Coverage heatmaps</span>
+            <h3>See signal quality across spaces.</h3>
+            <p>Track strong zones, weak corridors, and floor-level variation in one calm view.</p>
+        </article>
+        <article class="showcase-frame">
+            <span class="kicker">Carrier comparison</span>
+            <h3>Compare Wi-Fi and mobile performance.</h3>
+            <p>Understand which network layer performs best in a specific building or zone.</p>
+        </article>
+        <article class="showcase-frame">
+            <span class="kicker">Weak zone detection</span>
+            <h3>Spot areas that deserve attention first.</h3>
+            <p>Surface low-confidence areas and dead spots without making the interface noisy.</p>
+        </article>
+        <article class="showcase-frame">
+            <span class="kicker">Campus trends</span>
+            <h3>Watch connectivity change over time.</h3>
+            <p>See whether a location is improving, slipping, or staying steady across readings.</p>
         </article>
     </div>
 </section>
 
-<section class="section">
-    <div class="split-grid">
-        <article class="surface reveal">
-            <span class="kicker">What you can do</span>
-            <h2>A short list of useful actions.</h2>
-            <div class="doc-list">
-                <div class="item-card">
-                    <strong>Check the current view</strong>
-                    <p>See where things look good and where attention is needed.</p>
-                </div>
-                <div class="item-card">
-                    <strong>Add a new reading</strong>
-                    <p>Move from location to value without a complicated flow.</p>
-                </div>
-                <div class="item-card">
-                    <strong>Handle access</strong>
-                    <p>Keep requests organized and easy to review.</p>
-                </div>
-            </div>
-        </article>
+<section class="marketing-section split-story" id="community" data-reveal>
+    <div class="section-heading">
+        <span class="kicker">Community</span>
+        <h2>Built for collaboration, not data entry.</h2>
+    </div>
 
-        <article class="surface reveal">
-            <span class="kicker">Get started</span>
-            <h2>Open the workspace in the way that fits you best.</h2>
-            <div class="button-row">
-                <a class="btn primary" href="{% url 'dashboard' %}">Go to workspace</a>
-                <a class="btn ghost" href="{% url 'signup' %}">Request access</a>
+    <div class="split-story-grid">
+        <div class="split-story-copy">
+            <p class="display-copy">
+                NetSense works because many small observations become one living map. That means less wandering, less waiting, and a clearer picture of where campus connectivity is actually strong.
+            </p>
+        </div>
+        <div class="split-story-panels">
+            <div class="story-panel">
+                <strong>Students</strong>
+                <p>Move through campus and contribute naturally.</p>
             </div>
-        </article>
+            <div class="story-panel">
+                <strong>NetSense</strong>
+                <p>Aggregates the readings into useful intelligence.</p>
+            </div>
+            <div class="story-panel">
+                <strong>Campus</strong>
+                <p>Gets a clearer signal map and better decisions.</p>
+            </div>
+        </div>
     </div>
 </section>
+
+<section class="marketing-section closing-cta" data-reveal>
+    <span class="kicker">Get started</span>
+    <h2>Know where the signal is. Before you get there.</h2>
+    <p class="lead">Open the workspace to explore live coverage or request access to join the campus intelligence network.</p>
+    <div class="hero-actions">
+        <a class="btn primary" href="{% url 'dashboard' %}">Open Workspace</a>
+        <a class="btn ghost" href="{% url 'signup' %}">Request Access</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'heatmap/js/landing.js' %}?v=20260617-1"></script>
 {% endblock %}

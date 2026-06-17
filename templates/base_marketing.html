@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}NetSense{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}NetSense gives campus teams a calm, minimal workspace for coverage and access.{% endblock %}">
+    <meta name="theme-color" content="#070708">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="NetSense">
+    <link rel="manifest" href="/manifest.webmanifest?v=3">
+    <link rel="apple-touch-icon" href="{% static 'logo.jpeg' %}">
+    <link rel="icon" href="{% static 'logo.jpeg' %}">
+    <meta property="og:title" content="{% block og_title %}NetSense{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}A calm workspace for campus coverage and access.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{% static 'logo.jpeg' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'heatmap/css/style.css' %}?v=20260617-1">
+    <link rel="stylesheet" href="{% static 'heatmap/css/redesign.css' %}?v=20260617-1">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}theme-marketing{% endblock %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="marketing-nav">
+        <div class="marketing-nav-inner">
+            <a class="marketing-brand" href="{% url 'home' %}" aria-label="NetSense home">
+                <span class="marketing-brand-mark">N</span>
+                <span>NetSense</span>
+            </a>
+            <nav class="marketing-links" aria-label="Primary">
+                <a href="{% url 'home' %}#platform">Platform</a>
+                <a href="{% url 'home' %}#technology">Technology</a>
+                <a href="{% url 'home' %}#community">Community</a>
+                <a href="{% url 'home' %}#about">About</a>
+            </nav>
+            <div class="marketing-actions">
+                <a class="btn ghost" href="{% url 'login' %}">Sign in</a>
+                <a class="btn ghost" href="{% url 'signup' %}">Request Access</a>
+                <a class="btn primary" href="{% url 'dashboard' %}">Open Workspace</a>
+            </div>
+        </div>
+    </header>
+    <main id="main-content" class="marketing-main">
+        {% if messages %}
+            <section class="messages-wrap" aria-label="System messages">
+                <div class="message-stack">
+                    {% for message in messages %}
+                        <div class="message message-{{ message.tags|default:'info' }}" role="status" aria-live="polite">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+        <div class="marketing-content">{% block content %}{% endblock %}</div>
+    </main>
+    <footer class="marketing-footer" id="about">
+        <div class="marketing-footer-inner">
+            <div>
+                <strong>NetSense</strong>
+                <p>Community-powered campus connectivity intelligence.</p>
+            </div>
+            <div class="marketing-footer-links">
+                <a href="{% url 'workflow' %}">How it works</a>
+                <a href="{% url 'data_models' %}">Product guide</a>
+                <a href="{% url 'project_structure' %}">Workspace map</a>
+            </div>
+        </div>
+    </footer>
+    <script src="{% static 'heatmap/js/ui.js' %}?v=20260617-1"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

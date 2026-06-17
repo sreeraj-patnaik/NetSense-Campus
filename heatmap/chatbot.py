@@ -276,6 +276,16 @@ def _is_app_info_question(message: str) -> bool:
     return any(re.search(pattern, lowered, re.IGNORECASE) for pattern in APP_INFO_PATTERNS)
 
 
+def _payload_authenticated(payload: dict[str, Any] | None) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    return bool(payload.get("is_authenticated"))
+
+
+def _is_authenticated_request(user, payload: dict[str, Any] | None) -> bool:
+    return bool(user and getattr(user, "is_authenticated", False)) or _payload_authenticated(payload)
+
+
 def _auth_required_response(message: str) -> dict[str, Any]:
     return {
         "mode": "auth",
@@ -1065,7 +1075,7 @@ def _resolve_analytics_answer(request, message: str, history: list[dict[str, Any
         _clear_pending_state(request)
         return _app_info_response(request.user)
 
-    if not getattr(request.user, "is_authenticated", False):
+    if not _is_authenticated_request(request.user, payload):
         if _mentions_institution(message) or _analytics_intent(message):
             return _auth_required_response(message)
 
