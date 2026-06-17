@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -258,3 +259,32 @@ class InstitutionSelectionTests(TestCase):
 
         self.assertIn("spen sense", answer.lower())
         self.assertNotIn("project assistant", answer.lower())
+
+    def test_general_chat_messages_use_strict_system_prompt(self):
+        messages = views._build_general_chat_messages(
+            "Explain Python",
+            [{"role": "assistant", "text": "Sure"}],
+        )
+
+        self.assertGreaterEqual(len(messages), 2)
+        self.assertEqual(messages[0]["role"], "system")
+        self.assertIn("Never invent", messages[0]["content"])
+        self.assertEqual(messages[-1]["content"], "Explain Python")
+
+    @patch("heatmap.views._call_groq", return_value=(None, "down"))
+    @patch("heatmap.views._call_ollama", return_value=(None, "down"))
+    def test_chatbot_api_uses_safe_fallback_when_models_fail(self, _ollama, _groq):
+        request = self._add_session(
+            self.factory.post(
+                "/api/chatbot/",
+                data=json.dumps({"message": "Hello"}),
+                content_type="application/json",
+            )
+        )
+        request.user = self.user
+
+        response = views.chatbot_api(request)
+
+        self.assertEqual(response.status_code, 200)
+        payload = json.loads(response.content.decode("utf-8"))
+        self.assertIn("spen sense", payload["answer"].lower())

@@ -458,12 +458,14 @@
         return new Promise((resolve) => {
             if (floorMap.complete && floorMap.naturalWidth > 0) {
                 syncMapAspectRatio();
+                applyOverlayFrame();
                 resolve();
                 return;
             }
             const onLoad = () => {
                 floorMap.removeEventListener("load", onLoad);
                 syncMapAspectRatio();
+                applyOverlayFrame();
                 resolve();
             };
             floorMap.addEventListener("load", onLoad);
@@ -735,6 +737,7 @@
         setMapImage();
         applyFloorDimensions();
         await waitForImageLoad();
+        applyOverlayFrame();
         await loadHeatmap();
         await loadDashboardInsights();
     }
@@ -814,7 +817,10 @@
     });
     compareFloor?.addEventListener("change", loadDashboardInsights);
     compareRefreshBtn?.addEventListener("click", loadDashboardInsights);
-    window.addEventListener("resize", loadHeatmap);
+    window.addEventListener("resize", function () {
+        applyOverlayFrame();
+        loadHeatmap();
+    });
     mapWrap.addEventListener("mouseleave", hideWeakTooltip);
     mapWrap.addEventListener("mousemove", function (event) {
         if (!weakClustersToggle?.checked || !weakClusterLookup.size) {

@@ -1,30 +1,14 @@
-import os
-import json
 import urllib.request
-import urllib.error
+
+url = "https://diamond-voted-intake-objects.trycloudflare.com/api/tags"
 
 req = urllib.request.Request(
-    "https://api.groq.com/openai/v1/chat/completions",
-    data=json.dumps({
-        "model": "llama-3.1-8b-instant",
-        "messages": [{"role": "user", "content": "hello"}]
-    }).encode(),
+    url,
     headers={
-        "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
-        "Content-Type": "application/json"
+        "User-Agent": "Python"
     }
 )
 
-try:
-    with urllib.request.urlopen(req) as r:
-        print(r.read().decode())
-
-except urllib.error.HTTPError as e:
-    print("STATUS:", e.code)
-    print("REASON:", e.reason)
-
-    body = e.read().decode("utf-8", errors="ignore")
-
-    print("\nBODY START\n")
-    print(body)
-    print("\nBODY END\n")
+with urllib.request.urlopen(req, timeout=20) as r:
+    print(r.status)
+    print(r.read().decode()[:500])

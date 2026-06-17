@@ -83,6 +83,46 @@ _GREETING_MESSAGE_RE = re.compile(
     re.IGNORECASE,
 )
 
+STRICT_GENERAL_CHAT_PROMPT = (
+    "You are Spen Sense, a general-purpose assistant for the NetSense Campus site. "
+    "Answer naturally, clearly, and briefly. "
+    "Never invent project background, documentation, institution details, user identity, or live analytics. "
+    "If the user asks about NetSense data, rely only on explicit database-backed context provided by the application. "
+    "If the answer is not available, ask for the missing block, floor, mode, provider, or sign-in instead of guessing. "
+    "Do not mention being a documentation assistant."
+)
+STRICT_GENERAL_CHAT_HINTS = (
+    "Use only the information in the conversation.",
+    "Do not invent product, app, or institution details.",
+    "Do not mention project documentation unless the user explicitly asks for it.",
+    "If the user asks what this app does, keep the answer limited to the approved NetSense analytics summary provided by the application.",
+    "If the user asks about NetSense data without enough context, ask a clarifying question.",
+)
+SAFE_GENERAL_FALLBACK = (
+    "I'm here to help with general questions. "
+    "If you want NetSense analytics, sign in and share the block and floor."
+)
+
+STRICT_GENERAL_CHAT_PROMPT = (
+    "You are Spen Sense, a general-purpose assistant for the NetSense Campus site. "
+    "Answer naturally, clearly, and briefly. "
+    "Never invent project background, documentation, institution details, user identity, or live analytics. "
+    "If the user asks about NetSense data, rely only on explicit database-backed context provided by the application. "
+    "If the answer is not available, ask for the missing block, floor, mode, provider, or sign-in instead of guessing. "
+    "Do not mention being a documentation assistant."
+)
+STRICT_GENERAL_CHAT_HINTS = (
+    "Use only the information in the conversation.",
+    "Do not invent product, app, or institution details.",
+    "Do not mention project documentation unless the user explicitly asks for it.",
+    "If the user asks what this app does, keep the answer limited to the approved NetSense analytics summary provided by the application.",
+    "If the user asks about NetSense data without enough context, ask a clarifying question.",
+)
+SAFE_GENERAL_FALLBACK = (
+    "I'm here to help with general questions. "
+    "If you want NetSense analytics, sign in and share the block and floor."
+)
+
 
 # -----------------------------------------------------------------------------
 # Generic helpers
@@ -177,6 +217,45 @@ def _sanitize_general_assistant_answer(answer: str, message: str) -> str:
         return GENERAL_ASSISTANT_FALLBACK
 
     return cleaned
+
+
+def _safe_general_chat_answer(answer: str, message: str) -> str:
+    cleaned = _format_ai_answer(answer)
+    if not cleaned:
+        return SAFE_GENERAL_FALLBACK
+
+    if _looks_like_project_hallucination(cleaned):
+        if _GREETING_MESSAGE_RE.match(_normalize_text(message)):
+            return "Hi! I'm Spen Sense. How can I help?"
+        return SAFE_GENERAL_FALLBACK
+
+    return cleaned
+
+
+def _build_general_chat_messages(message: str, history: list[dict[str, Any]] | None) -> list[dict[str, str]]:
+    messages = [
+        {
+            "role": "system",
+            "content": "\n".join((STRICT_GENERAL_CHAT_PROMPT, *STRICT_GENERAL_CHAT_HINTS)),
+        }
+    ]
+
+    for item in (history or [])[-6:]:
+        if not isinstance(item, dict):
+            continue
+
+        role = item.get("role", "user")
+        if role not in {"user", "assistant"}:
+            role = "user"
+
+        text = _normalize_text(str(item.get("text") or "")).strip()
+        if not text:
+            continue
+
+        messages.append({"role": role, "content": text})
+
+    messages.append({"role": "user", "content": _normalize_text(message).strip()})
+    return messages
 
 
 # -----------------------------------------------------------------------------
@@ -1271,7 +1350,7 @@ def _build_chat_prompt(
     return "\n".join(sections)
 
 
-def _call_ollama(prompt: str):
+def _call_ollama(message: str, history: list[dict[str, Any]] | None):
     base_url = (getattr(settings, "OLLAMA_BASE_URL", "") or "").strip()
     model = (getattr(settings, "OLLAMA_MODEL", "") or "").strip()
 
@@ -1283,24 +1362,22 @@ def _call_ollama(prompt: str):
     print("==================================\n")
 
     url = f"{base_url.rstrip('/')}/api/chat"
+    messages = _build_general_chat_messages(message, history)
 
     payload = {
         "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": GENERAL_ASSISTANT_SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": prompt,
-            },
-        ],
+        "messages": messages,
+        "options": {
+            "temperature": 0.0,
+            "top_p": 0.1,
+            "repeat_penalty": 1.05,
+            "num_predict": 256,
+        },
         "stream": False,
     }
 
     print("\n========== OLLAMA PROMPT ==========")
-    print(prompt[:3000])
+    print(json.dumps(messages, ensure_ascii=False)[:3000])
     print("===================================\n")
 
     data, error = _post_json(
@@ -1327,7 +1404,9 @@ def _call_ollama(prompt: str):
 
     except Exception as exc:
         return None, str(exc)
-def _call_groq(prompt: str, history: list[dict[str, Any]] | None):
+
+
+def _call_groq(message: str, history: list[dict[str, Any]] | None):
     api_key = _require_groq_key()
 
     api_url = getattr(
@@ -1349,49 +1428,14 @@ def _call_groq(prompt: str, history: list[dict[str, Any]] | None):
     print("URL:", api_url)
     print("=================================\n")
 
-    messages_payload = [
-        {
-                "role": "system",
-                "content": (
-                    "Always respond in English. "
-                    f"{GENERAL_ASSISTANT_SYSTEM_PROMPT} "
-                    "Answer the user's question directly and naturally."
-                ),
-            }
-    ]
-
-    for item in (history or [])[-6:]:
-        if not isinstance(item, dict):
-            continue
-
-        role = item.get("role", "user")
-        text = _normalize_text(str(item.get("text") or "")).strip()
-
-        if not text:
-            continue
-
-        if role not in {"user", "assistant"}:
-            role = "user"
-
-        messages_payload.append(
-            {
-                "role": role,
-                "content": text,
-            }
-        )
-
-    messages_payload.append(
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    )
+    messages_payload = _build_general_chat_messages(message, history)
 
     payload = {
         "model": model,
         "messages": messages_payload,
-        "temperature": 0.2,
-        "max_tokens": 1024,
+        "temperature": 0.0,
+        "top_p": 0.1,
+        "max_tokens": 512,
     }
 
     try:
@@ -1510,7 +1554,7 @@ def chatbot_api(request):
         )
 
     try:
-        answer, error = _call_ollama(message)
+        answer, error = _call_ollama(message, history)
     except Exception as exc:
         answer, error = None, str(exc)
 
@@ -1535,11 +1579,13 @@ def chatbot_api(request):
 
     if not answer:
         return JsonResponse(
-            {"error": error or "Unable to generate response."},
-            status=502,
+            {
+                "answer": SAFE_GENERAL_FALLBACK,
+                "context_scope": "general",
+            }
         )
 
-    answer = _sanitize_general_assistant_answer(answer, message)
+    answer = _safe_general_chat_answer(answer, message)
 
     return JsonResponse(
         {

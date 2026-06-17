@@ -77,6 +77,7 @@
         floorMap.src = floorCfg.image_url || cfg.defaultFloorImage;
         if (floorMap.complete && floorMap.naturalWidth > 0) {
             syncMapAspectRatio();
+            applyOverlayFrame();
         }
     }
 
