@@ -36,6 +36,13 @@
             <button id="loading-screen-skip" aria-label="Skip loading screen">Skip</button>
         </div>
     </div>
+    <script>
+        console.log('LoadingScreen: inline check loaded');
+        const loadingScreenOverlay = document.getElementById('loading-screen-overlay');
+        const loadingScreenVideo = document.getElementById('loading-screen-video');
+        console.log('LoadingScreen: overlay element=', loadingScreenOverlay);
+        console.log('LoadingScreen: video element=', loadingScreenVideo);
+    </script>
 
     <a class="skip-link" href="#main-content">Skip to content</a>
 
@@ -139,7 +146,7 @@
     <script src="{% static 'heatmap/js/pwa.js' %}?v=20260617-1"></script>
     <script src="{% static 'heatmap/js/chatbot.js' %}?v=20260617-1"></script>
     <script src="{% static 'heatmap/js/ui.js' %}?v=20260617-1"></script>
-    <script src="{% static 'heatmap/js/loading-screen.js' %}"></script>
+    <script src="{% static 'heatmap/js/loading-screen.js' %}?v=20260618-1"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
